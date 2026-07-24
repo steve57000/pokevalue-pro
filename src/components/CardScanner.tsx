@@ -13,12 +13,24 @@ import {
   Zap,
 } from 'lucide-react'
 import { searchTcgDexCards } from '../api/tcgdex'
-import { parseCardScanText, type ScannerCandidate, type ScanLanguage } from '../domain/scanner'
-import { recognizeCardText, terminateCardOcr, type OcrProgress } from '../services/cardOcr'
+import {
+  hasReliableBestMatch,
+  matchStrength,
+  parseCardScanText,
+  type ScannerCandidate,
+  type ScanLanguage,
+} from '../domain/scanner'
+import {
+  recognizeCardNumber,
+  recognizeCardText,
+  terminateCardOcr,
+  type OcrProgress,
+} from '../services/cardOcr'
 import {
   assessCardFrame,
   captureCardFrame,
   isCameraSupported,
+  prepareCardNumberOcrImage,
   prepareCardOcrImage,
   type FrameQuality,
 } from '../utils/camera'
@@ -70,7 +82,7 @@ export function CardScanner({
   const [torchEnabled, setTorchEnabled] = useState(false)
   const [quality, setQuality] = useState(DEFAULT_QUALITY)
   const [continuous, setContinuous] = useState(false)
-  const [language, setLanguage] = useState<ScanLanguage>('fr')
+  const [language, setLanguage] = useState<ScanLanguage>('auto')
   const [scanState, setScanState] = useState<ScanState>('idle')
   const [scanError, setScanError] = useState<string>()
   const [ocrProgress, setOcrProgress] = useState<OcrProgress>({ progress: 0, message: 'Préparation' })
@@ -182,16 +194,31 @@ export function CardScanner({
     try {
       const preparedImage = await prepareCardOcrImage(image)
       const ocr = await recognizeCardText(preparedImage, language, setOcrProgress)
-      setOcrText(ocr.text)
-      const clues = parseCardScanText(ocr.text)
+      let mergedOcrText = ocr.text
+      let clues = parseCardScanText(mergedOcrText)
+      if (!clues.localId) {
+        try {
+          const numberImage = await prepareCardNumberOcrImage(image)
+          const numberOcr = await recognizeCardNumber(numberImage, language, setOcrProgress)
+          if (numberOcr.text) {
+            mergedOcrText = `${mergedOcrText}\n${numberOcr.text}`.trim()
+            clues = parseCardScanText(mergedOcrText)
+          }
+        } catch {
+          // A readable name is enough to continue with bilingual and visual matching.
+        }
+      }
+      setOcrText(mergedOcrText)
+      setManualName(clues.nameHints[0] ?? '')
+      setManualNumber(clues.localId ?? '')
       if (!clues.localId && clues.nameHints.length === 0) {
         throw new Error('Le nom ou le numéro n’est pas assez lisible. Reprends la photo ou utilise la recherche manuelle.')
       }
 
       setScanState('searching')
-      const matches = await searchTcgDexCards(clues, language)
+      const matches = await searchTcgDexCards(clues, language, { image })
       if (matches.length === 0) {
-        throw new Error('Aucune correspondance exacte trouvée. Vérifie le nom et le numéro dans la recherche manuelle.')
+        throw new Error('Aucune correspondance suffisamment fiable. Vérifie les indices préremplis ou reprends une photo plus nette.')
       }
       setCandidates(matches)
       setScanState('done')
@@ -304,6 +331,7 @@ export function CardScanner({
         <label className="language-select">
           Langue de la carte
           <select value={language} onChange={(event) => setLanguage(event.target.value as ScanLanguage)} disabled={isBusy}>
+            <option value="auto">Automatique (FR + EN)</option>
             <option value="fr">Français</option>
             <option value="en">Anglais</option>
           </select>
@@ -373,7 +401,7 @@ export function CardScanner({
             <div className="scan-progress">
               <div><LoaderCircle className="spin" size={18}/><span>{scanState === 'capturing' ? 'Capture de la carte' : scanState === 'searching' ? 'Recherche dans TCGdex' : ocrProgress.message}</span></div>
               <progress max="1" value={scanState === 'ocr' ? ocrProgress.progress : undefined}/>
-              {scanState === 'ocr' && <small>Le premier scan peut prendre quelques secondes : le modèle OCR est mis en cache sur le téléphone.</small>}
+              {scanState === 'ocr' && <small>Le premier scan peut prendre quelques secondes. Le nom et le petit numéro sont analysés séparément pour gagner en précision.</small>}
             </div>
           )}
 
@@ -390,7 +418,7 @@ export function CardScanner({
 
           <div className="manual-search">
             <div><Search size={17}/><strong>Recherche assistée</strong></div>
-            <p>Si la carte brillante est mal lue, saisis ce que tu vois en bas de la carte.</p>
+            <p>Les indices détectés sont préremplis. Corrige le nom ou le numéro si nécessaire.</p>
             <div className="manual-fields">
               <input value={manualName} onChange={(event) => setManualName(event.target.value)} placeholder="Nom, ex. Dracaufeu"/>
               <input value={manualNumber} onChange={(event) => setManualNumber(event.target.value)} placeholder="Numéro, ex. 199"/>
@@ -398,7 +426,7 @@ export function CardScanner({
             </div>
           </div>
 
-          <div className="privacy-note"><ShieldCheck size={18}/><span>La photo reste dans ce navigateur et n’est ni enregistrée ni envoyée à TCGdex. Seuls les indices textuels servent à la recherche.</span></div>
+          <div className="privacy-note"><ShieldCheck size={18}/><span>La photo reste dans ce navigateur. Elle sert localement à comparer les illustrations et n’est jamais envoyée à TCGdex.</span></div>
         </div>
       </div>
 
@@ -412,16 +440,21 @@ export function CardScanner({
             {candidates.map((candidate, index) => {
               const collected = isCollected(candidate.id)
               const confirmed = confirmedId === candidate.id
+              const strength = matchStrength(candidate.matchScore)
+              const reliableBest = index === 0 && hasReliableBestMatch(candidates)
               return (
                 <article className={`candidate-card ${confirmed ? 'confirmed' : ''}`} key={candidate.id}>
                   <div className="candidate-image">
                     <CardImage image={candidate.image} fallbackImage={candidate.fallbackImage} name={candidate.name} quality="low"/>
-                    {index === 0 && <span className="best-match">Meilleure correspondance</span>}
+                    {reliableBest && <span className="best-match">Meilleure correspondance</span>}
                   </div>
                   <div className="candidate-content">
-                    <div className="candidate-confidence"><strong>{candidate.matchScore}%</strong><span>{candidate.matchReasons.join(' · ') || 'À vérifier'}</span></div>
+                    <div className={`candidate-confidence ${strength}`}>
+                      <strong>Indice {candidate.matchScore}/100</strong>
+                      <span>{candidate.matchReasons.join(' · ') || 'À vérifier'}</span>
+                    </div>
                     <h3>{candidate.name}</h3>
-                    <p>{candidate.setName ?? 'Extension non communiquée'} · n° {candidate.localId ?? 'inconnu'}</p>
+                    <p>{candidate.setName ?? 'Extension non communiquée'} · n° {candidate.localId ?? 'inconnu'} · {candidate.language.toUpperCase()}</p>
                     <LivePrice live={candidate}/>
                     <div className="candidate-actions">
                       <button onClick={() => { onRemember(candidate); setConfirmedId(candidate.id) }}>

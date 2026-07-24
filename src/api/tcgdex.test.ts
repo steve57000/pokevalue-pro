@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPokemonTcgImageFallback,
   buildTcgDexImageUrl,
+  buildTcgDexSearchRequests,
   buildTcgDexSearchUrl,
   buildTcgDexSearchUrls,
+  getTcgDexSearchLanguages,
 } from './tcgdex'
 
 describe('buildTcgDexImageUrl', () => {
@@ -77,6 +79,39 @@ describe('buildTcgDexSearchUrl', () => {
       nameHints: ['Dracaufeu', 'Danseflamme'],
       localId: '4',
     }, 'fr')).toEqual(['https://api.tcgdex.net/v2/fr/cards?localId=4'])
+  })
+
+  it('searches French and English automatically to handle a language mismatch', () => {
+    expect(getTcgDexSearchLanguages('auto')).toEqual(['fr', 'en'])
+    const requests = buildTcgDexSearchRequests({
+      rawText: 'Omanyte',
+      nameHints: ['Omanyte'],
+    }, 'auto')
+    expect(requests).toEqual([
+      {
+        language: 'fr',
+        url: 'https://api.tcgdex.net/v2/fr/cards?name=Omanyte',
+      },
+      {
+        language: 'en',
+        url: 'https://api.tcgdex.net/v2/en/cards?name=Omanyte',
+      },
+    ])
+  })
+
+  it('cross-checks both number and name instead of trusting one OCR clue', () => {
+    const requests = buildTcgDexSearchRequests({
+      rawText: 'Omanyte\n180/165',
+      nameHints: ['Omanyte'],
+      localId: '180',
+      printedTotal: '165',
+    }, 'en')
+    expect(requests.map((request) => request.url)).toEqual([
+      'https://api.tcgdex.net/v2/en/cards?localId=180',
+      'https://api.tcgdex.net/v2/en/cards?name=Omanyte',
+      'https://api.tcgdex.net/v2/fr/cards?localId=180',
+      'https://api.tcgdex.net/v2/fr/cards?name=Omanyte',
+    ])
   })
 })
 

@@ -1,6 +1,6 @@
 import type { LoggerMessage, Worker } from 'tesseract.js'
 import ocrWorkerUrl from 'tesseract.js/dist/worker.min.js?url'
-import type { ScanLanguage } from '../domain/scanner'
+import type { CardLanguage, ScanLanguage } from '../domain/scanner'
 
 export type OcrProgress = {
   progress: number
@@ -13,8 +13,9 @@ export type OcrResult = {
 }
 
 let workerPromise: Promise<Worker> | undefined
-let workerLanguage: ScanLanguage | undefined
+let workerLanguage: CardLanguage | undefined
 let activeProgress: ((progress: OcrProgress) => void) | undefined
+let activeStage: 'text' | 'number' = 'text'
 
 const TESSERACT_CORE_PATH = 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0'
 const TESSERACT_LANGUAGE_VERSION = '4.0.0_best_int'
@@ -34,7 +35,7 @@ export function mapOcrProgress(message: Pick<LoggerMessage, 'status' | 'progress
   }
 }
 
-async function createOcrWorker(language: ScanLanguage): Promise<Worker> {
+async function createOcrWorker(language: CardLanguage): Promise<Worker> {
   const { createWorker, OEM, PSM } = await import('tesseract.js')
   const languageCode = language === 'fr' ? 'fra' : 'eng'
   const worker = await createWorker(languageCode, OEM.LSTM_ONLY, {
@@ -42,7 +43,15 @@ async function createOcrWorker(language: ScanLanguage): Promise<Worker> {
     workerBlobURL: false,
     corePath: TESSERACT_CORE_PATH,
     langPath: `https://cdn.jsdelivr.net/npm/@tesseract.js-data/${languageCode}/${TESSERACT_LANGUAGE_VERSION}`,
-    logger: (message) => activeProgress?.(mapOcrProgress(message)),
+    logger: (message) => {
+      const progress = mapOcrProgress(message)
+      activeProgress?.({
+        ...progress,
+        message: activeStage === 'number' && message.status === 'recognizing text'
+          ? 'Lecture du numéro imprimé'
+          : progress.message,
+      })
+    },
   })
   await worker.setParameters({
     tessedit_pageseg_mode: PSM.SPARSE_TEXT,
@@ -53,11 +62,12 @@ async function createOcrWorker(language: ScanLanguage): Promise<Worker> {
 }
 
 async function getOcrWorker(language: ScanLanguage): Promise<Worker> {
-  if (workerPromise && workerLanguage === language) return workerPromise
+  const resolvedLanguage: CardLanguage = language === 'auto' ? 'fr' : language
+  if (workerPromise && workerLanguage === resolvedLanguage) return workerPromise
   if (workerPromise) await terminateCardOcr()
 
-  workerLanguage = language
-  const creation = createOcrWorker(language)
+  workerLanguage = resolvedLanguage
+  const creation = createOcrWorker(resolvedLanguage)
   workerPromise = creation
   try {
     return await creation
@@ -84,8 +94,15 @@ export async function recognizeCardText(
   onProgress?: (progress: OcrProgress) => void,
 ): Promise<OcrResult> {
   activeProgress = onProgress
+  activeStage = 'text'
   try {
+    const { PSM } = await import('tesseract.js')
     const worker = await getOcrWorker(language)
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      tessedit_char_whitelist: '',
+      preserve_interword_spaces: '1',
+    })
     const result = await worker.recognize(image, { rotateAuto: true })
     return {
       text: result.data.text.trim(),
@@ -99,12 +116,47 @@ export async function recognizeCardText(
   }
 }
 
+export async function recognizeCardNumber(
+  image: Blob,
+  language: ScanLanguage,
+  onProgress?: (progress: OcrProgress) => void,
+): Promise<OcrResult> {
+  activeProgress = onProgress
+  activeStage = 'number'
+  try {
+    const { PSM } = await import('tesseract.js')
+    const worker = await getOcrWorker(language)
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/- ',
+      preserve_interword_spaces: '1',
+    })
+    const result = await worker.recognize(image)
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+      tessedit_char_whitelist: '',
+      preserve_interword_spaces: '1',
+    })
+    return {
+      text: result.data.text.trim(),
+      confidence: result.data.confidence,
+    }
+  } catch (error) {
+    await terminateCardOcr()
+    throw readableOcrError(error)
+  } finally {
+    activeProgress = undefined
+    activeStage = 'text'
+  }
+}
+
 export async function terminateCardOcr(): Promise<void> {
   if (!workerPromise) return
   const currentWorker = workerPromise
   workerPromise = undefined
   workerLanguage = undefined
   activeProgress = undefined
+  activeStage = 'text'
   try {
     const worker = await currentWorker
     await worker.terminate()

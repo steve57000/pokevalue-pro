@@ -24,11 +24,11 @@ export function computeCardCrop(width: number, height: number, targetRatio = CAR
 
 export function computeOcrBands(width: number, height: number): OcrBand[] {
   const crop = computeCardCrop(width, height)
-  const topHeight = crop.sh * 0.32
-  const bottomHeight = crop.sh * 0.28
+  const topHeight = crop.sh * 0.27
+  const bottomHeight = crop.sh * 0.24
   return [
-    { sx: crop.sx, sy: crop.sy, sw: crop.sw, sh: topHeight, dy: 0, dh: 320 },
-    { sx: crop.sx, sy: crop.sy + crop.sh - bottomHeight, sw: crop.sw, sh: bottomHeight, dy: 340, dh: 280 },
+    { sx: crop.sx, sy: crop.sy, sw: crop.sw, sh: topHeight, dy: 0, dh: 400 },
+    { sx: crop.sx, sy: crop.sy + crop.sh - bottomHeight, sw: crop.sw, sh: bottomHeight, dy: 430, dh: 360 },
   ]
 }
 
@@ -108,13 +108,15 @@ export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
   const decoded = await decodeCardImage(image)
   try {
     const canvas = document.createElement('canvas')
-    canvas.width = 1000
-    canvas.height = 620
+    canvas.width = 1400
+    canvas.height = 810
     const context = canvas.getContext('2d', { alpha: false })
     if (!context) return image
     context.fillStyle = '#fff'
     context.fillRect(0, 0, canvas.width, canvas.height)
-    context.filter = 'grayscale(1) contrast(1.45)'
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+    context.filter = 'grayscale(1) contrast(1.7)'
     for (const band of computeOcrBands(decoded.width, decoded.height)) {
       context.drawImage(decoded.source, band.sx, band.sy, band.sw, band.sh, 0, band.dy, canvas.width, band.dh)
     }
@@ -122,6 +124,57 @@ export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
 
     return await new Promise<Blob>((resolve) => {
       canvas.toBlob((blob) => resolve(blob ?? image), 'image/jpeg', 0.92)
+    })
+  } finally {
+    decoded.dispose()
+  }
+}
+
+export async function prepareCardNumberOcrImage(image: Blob): Promise<Blob> {
+  const decoded = await decodeCardImage(image)
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1800
+    canvas.height = 520
+    const context = canvas.getContext('2d', { alpha: false, willReadFrequently: true })
+    if (!context) return image
+
+    const crop = computeCardCrop(decoded.width, decoded.height)
+    const bandHeight = crop.sh * 0.2
+    context.fillStyle = '#fff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+    context.filter = 'grayscale(1) contrast(2.1)'
+    context.drawImage(
+      decoded.source,
+      crop.sx,
+      crop.sy + crop.sh - bandHeight,
+      crop.sw,
+      bandHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    )
+    context.filter = 'none'
+
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+    let total = 0
+    for (let offset = 0; offset < pixels.data.length; offset += 4) {
+      total += pixels.data[offset]
+    }
+    const threshold = Math.max(95, Math.min(205, total / (pixels.data.length / 4) - 18))
+    for (let offset = 0; offset < pixels.data.length; offset += 4) {
+      const value = pixels.data[offset] < threshold ? 0 : 255
+      pixels.data[offset] = value
+      pixels.data[offset + 1] = value
+      pixels.data[offset + 2] = value
+    }
+    context.putImageData(pixels, 0, 0)
+
+    return await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob ?? image), 'image/png')
     })
   } finally {
     decoded.dispose()

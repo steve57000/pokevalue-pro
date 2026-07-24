@@ -1,11 +1,14 @@
 import type { CardDataProvider, ExternalCard } from '../domain/cards'
 import {
-  normalizeLocalId,
+  combineScannerScores,
+  MIN_TEXT_MATCH_SCORE,
   scoreScannerCandidate,
+  type CardLanguage,
   type CardScanClues,
   type ScannerCandidate,
   type ScanLanguage,
 } from '../domain/scanner'
+import { compareCardImageToCandidates } from '../services/cardVisualMatcher'
 import { getCached, setCached } from '../utils/cache'
 import { normalizeApiDate } from '../utils/dates'
 
@@ -67,12 +70,27 @@ type TcgDexCardResponse = {
   localId?: string
   rarity?: string
   image?: string
-  set?: { name?: string }
+  set?: {
+    name?: string
+    cardCount?: {
+      official?: number
+      total?: number
+    }
+  }
   updated?: string
   pricing?: ExternalCard['pricing']
 }
 
 type TcgDexCardBriefResponse = Pick<TcgDexCardResponse, 'id' | 'name' | 'localId' | 'image'>
+
+type TcgDexSearchRequest = {
+  language: CardLanguage
+  url: string
+}
+
+export type CardSearchOptions = {
+  image?: Blob
+}
 
 async function fetchJson<T>(url: string): Promise<T> {
   return withRequestSlot(async () => {
@@ -88,7 +106,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   })
 }
 
-export function buildTcgDexSearchUrl(clues: CardScanClues, language: ScanLanguage): string | undefined {
+export function buildTcgDexSearchUrl(clues: CardScanClues, language: CardLanguage): string | undefined {
   const localId = clues.localId?.trim()
   const name = clues.nameHints.find((hint) => hint.trim().length >= 3)?.trim()
   if (!localId && !name) return undefined
@@ -99,7 +117,7 @@ export function buildTcgDexSearchUrl(clues: CardScanClues, language: ScanLanguag
   return `${BASE_URL}/${language}/cards?${params.toString()}`
 }
 
-export function buildTcgDexSearchUrls(clues: CardScanClues, language: ScanLanguage): string[] {
+export function buildTcgDexSearchUrls(clues: CardScanClues, language: CardLanguage): string[] {
   if (clues.localId?.trim()) {
     const url = buildTcgDexSearchUrl(clues, language)
     return url ? [url] : []
@@ -117,6 +135,33 @@ export function buildTcgDexSearchUrls(clues: CardScanClues, language: ScanLangua
     const params = new URLSearchParams({ name })
     return `${BASE_URL}/${language}/cards?${params.toString()}`
   })
+}
+
+export function getTcgDexSearchLanguages(language: ScanLanguage): CardLanguage[] {
+  if (language === 'en') return ['en', 'fr']
+  return ['fr', 'en']
+}
+
+export function buildTcgDexSearchRequests(
+  clues: CardScanClues,
+  language: ScanLanguage,
+): TcgDexSearchRequest[] {
+  const requests: TcgDexSearchRequest[] = []
+  for (const cardLanguage of getTcgDexSearchLanguages(language)) {
+    if (clues.localId?.trim()) {
+      const params = new URLSearchParams({ localId: clues.localId.trim() })
+      requests.push({
+        language: cardLanguage,
+        url: `${BASE_URL}/${cardLanguage}/cards?${params.toString()}`,
+      })
+    }
+
+    const nameOnlyClues = { ...clues, localId: undefined }
+    for (const url of buildTcgDexSearchUrls(nameOnlyClues, cardLanguage)) {
+      requests.push({ language: cardLanguage, url })
+    }
+  }
+  return requests
 }
 
 export class TcgDexProvider implements CardDataProvider {
@@ -150,6 +195,8 @@ export class TcgDexProvider implements CardDataProvider {
       id: data.id,
       name: data.name,
       setName: data.set?.name,
+      setOfficialCount: data.set?.cardCount?.official,
+      setTotalCount: data.set?.cardCount?.total,
       localId: data.localId,
       rarity: data.rarity,
       image: data.image,
@@ -166,15 +213,23 @@ export const tcgDexProvider = new TcgDexProvider()
 export async function searchTcgDexCards(
   clues: CardScanClues,
   language: ScanLanguage = 'fr',
+  options: CardSearchOptions = {},
 ): Promise<ScannerCandidate[]> {
-  const urls = buildTcgDexSearchUrls(clues, language)
-  if (urls.length === 0) return []
+  const requests = buildTcgDexSearchRequests(clues, language)
+  if (requests.length === 0) return []
 
-  const searchResponses = await Promise.allSettled(urls.map((url) => fetchJson<unknown>(url)))
+  const searchResponses = await Promise.allSettled(
+    requests.map(async (request) => ({
+      ...request,
+      data: await fetchJson<unknown>(request.url),
+    })),
+  )
   const validResponses = searchResponses
-    .filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled')
+    .filter((result): result is PromiseFulfilledResult<TcgDexSearchRequest & { data: unknown }> =>
+      result.status === 'fulfilled')
     .map((result) => result.value)
-    .filter(Array.isArray)
+    .filter((result): result is TcgDexSearchRequest & { data: unknown[] } =>
+      Array.isArray(result.data))
 
   if (validResponses.length === 0) {
     const firstError = searchResponses.find((result): result is PromiseRejectedResult => result.status === 'rejected')
@@ -182,37 +237,96 @@ export async function searchTcgDexCards(
     throw new Error('Réponse de recherche TCGdex invalide')
   }
 
-  const uniqueBriefs = new Map<string, TcgDexCardBriefResponse>()
+  const uniqueBriefs = new Map<string, {
+    candidate: TcgDexCardBriefResponse
+    language: CardLanguage
+    score: number
+    reasons: string[]
+  }>()
   for (const response of validResponses) {
-    for (const item of response) {
+    for (const item of response.data) {
       if (!item || typeof item !== 'object') continue
       const candidate = item as Partial<TcgDexCardBriefResponse>
       if (typeof candidate.id !== 'string' || typeof candidate.name !== 'string') continue
-      uniqueBriefs.set(candidate.id, candidate as TcgDexCardBriefResponse)
+      const typedCandidate = candidate as TcgDexCardBriefResponse
+      const textMatch = scoreScannerCandidate(typedCandidate, clues)
+      if (textMatch.score < MIN_TEXT_MATCH_SCORE) continue
+
+      const existing = uniqueBriefs.get(typedCandidate.id)
+      if (!existing || textMatch.score > existing.score) {
+        uniqueBriefs.set(typedCandidate.id, {
+          candidate: typedCandidate,
+          language: response.language,
+          score: textMatch.score,
+          reasons: textMatch.reasons,
+        })
+      }
     }
   }
 
   const briefs = [...uniqueBriefs.values()]
-    .filter((candidate) => {
-      if (!clues.localId || !candidate.localId) return true
-      return normalizeLocalId(candidate.localId) === normalizeLocalId(clues.localId)
+  if (briefs.length === 0) return []
+
+  let visualMatches = new Map<string, number>()
+  if (options.image) {
+    try {
+      visualMatches = await compareCardImageToCandidates(
+        options.image,
+        briefs.map(({ candidate }) => ({
+          id: candidate.id,
+          imageUrl: buildTcgDexImageUrl(candidate.image, 'low'),
+        })),
+      )
+    } catch {
+      // OCR and manual confirmation remain available if CORS or canvas blocks comparison.
+    }
+  }
+
+  const rankedBriefs = briefs
+    .map((brief) => {
+      const visualScore = visualMatches.get(brief.candidate.id)
+      const combined = combineScannerScores(brief.score, visualScore)
+      return {
+        ...brief,
+        visualScore,
+        combinedScore: combined.score,
+        visualReason: combined.visualReason,
+      }
     })
-    .map((candidate) => ({
-      candidate,
-      ...scoreScannerCandidate(candidate, clues),
-    }))
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 8)
+    .sort((left, right) =>
+      right.combinedScore - left.combinedScore
+      || (right.visualScore ?? -1) - (left.visualScore ?? -1)
+      || right.score - left.score)
+    .slice(0, 12)
 
   const detailed = await Promise.allSettled(
-    briefs.map(async ({ candidate, score, reasons }) => ({
-      ...(await tcgDexProvider.getCard(candidate.id, language)),
-      matchScore: score,
-      matchReasons: reasons,
-    })),
+    rankedBriefs.map(async ({
+      candidate,
+      language: candidateLanguage,
+      visualScore,
+    }) => {
+      const card = await tcgDexProvider.getCard(candidate.id, candidateLanguage)
+      const textMatch = scoreScannerCandidate(card, clues)
+      const combined = combineScannerScores(textMatch.score, visualScore)
+      return {
+        ...card,
+        matchScore: combined.score,
+        textMatchScore: textMatch.score,
+        visualMatchScore: visualScore,
+        matchReasons: [
+          ...textMatch.reasons,
+          ...(combined.visualReason ? [combined.visualReason] : []),
+        ],
+      }
+    }),
   )
 
   return detailed
-    .filter((result): result is PromiseFulfilledResult<ScannerCandidate> => result.status === 'fulfilled')
-    .map((result) => result.value)
+    .flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+    .filter((candidate) => candidate.textMatchScore >= MIN_TEXT_MATCH_SCORE)
+    .sort((left, right) =>
+      right.matchScore - left.matchScore
+      || (right.visualMatchScore ?? -1) - (left.visualMatchScore ?? -1)
+      || right.textMatchScore - left.textMatchScore)
+    .slice(0, 8)
 }
