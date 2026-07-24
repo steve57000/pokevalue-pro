@@ -5,11 +5,14 @@ import {
   Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2
 } from 'lucide-react'
 import { cards, rarities, sets } from './data'
+import { CardImage } from './components/CardImage'
+import { LivePrice } from './components/LivePrice'
+import { selectCardmarketPrice } from './domain/pricing'
+import { useLiveCards } from './hooks/useLiveCards'
+import { money } from './utils/money'
 import type { Card } from './types'
 
 type View = 'catalogue' | 'favorites' | 'collection' | 'estimator' | 'guide'
-
-const money = (value:number) => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value)
 
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
@@ -21,6 +24,7 @@ function App() {
   const [selected, setSelected] = useState<Card|null>(null)
   const [favorites, setFavorites] = useState<string[]>(() => JSON.parse(localStorage.getItem('pv-favorites') || '[]'))
   const [collection, setCollection] = useState<string[]>(() => JSON.parse(localStorage.getItem('pv-collection') || '[]'))
+  const { entries: liveCards, retry } = useLiveCards(cards)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -117,8 +121,8 @@ function App() {
             <div className="result-head"><strong>{filtered.length} carte{filtered.length!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
             <section className="card-grid">
               {[...filtered].sort((a,b)=>b.score-a.score).map(card =>
-                <CardTile key={card.id} card={card} favorite={favorites.includes(card.id)} collected={collection.includes(card.id)}
-                  onOpen={()=>setSelected(card)}
+                <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={favorites.includes(card.id)} collected={collection.includes(card.id)}
+                  onOpen={()=>setSelected(card)} onRetry={()=>retry(card.id)}
                   onFavorite={()=>toggle(card.id,favorites,setFavorites)}
                   onCollect={()=>toggle(card.id,collection,setCollection)}
                 />
@@ -136,7 +140,7 @@ function App() {
         {nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
       </nav>
 
-      {selected && <Detail card={selected} onClose={()=>setSelected(null)}
+      {selected && <Detail card={selected} liveEntry={liveCards[selected.id]} onClose={()=>setSelected(null)}
         favorite={favorites.includes(selected.id)}
         collected={collection.includes(selected.id)}
         onFavorite={()=>toggle(selected.id,favorites,setFavorites)}
@@ -150,42 +154,50 @@ function Stat({icon,label,value}:{icon:React.ReactNode,label:string,value:string
   return <div className="stat-card"><div>{icon}</div><span>{label}</span><strong>{value}</strong></div>
 }
 
-function CardTile({card,favorite,collected,onOpen,onFavorite,onCollect}:{card:Card,favorite:boolean,collected:boolean,onOpen:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
+function CardTile({card,liveEntry,favorite,collected,onOpen,onRetry,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},favorite:boolean,collected:boolean,onOpen:()=>void,onRetry:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
+  const livePrice = selectCardmarketPrice(liveEntry?.data?.pricing)
+  const hasLive = liveEntry?.status === 'success' && !!livePrice
   return <article className="poke-card">
-    <div className="card-visual" style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
-      <div className="card-number">{card.number}</div>
-      <div className="fake-orb"></div>
-      <div className="pokemon-name">{card.pokemon}</div>
-      <div className="rarity-pill">{card.rarity}</div>
+    <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
+      <div className="card-number">{liveEntry?.data?.localId ?? card.number}</div>
+      {card.tcgdexId && liveEntry?.status === 'loading' ? <div className="image-skeleton"/> : card.tcgdexId ? <CardImage image={liveEntry?.data?.image} name={liveEntry?.data?.name ?? card.name} quality="low" className="real-card-image"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
+      <div className="rarity-pill">{liveEntry?.data?.rarity ?? card.rarity}</div>
       <button className={`heart ${favorite?'filled':''}`} onClick={(e)=>{e.stopPropagation();onFavorite()}}><Heart size={18} fill={favorite?'currentColor':'none'}/></button>
     </div>
     <div className="card-body">
       <div className="card-meta"><span>{card.year}</span><span>{card.language}</span><span className={`trend ${card.trend}`}>{card.trend==='up'?'↗':card.trend==='down'?'↘':'→'}</span></div>
       <h3>{card.name}</h3>
       <p>{card.set}</p>
-      <div className="price-row"><div><small>Brute estimée</small><strong>{money(card.rawMin)} – {money(card.rawMax)}</strong></div><div className="score">{card.score.toFixed(1)}</div></div>
+      <div className="source-badge">{hasLive ? 'Prix marché actualisé' : 'Estimation indicative'}</div>
+      {liveEntry?.status === 'loading' && <div className="price-skeleton"/>}
+      {liveEntry?.status === 'error' && <div className="api-error"><span>Donnée API indisponible</span><button onClick={(e)=>{e.stopPropagation();onRetry()}}>Réessayer</button></div>}
+      {hasLive ? <LivePrice live={liveEntry?.data} compact /> : <div className="price-row"><div><small>Brute estimée</small><strong>{money(card.rawMin)} – {money(card.rawMax)}</strong></div><div className="score">{card.score.toFixed(1)}</div></div>}
       <div className="card-actions"><button onClick={onOpen}>Voir la fiche <ArrowUpRight size={15}/></button><button className={collected?'collected':''} onClick={onCollect}>{collected?<CheckCircle2 size={16}/>:<Library size={16}/>}</button></div>
     </div>
   </article>
 }
 
-function Detail({card,onClose,favorite,collected,onFavorite,onCollect}:{card:Card,onClose:()=>void,favorite:boolean,collected:boolean,onFavorite:()=>void,onCollect:()=>void}) {
+function Detail({card,liveEntry,onClose,favorite,collected,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},onClose:()=>void,favorite:boolean,collected:boolean,onFavorite:()=>void,onCollect:()=>void}) {
+  const livePrice = selectCardmarketPrice(liveEntry?.data?.pricing)
+  const hasLive = liveEntry?.status === 'success' && !!livePrice
   return <div className="modal-backdrop" onMouseDown={onClose}>
     <div className="modal" onMouseDown={e=>e.stopPropagation()}>
       <button className="modal-close" onClick={onClose}><X/></button>
-      <div className="detail-visual" style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}66, transparent 35%), linear-gradient(145deg, ${card.color}, #111827)`}}>
-        <div className="fake-orb big"></div><div className="pokemon-name big-name">{card.pokemon}</div><span>{card.number}</span>
+      <div className={`detail-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}66, transparent 35%), linear-gradient(145deg, ${card.color}, #111827)`}}>
+        {card.tcgdexId && liveEntry?.status === 'success' ? <CardImage image={liveEntry.data?.image} name={liveEntry.data?.name ?? card.name} quality="high" className="real-card-image detail-image"/> : <><div className="fake-orb big"></div><div className="pokemon-name big-name">{card.pokemon}</div></>}<span>{liveEntry?.data?.localId ?? card.number}</span>
       </div>
       <div className="detail-content">
         <span className="eyebrow">{card.rarity}</span>
         <h2>{card.name}</h2>
         <p className="set-line">{card.set} · {card.year} · {card.language}</p>
         <p>{card.note}</p>
-        <div className="detail-prices">
-          <div><small>Brute min.</small><strong>{money(card.rawMin)}</strong></div>
-          <div><small>Brute max.</small><strong>{money(card.rawMax)}</strong></div>
+        <div className="source-badge detail-badge">{hasLive ? 'Prix marché actualisé' : 'Estimation indicative'}</div>
+        {hasLive ? <LivePrice live={liveEntry?.data} /> : <div className="detail-prices">
+          <div><small>Brute min. indicative</small><strong>{money(card.rawMin)}</strong></div>
+          <div><small>Brute max. indicative</small><strong>{money(card.rawMax)}</strong></div>
           <div><small>Grade 10 indicatif</small><strong>{money(card.graded10)}</strong></div>
-        </div>
+        </div>}
+        {hasLive && <p className="graded-unavailable">Prix gradé non disponible via TCGdex.</p>}
         <div className="watch-box"><AlertTriangle size={20}/><p><strong>Avant achat :</strong> contrôle le dos, les coins, les rayures, le centrage, la texture et compare plusieurs ventes réellement terminées.</p></div>
         <div className="detail-buttons"><button onClick={onFavorite}><Heart size={18} fill={favorite?'currentColor':'none'}/>{favorite?'Retirer des favoris':'Ajouter aux favoris'}</button><button className="primary" onClick={onCollect}><Library size={18}/>{collected?'Retirer de ma collection':'Ajouter à ma collection'}</button></div>
       </div>
