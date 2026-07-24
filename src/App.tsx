@@ -2,17 +2,36 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
-  Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2
+  Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine
 } from 'lucide-react'
 import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
+import { CardScanner } from './components/CardScanner'
 import { LivePrice } from './components/LivePrice'
 import { selectCardmarketPrice } from './domain/pricing'
+import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
+import { readStoredJson, readStoredStringArray } from './utils/storage'
 import type { Card } from './types'
 
-type View = 'catalogue' | 'favorites' | 'collection' | 'estimator' | 'guide'
+type View = 'catalogue' | 'scanner' | 'favorites' | 'collection' | 'estimator' | 'guide'
+
+const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
+
+function collectionIdForTcgDexCard(tcgdexId: string): string {
+  return cards.find((card) => card.tcgdexId === tcgdexId)?.id ?? tcgdexId
+}
+
+function readRecentScans(): ScannerCandidate[] {
+  const stored = readStoredJson<unknown>(SCANNED_CARDS_STORAGE_KEY, [])
+  if (!Array.isArray(stored)) return []
+  return stored.filter((item): item is ScannerCandidate => {
+    if (!item || typeof item !== 'object') return false
+    const candidate = item as Partial<ScannerCandidate>
+    return typeof candidate.id === 'string' && typeof candidate.name === 'string'
+  })
+}
 
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
@@ -22,8 +41,9 @@ function App() {
   const [rarityFilter, setRarityFilter] = useState('Toutes')
   const [minValue, setMinValue] = useState(0)
   const [selected, setSelected] = useState<Card|null>(null)
-  const [favorites, setFavorites] = useState<string[]>(() => JSON.parse(localStorage.getItem('pv-favorites') || '[]'))
-  const [collection, setCollection] = useState<string[]>(() => JSON.parse(localStorage.getItem('pv-collection') || '[]'))
+  const [favorites, setFavorites] = useState<string[]>(() => readStoredStringArray('pv-favorites'))
+  const [collection, setCollection] = useState<string[]>(() => readStoredStringArray('pv-collection'))
+  const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const { entries: liveCards, retry } = useLiveCards(cards)
 
   useEffect(() => {
@@ -32,6 +52,7 @@ function App() {
   }, [theme])
   useEffect(() => localStorage.setItem('pv-favorites', JSON.stringify(favorites)), [favorites])
   useEffect(() => localStorage.setItem('pv-collection', JSON.stringify(collection)), [collection])
+  useEffect(() => localStorage.setItem(SCANNED_CARDS_STORAGE_KEY, JSON.stringify(recentScans)), [recentScans])
 
   const filtered = useMemo(() => cards.filter(card => {
     const matchesText = `${card.name} ${card.pokemon} ${card.set} ${card.number}`.toLowerCase().includes(query.toLowerCase())
@@ -45,8 +66,26 @@ function App() {
   const toggle = (id:string, list:string[], setter:(v:string[])=>void) =>
     setter(list.includes(id) ? list.filter(x=>x!==id) : [...list,id])
 
+  const rememberScannedCard = (candidate: ScannerCandidate) => {
+    setRecentScans((current) => [candidate, ...current.filter((card) => card.id !== candidate.id)].slice(0, 50))
+  }
+
+  const isScannedCardCollected = (tcgdexId: string) => collection.includes(collectionIdForTcgDexCard(tcgdexId))
+
+  const toggleScannedCollection = (candidate: ScannerCandidate) => {
+    rememberScannedCard(candidate)
+    const collectionId = collectionIdForTcgDexCard(candidate.id)
+    toggle(collectionId, collection, setCollection)
+  }
+
+  const scannedCollection = recentScans.filter((candidate) =>
+    isScannedCardCollected(candidate.id) &&
+    !cards.some((card) => card.tcgdexId === candidate.id),
+  )
+
   const nav = [
     {id:'catalogue', label:'Catalogue', icon:Search},
+    {id:'scanner', label:'Scanner une carte', icon:ScanLine},
     {id:'favorites', label:'Favoris', icon:Heart},
     {id:'collection', label:'Ma collection', icon:Library},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},
@@ -118,7 +157,7 @@ function App() {
               {(setFilter!=='Toutes'||rarityFilter!=='Toutes'||minValue>0||query) && <button className="reset" onClick={()=>{setSetFilter('Toutes');setRarityFilter('Toutes');setMinValue(0);setQuery('')}}><X size={15}/> Réinitialiser</button>}
             </section>
 
-            <div className="result-head"><strong>{filtered.length} carte{filtered.length!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
+            <div className="result-head"><strong>{filtered.length + (view === 'collection' ? scannedCollection.length : 0)} carte{filtered.length + (view === 'collection' ? scannedCollection.length : 0)!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
             <section className="card-grid">
               {[...filtered].sort((a,b)=>b.score-a.score).map(card =>
                 <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={favorites.includes(card.id)} collected={collection.includes(card.id)}
@@ -128,9 +167,34 @@ function App() {
                 />
               )}
             </section>
-            {filtered.length===0 && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
+            {view === 'collection' && scannedCollection.length > 0 && (
+              <section className="scanned-collection">
+                <div className="result-head"><strong>Cartes ajoutées avec le scanner</strong><span>Données TCGdex mémorisées dans ce navigateur</span></div>
+                <div className="scanned-collection-grid">
+                  {scannedCollection.map((card) => (
+                    <article key={card.id}>
+                      <div className="scanned-collection-image"><CardImage image={card.image} name={card.name} quality="low"/></div>
+                      <div>
+                        <span className="source-badge">Carte scannée</span>
+                        <h3>{card.name}</h3>
+                        <p>{card.setName ?? 'Extension inconnue'} · n° {card.localId ?? '—'}</p>
+                        <LivePrice live={card}/>
+                        <button onClick={() => toggleScannedCollection(card)}><X size={16}/> Retirer de ma collection</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+            {filtered.length===0 && (view !== 'collection' || scannedCollection.length === 0) && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
           </>}
 
+          {view==='scanner' && <CardScanner
+            recentCards={recentScans}
+            isCollected={isScannedCardCollected}
+            onRemember={rememberScannedCard}
+            onToggleCollection={toggleScannedCollection}
+          />}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
         </div>

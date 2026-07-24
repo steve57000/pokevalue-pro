@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTcgDexImageUrl } from './tcgdex'
+import { buildTcgDexImageUrl, buildTcgDexSearchUrl } from './tcgdex'
 
 describe('buildTcgDexImageUrl', () => {
   it('construit l’URL low.webp', () => {
@@ -12,6 +12,27 @@ describe('buildTcgDexImageUrl', () => {
 })
 
 import { TcgDexProvider } from './tcgdex'
+
+describe('buildTcgDexSearchUrl', () => {
+  it('prioritizes the printed number because it is more discriminating', () => {
+    expect(buildTcgDexSearchUrl({
+      rawText: 'Dracaufeu 4/102',
+      nameHints: ['Dracaufeu'],
+      localId: '4',
+    }, 'fr')).toBe('https://api.tcgdex.net/v2/fr/cards?localId=4')
+  })
+
+  it('falls back to a name when no number was detected', () => {
+    expect(buildTcgDexSearchUrl({
+      rawText: 'Noctali VMAX',
+      nameHints: ['Noctali VMAX'],
+    }, 'fr')).toBe('https://api.tcgdex.net/v2/fr/cards?name=Noctali+VMAX')
+  })
+
+  it('does not send an empty query', () => {
+    expect(buildTcgDexSearchUrl({ rawText: '', nameHints: [] }, 'fr')).toBeUndefined()
+  })
+})
 
 describe('TcgDexProvider', () => {
   it('rejette une réponse API en erreur', async () => {

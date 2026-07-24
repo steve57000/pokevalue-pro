@@ -1,5 +1,5 @@
-node_modules
-dist
+node_modules/
+dist/
 .vite
 .DS_Store
 .env
@@ -7,7 +7,5 @@ dist
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
-node_modules/
-dist/
 .env.*
 !.env.example
