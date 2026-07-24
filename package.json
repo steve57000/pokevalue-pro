@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "check": "npm run typecheck && npm run test && npm run build && npm run verify:dist"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
