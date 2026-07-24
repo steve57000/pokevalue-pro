@@ -69,7 +69,9 @@ npm run check
 
 La CI exécute l’installation propre, le typecheck, les tests et le build sur chaque pull request. Après fusion dans `main`, le même workflow prépare puis déploie `dist` sur GitHub Pages.
 
-Pour le premier déploiement, sélectionner **GitHub Actions** dans `Settings > Pages > Build and deployment > Source`.
+Le contrôle `npm run check` vérifie aussi que l’artefact contient la page principale, le manifeste, l’icône et des chemins relatifs compatibles avec l’adresse `/pokevalue-pro/`.
+
+Pour le premier déploiement, sélectionner **GitHub Actions** dans `Settings > Pages > Build and deployment > Source`. Le workflow peut ensuite être relancé manuellement depuis l’onglet **Actions** grâce au déclencheur `workflow_dispatch`.
 
 ## Sources et dépendances principales
 
