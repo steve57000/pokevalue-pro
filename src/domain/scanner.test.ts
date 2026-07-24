@@ -18,6 +18,14 @@ describe('scanner clues', () => {
     expect(parseCardScanText('Pikachu\nSVP 101').localId).toBe('101')
   })
 
+  it('keeps the card name when OCR also reads evolution text and attacks', () => {
+    const clues = parseCardScanText(
+      'Évolution de Reptincel · Placez Dracaufeu\nDracaufeu\nDanseflamme\nRésistance',
+    )
+    expect(clues.nameHints[0]).toBe('Dracaufeu')
+    expect(clues.nameHints).not.toContain('Évolution de Reptincel Placez Dracaufeu')
+  })
+
   it('normalizes leading zeroes without losing promo prefixes', () => {
     expect(normalizeLocalId('074')).toBe('74')
     expect(normalizeLocalId('SVP-074')).toBe('SVP74')

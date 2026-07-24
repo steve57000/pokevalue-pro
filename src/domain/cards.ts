@@ -7,6 +7,11 @@ export type ExternalCard = {
   localId?: string
   rarity?: string
   image?: string
+  fallbackImage?: {
+    low: string
+    high: string
+    source: 'Pokémon TCG API'
+  }
   language: string
   updatedAt?: string
   pricing?: TcgDexPricing

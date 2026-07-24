@@ -5,7 +5,9 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 ## Fonctionnalités
 
 - catalogue avec recherche, filtres, favoris et collection locale ;
-- images réelles et prix Cardmarket actualisés pour les cartes reliées à TCGdex ;
+- 30 cartes du catalogue reliées à leurs identifiants TCGdex vérifiés ;
+- images réelles TCGdex, avec repli Pokémon TCG API lorsque le scan TCGdex manque ;
+- prix Cardmarket actualisés lorsqu’ils sont disponibles ;
 - source, devise, date de mise à jour et état du cache affichés ;
 - scanner mobile avec caméra arrière, aide au cadrage, contrôle de netteté et flash lorsqu’il est disponible ;
 - reconnaissance manuelle ou continue par OCR français/anglais ;
@@ -26,7 +28,7 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 5. Les meilleures correspondances, images et prix disponibles sont affichés.
 6. L’utilisateur confirme visuellement la bonne carte.
 
-La photo n’est ni enregistrée dans `localStorage`, ni envoyée à TCGdex, ni commitée dans le dépôt. Les modèles OCR et le worker Tesseract.js sont chargés à la première analyse puis mis en cache par le navigateur.
+La photo n’est ni enregistrée dans `localStorage`, ni envoyée à TCGdex, ni commitée dans le dépôt. Le worker Tesseract.js est livré avec l’application ; le cœur WebAssembly et le modèle de langue sont chargés à la première analyse puis mis en cache par le navigateur.
 
 ## Limites importantes
 
@@ -36,6 +38,7 @@ La photo n’est ni enregistrée dans `localStorage`, ni envoyée à TCGdex, ni 
 - Les prix TCGdex/Cardmarket sont des indicateurs de marché, pas des ventes garanties.
 - Les prix gradés ne sont pas présentés comme des données live lorsqu’aucune source spécialisée ne les fournit.
 - Le premier OCR peut être plus lent, car le modèle de langue doit être téléchargé.
+- Les quelques images absentes de TCGdex utilisent un visuel anglais de secours fourni par Pokémon TCG API.
 
 ## Compatibilité caméra
 
@@ -76,6 +79,7 @@ Pour le premier déploiement, sélectionner **GitHub Actions** dans `Settings > 
 ## Sources et dépendances principales
 
 - [TCGdex](https://tcgdex.dev/) : catalogue, images et données de marché disponibles ;
+- [Pokémon TCG API](https://docs.pokemontcg.io/) : images de secours lorsque TCGdex ne possède pas de scan ;
 - [Tesseract.js](https://github.com/naptha/tesseract.js) : OCR local dans le navigateur ;
 - API Web `MediaDevices.getUserMedia()` : accès caméra avec autorisation.
 
