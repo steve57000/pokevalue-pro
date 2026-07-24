@@ -1,0 +1,38 @@
+import type { Card } from '../types'
+
+export type ExternalCard = {
+  id: string
+  name: string
+  setName?: string
+  localId?: string
+  rarity?: string
+  image?: string
+  language: string
+  updatedAt?: string
+  pricing?: TcgDexPricing
+  fromStaleCache?: boolean
+}
+
+export type TcgDexPricing = {
+  cardmarket?: {
+    updatedAt?: string | null
+    trend?: number | null
+    avg30?: number | null
+    avg7?: number | null
+    avg?: number | null
+    low?: number | null
+  } | null
+}
+
+export interface CardDataProvider {
+  getCard(id: string, language?: string): Promise<ExternalCard>
+}
+
+export type LiveCardState = {
+  card: Card
+  live?: ExternalCard
+  status: 'idle' | 'loading' | 'success' | 'error'
+  error?: string
+  fromStaleCache?: boolean
+  retry: () => void
+}

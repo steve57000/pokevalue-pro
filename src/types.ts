@@ -16,4 +16,5 @@ export type Card = {
   color: string
   accent: string
   note: string
+  tcgdexId?: string
 }
