@@ -10,8 +10,11 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 - prix Cardmarket actualisés lorsqu’ils sont disponibles ;
 - source, devise, date de mise à jour et état du cache affichés ;
 - scanner mobile avec caméra arrière, aide au cadrage, contrôle de netteté et flash lorsqu’il est disponible ;
-- reconnaissance manuelle ou continue par OCR français/anglais ;
-- recherche des correspondances par nom et numéro dans TCGdex ;
+- reconnaissance manuelle ou continue par OCR, avec recherche automatique français + anglais ;
+- second passage OCR agrandi et contrasté pour le petit numéro imprimé ;
+- recherche croisée par nom, numéro et total de l’extension dans TCGdex ;
+- comparaison perceptuelle locale de l’illustration pour départager les éditions d’un même Pokémon ;
+- seuil de pertinence empêchant un résultat sans indice concordant d’être présenté comme correspondance ;
 - confirmation visuelle obligatoire avant d’ajouter une carte à la collection ;
 - import d’une photo comme solution de repli ;
 - recherche assistée si l’OCR ne lit pas correctement une carte brillante ;
@@ -23,18 +26,21 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 
 1. Le navigateur demande explicitement l’autorisation d’utiliser la caméra.
 2. La carte est cadrée et capturée localement.
-3. Tesseract.js lit le nom et le numéro dans le navigateur.
-4. Seuls ces indices textuels sont envoyés à TCGdex pour rechercher des cartes.
-5. Les meilleures correspondances, images et prix disponibles sont affichés.
-6. L’utilisateur confirme visuellement la bonne carte.
+3. Tesseract.js lit le nom, puis effectue un passage renforcé sur le petit numéro.
+4. Les indices textuels servent à rechercher des cartes dans les catalogues TCGdex français et anglais.
+5. Le navigateur télécharge uniquement les images des candidates et compare localement leur empreinte visuelle à la photo.
+6. Les résultats sans preuve concordante sont supprimés ; le badge « Meilleure correspondance » n’apparaît que si le premier résultat se détache réellement.
+7. L’utilisateur confirme toujours visuellement la langue, l’extension, le numéro et l’illustration.
 
-La photo n’est ni enregistrée dans `localStorage`, ni envoyée à TCGdex, ni commitée dans le dépôt. Le worker Tesseract.js est livré avec l’application ; le cœur WebAssembly et le modèle de langue sont chargés à la première analyse puis mis en cache par le navigateur.
+La photo n’est ni enregistrée dans `localStorage`, ni envoyée à TCGdex, ni commitée dans le dépôt. La comparaison d’image s’exécute dans le navigateur avec une petite empreinte de luminance et de couleur ; seule la photo locale est lue. Le worker Tesseract.js est livré avec l’application ; le cœur WebAssembly et le modèle de langue sont chargés à la première analyse puis mis en cache par le navigateur.
 
 ## Limites importantes
 
 - Le scanner aide à identifier une carte ; il ne certifie ni son authenticité, ni son état, ni sa variante holo/reverse.
 - Une carte sous sleeve brillante, floue, inclinée ou partiellement masquée peut produire plusieurs résultats.
 - Le numéro imprimé reste le meilleur indice. L’utilisateur doit toujours confirmer l’extension, le numéro, la langue et l’illustration.
+- L’indice sur 100 classe les correspondances ; il ne représente pas une probabilité statistique d’authenticité.
+- Si la comparaison visuelle est bloquée par le navigateur ou le réseau, l’application conserve l’OCR et la confirmation manuelle sans inventer de correspondance.
 - Les prix TCGdex/Cardmarket sont des indicateurs de marché, pas des ventes garanties.
 - Les prix gradés ne sont pas présentés comme des données live lorsqu’aucune source spécialisée ne les fournit.
 - Le premier OCR peut être plus lent, car le modèle de langue doit être téléchargé.

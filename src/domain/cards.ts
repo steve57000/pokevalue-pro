@@ -4,6 +4,8 @@ export type ExternalCard = {
   id: string
   name: string
   setName?: string
+  setOfficialCount?: number
+  setTotalCount?: number
   localId?: string
   rarity?: string
   image?: string
