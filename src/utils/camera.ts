@@ -61,9 +61,51 @@ export async function captureCardFrame(video: HTMLVideoElement): Promise<Blob> {
   })
 }
 
+type DecodedCardImage = {
+  source: CanvasImageSource
+  width: number
+  height: number
+  dispose: () => void
+}
+
+async function decodeCardImage(image: Blob): Promise<DecodedCardImage> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(image, { imageOrientation: 'from-image' })
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        dispose: () => bitmap.close(),
+      }
+    } catch {
+      // Safari can expose createImageBitmap while rejecting its orientation options.
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(image)
+  try {
+    const element = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const candidate = new Image()
+      candidate.decoding = 'async'
+      candidate.onload = () => resolve(candidate)
+      candidate.onerror = () => reject(new Error('La photo sélectionnée ne peut pas être décodée.'))
+      candidate.src = objectUrl
+    })
+    return {
+      source: element,
+      width: element.naturalWidth,
+      height: element.naturalHeight,
+      dispose: () => URL.revokeObjectURL(objectUrl),
+    }
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl)
+    throw error
+  }
+}
+
 export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
-  if (typeof createImageBitmap !== 'function') return image
-  const bitmap = await createImageBitmap(image, { imageOrientation: 'from-image' })
+  const decoded = await decodeCardImage(image)
   try {
     const canvas = document.createElement('canvas')
     canvas.width = 1000
@@ -73,8 +115,8 @@ export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
     context.fillStyle = '#fff'
     context.fillRect(0, 0, canvas.width, canvas.height)
     context.filter = 'grayscale(1) contrast(1.45)'
-    for (const band of computeOcrBands(bitmap.width, bitmap.height)) {
-      context.drawImage(bitmap, band.sx, band.sy, band.sw, band.sh, 0, band.dy, canvas.width, band.dh)
+    for (const band of computeOcrBands(decoded.width, decoded.height)) {
+      context.drawImage(decoded.source, band.sx, band.sy, band.sw, band.sh, 0, band.dy, canvas.width, band.dh)
     }
     context.filter = 'none'
 
@@ -82,7 +124,7 @@ export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
       canvas.toBlob((blob) => resolve(blob ?? image), 'image/jpeg', 0.92)
     })
   } finally {
-    bitmap.close()
+    decoded.dispose()
   }
 }
 

@@ -62,6 +62,7 @@ export function CardScanner({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const busyRef = useRef(false)
   const lastAutoScanRef = useRef(0)
+  const lastImageRef = useRef<Blob>()
   const [cameraState, setCameraState] = useState<CameraState>('idle')
   const [cameraError, setCameraError] = useState<string>()
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
@@ -122,8 +123,15 @@ export function CardScanner({
       await video.play()
 
       const track = stream.getVideoTracks()[0]
-      const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean }
-      setTorchAvailable(Boolean(capabilities.torch))
+      try {
+        const capabilities = typeof track.getCapabilities === 'function'
+          ? track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean }
+          : undefined
+        setTorchAvailable(Boolean(capabilities?.torch))
+      } catch {
+        // Camera access must remain usable when a browser cannot expose capabilities.
+        setTorchAvailable(false)
+      }
       setFacingMode(nextFacingMode)
       setCameraState('active')
     } catch (error) {
@@ -163,6 +171,7 @@ export function CardScanner({
   const analyzeImage = useCallback(async (image: Blob) => {
     if (busyRef.current) return
     busyRef.current = true
+    lastImageRef.current = image
     setCandidates([])
     setConfirmedId(undefined)
     setScanError(undefined)
@@ -198,6 +207,7 @@ export function CardScanner({
 
   const captureAndAnalyze = useCallback(async () => {
     if (busyRef.current || !videoRef.current) return
+    lastImageRef.current = undefined
     setScanState('capturing')
     setScanError(undefined)
     try {
@@ -258,6 +268,7 @@ export function CardScanner({
       return
     }
     if (busyRef.current) return
+    lastImageRef.current = undefined
     busyRef.current = true
     setScanError(undefined)
     setCandidates([])
@@ -366,7 +377,15 @@ export function CardScanner({
             </div>
           )}
 
-          {scanError && <div className="scanner-alert error"><AlertTriangle size={18}/><span>{scanError}</span></div>}
+          {scanError && <div className="scanner-alert error">
+            <AlertTriangle size={18}/>
+            <span>{scanError}</span>
+            {lastImageRef.current && <button onClick={() => {
+              const image = lastImageRef.current
+              if (!image) return
+              void terminateCardOcr().then(() => analyzeImage(image))
+            }} disabled={isBusy}><RefreshCw size={15}/> Réessayer l’analyse</button>}
+          </div>}
           {ocrText && <details className="ocr-details"><summary>Texte détecté</summary><pre>{ocrText}</pre></details>}
 
           <div className="manual-search">
@@ -396,7 +415,7 @@ export function CardScanner({
               return (
                 <article className={`candidate-card ${confirmed ? 'confirmed' : ''}`} key={candidate.id}>
                   <div className="candidate-image">
-                    <CardImage image={candidate.image} name={candidate.name} quality="low"/>
+                    <CardImage image={candidate.image} fallbackImage={candidate.fallbackImage} name={candidate.name} quality="low"/>
                     {index === 0 && <span className="best-match">Meilleure correspondance</span>}
                   </div>
                   <div className="candidate-content">
@@ -426,7 +445,7 @@ export function CardScanner({
           <div className="recent-scan-list">
             {recentCards.slice(0, 6).map((card) => (
               <article key={card.id}>
-                <CardImage image={card.image} name={card.name} quality="low"/>
+                <CardImage image={card.image} fallbackImage={card.fallbackImage} name={card.name} quality="low"/>
                 <div><strong>{card.name}</strong><span>{card.setName ?? 'Extension inconnue'} · n° {card.localId ?? '—'}</span></div>
                 {isCollected(card.id) && <Library size={17}/>}
               </article>

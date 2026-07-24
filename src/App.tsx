@@ -4,6 +4,7 @@ import {
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
   Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine
 } from 'lucide-react'
+import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
 import { CardScanner } from './components/CardScanner'
@@ -26,10 +27,14 @@ function collectionIdForTcgDexCard(tcgdexId: string): string {
 function readRecentScans(): ScannerCandidate[] {
   const stored = readStoredJson<unknown>(SCANNED_CARDS_STORAGE_KEY, [])
   if (!Array.isArray(stored)) return []
-  return stored.filter((item): item is ScannerCandidate => {
-    if (!item || typeof item !== 'object') return false
+  return stored.flatMap((item): ScannerCandidate[] => {
+    if (!item || typeof item !== 'object') return []
     const candidate = item as Partial<ScannerCandidate>
-    return typeof candidate.id === 'string' && typeof candidate.name === 'string'
+    if (typeof candidate.id !== 'string' || typeof candidate.name !== 'string') return []
+    return [{
+      ...candidate,
+      fallbackImage: candidate.fallbackImage ?? buildPokemonTcgImageFallback(candidate.id),
+    } as ScannerCandidate]
   })
 }
 
@@ -115,7 +120,7 @@ function App() {
           <p>Repère plus vite les cartes intéressantes dans les lots.</p>
           <button onClick={()=>setView('guide')}>Voir la méthode <ChevronRight size={15}/></button>
         </div>
-        <p className="disclaimer">Prix indicatifs de démonstration. Toujours vérifier les ventes récentes avant achat.</p>
+        <p className="disclaimer">Prix Cardmarket via TCGdex lorsqu’ils sont disponibles. Toujours vérifier les ventes récentes avant achat.</p>
       </aside>
 
       <main>
@@ -173,7 +178,7 @@ function App() {
                 <div className="scanned-collection-grid">
                   {scannedCollection.map((card) => (
                     <article key={card.id}>
-                      <div className="scanned-collection-image"><CardImage image={card.image} name={card.name} quality="low"/></div>
+                      <div className="scanned-collection-image"><CardImage image={card.image} fallbackImage={card.fallbackImage} name={card.name} quality="low"/></div>
                       <div>
                         <span className="source-badge">Carte scannée</span>
                         <h3>{card.name}</h3>
@@ -224,7 +229,7 @@ function CardTile({card,liveEntry,favorite,collected,onOpen,onRetry,onFavorite,o
   return <article className="poke-card">
     <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
       <div className="card-number">{liveEntry?.data?.localId ?? card.number}</div>
-      {card.tcgdexId && liveEntry?.status === 'loading' ? <div className="image-skeleton"/> : card.tcgdexId ? <CardImage image={liveEntry?.data?.image} name={liveEntry?.data?.name ?? card.name} quality="low" className="real-card-image"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
+      {card.tcgdexId && liveEntry?.status === 'loading' ? <div className="image-skeleton"/> : card.tcgdexId ? <CardImage image={liveEntry?.data?.image} fallbackImage={liveEntry?.data?.fallbackImage} name={liveEntry?.data?.name ?? card.name} quality="low" className="real-card-image"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
       <div className="rarity-pill">{liveEntry?.data?.rarity ?? card.rarity}</div>
       <button className={`heart ${favorite?'filled':''}`} onClick={(e)=>{e.stopPropagation();onFavorite()}}><Heart size={18} fill={favorite?'currentColor':'none'}/></button>
     </div>
@@ -248,7 +253,7 @@ function Detail({card,liveEntry,onClose,favorite,collected,onFavorite,onCollect}
     <div className="modal" onMouseDown={e=>e.stopPropagation()}>
       <button className="modal-close" onClick={onClose}><X/></button>
       <div className={`detail-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}66, transparent 35%), linear-gradient(145deg, ${card.color}, #111827)`}}>
-        {card.tcgdexId && liveEntry?.status === 'success' ? <CardImage image={liveEntry.data?.image} name={liveEntry.data?.name ?? card.name} quality="high" className="real-card-image detail-image"/> : <><div className="fake-orb big"></div><div className="pokemon-name big-name">{card.pokemon}</div></>}<span>{liveEntry?.data?.localId ?? card.number}</span>
+        {card.tcgdexId && liveEntry?.status === 'success' ? <CardImage image={liveEntry.data?.image} fallbackImage={liveEntry.data?.fallbackImage} name={liveEntry.data?.name ?? card.name} quality="high" className="real-card-image detail-image"/> : <><div className="fake-orb big"></div><div className="pokemon-name big-name">{card.pokemon}</div></>}<span>{liveEntry?.data?.localId ?? card.number}</span>
       </div>
       <div className="detail-content">
         <span className="eyebrow">{card.rarity}</span>

@@ -5,8 +5,12 @@ import type { Card } from '../types'
 
 export type LiveEntry = { status: 'idle' | 'loading' | 'success' | 'error'; data?: ExternalCard; error?: string }
 
+export function tcgDexLanguageForCard(card: Pick<Card, 'language'>): 'fr' | 'en' {
+  return card.language === 'FR' ? 'fr' : 'en'
+}
+
 export function useLiveCards(cards: Card[]) {
-  const pilotCards = useMemo(() => cards.filter((card) => card.tcgdexId), [cards])
+  const mappedCards = useMemo(() => cards.filter((card) => card.tcgdexId), [cards])
   const [entries, setEntries] = useState<Record<string, LiveEntry>>({})
   const [retryNonce, setRetryNonce] = useState(0)
 
@@ -17,22 +21,26 @@ export function useLiveCards(cards: Card[]) {
 
   useEffect(() => {
     let active = true
-    if (pilotCards.length === 0) return
+    if (mappedCards.length === 0) return
 
     setEntries((current) => {
       const next = { ...current }
-      for (const card of pilotCards) {
+      for (const card of mappedCards) {
         if (next[card.id]?.status !== 'success') next[card.id] = { status: 'loading' }
       }
       return next
     })
 
-    Promise.allSettled(pilotCards.map((card) => tcgDexProvider.getCard(card.tcgdexId!, 'fr').then((data) => ({ id: card.id, data })))).then((results) => {
+    Promise.allSettled(mappedCards.map((card) =>
+      tcgDexProvider
+        .getCard(card.tcgdexId!, tcgDexLanguageForCard(card))
+        .then((data) => ({ id: card.id, data })),
+    )).then((results) => {
       if (!active) return
       setEntries((current) => {
         const next = { ...current }
         results.forEach((result, index) => {
-          const card = pilotCards[index]
+          const card = mappedCards[index]
           if (result.status === 'fulfilled') next[result.value.id] = { status: 'success', data: result.value.data }
           else next[card.id] = { status: 'error', error: result.reason instanceof Error ? result.reason.message : 'Erreur API inconnue' }
         })
@@ -41,7 +49,7 @@ export function useLiveCards(cards: Card[]) {
     })
 
     return () => { active = false }
-  }, [pilotCards, retryNonce])
+  }, [mappedCards, retryNonce])
 
   return { entries, retry }
 }
