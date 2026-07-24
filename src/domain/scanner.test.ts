@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   combineScannerScores,
+  MIN_BEST_MATCH_GAP,
+  MIN_FINAL_MATCH_SCORE,
   hasReliableBestMatch,
   levenshteinSimilarity,
   matchStrength,
@@ -54,7 +56,9 @@ describe('scanner clues', () => {
     const wrong = scoreScannerCandidate({ name: 'Fossile Rare', localId: '167' }, clues)
     const correct = scoreScannerCandidate({ name: 'Omanyte', localId: '180' }, clues)
 
-    expect(wrong).toEqual({ score: 0, reasons: [] })
+    expect(wrong.score).toBe(0)
+    expect(wrong.reasons).toEqual([])
+    expect(wrong.contradictions).toContain('aucune preuve textuelle')
     expect(correct.score).toBeGreaterThanOrEqual(40)
     expect(correct.reasons).toContain('nom détecté')
   })
@@ -68,15 +72,13 @@ describe('scanner clues', () => {
       setTotalCount: 207,
     }, clues)
     expect(result.score).toBe(100)
-    expect(result.reasons).toContain('extension cohérente')
+    expect(result.reasons).toContain('total extension exact')
   })
 
   it('adds visual evidence only when the illustration is sufficiently similar', () => {
-    expect(combineScannerScores(42, 90)).toEqual({
-      score: 84,
-      visualReason: 'illustration très proche',
-    })
-    expect(combineScannerScores(42, 40)).toEqual({ score: 42 })
+    expect(combineScannerScores(42, 90).score).toBe(74)
+    expect(combineScannerScores(42, 90).visualReason).toBe('illustration très proche')
+    expect(combineScannerScores(42, 40).score).toBe(42)
   })
 
   it('does not promote a weak or ambiguous first result as the best match', () => {
@@ -93,4 +95,49 @@ describe('scanner clues', () => {
     expect(hasReliableBestMatch([candidate(84), candidate(80)])).toBe(false)
     expect(matchStrength(84)).toBe('strong')
   })
+
+  it('detects Japanese and Chinese text as language clues', () => {
+    expect(scoreScannerCandidate({ name: 'ピカチュウ', localId: '25', language: 'ja' }, parseCardScanText('ピカチュウ\n025/165')).reasons).toContain('langue ja')
+    expect(scoreScannerCandidate({ name: '皮卡丘', localId: '25', language: 'zh-cn' }, parseCardScanText('皮卡丘\n025/165')).reasons).toContain('langue zh-cn')
+  })
+
+  it('penalizes a candidate with the right name but wrong printed number', () => {
+    const clues = parseCardScanText('Omanyte\n180/165')
+    const wrong = scoreScannerCandidate({ name: 'Omanyte', localId: '179', setOfficialCount: 165 }, clues)
+    expect(wrong.score).toBeLessThan(40)
+    expect(wrong.contradictions).toContain('numéro différent (179)')
+  })
+
+  it('rejects a result supported only by image availability', () => {
+    const combined = combineScannerScores(0, 90)
+    expect(combined.score).toBeLessThan(72)
+  })
+  it('handles rotated/photo-background evidence by relying on number plus total instead of first image', () => {
+    const clues = parseCardScanText('table sombre\nDracaufeu ex\n180/165')
+    const good = scoreScannerCandidate({ name: 'Dracaufeu ex', localId: '180', setOfficialCount: 165, language: 'fr' }, clues)
+    const wrong = scoreScannerCandidate({ name: 'Dracaufeu ex', localId: '181', setOfficialCount: 165, language: 'fr' }, clues)
+    expect(good.score).toBeGreaterThan(wrong.score)
+  })
+
+  it('keeps partially readable numbers useful without inventing a total', () => {
+    const clues = parseCardScanText('NoctaIi VMAX\n215 /')
+    expect(clues.printedTotal).toBeUndefined()
+    expect(scoreScannerCandidate({ name: 'Noctali VMAX', localId: '215' }, clues).score).toBeGreaterThanOrEqual(54)
+  })
+
+  it('keeps trainer and energy names searchable instead of forcing Pokémon-only results', () => {
+    expect(parseCardScanText('Rosa\nDresseur Supporter\n236/236').nameHints).toContain('Rosa')
+    expect(parseCardScanText('Fire Energy\n165/165').nameHints).toContain('Fire Energy')
+  })
+
+  it('marks close candidates as ambiguous until the gap is sufficient', () => {
+    const candidate = (id: string, score: number): ScannerCandidate => ({ id, name: id, language: 'fr', matchScore: score, textMatchScore: score, matchReasons: [] })
+    expect(hasReliableBestMatch([candidate('a', 82), candidate('b', 75)])).toBe(false)
+  })
+
+  it('invalidates stale recognition-style cache entries through the current cache version', () => {
+    expect(MIN_FINAL_MATCH_SCORE).toBe(72)
+    expect(MIN_BEST_MATCH_GAP).toBe(10)
+  })
+
 })

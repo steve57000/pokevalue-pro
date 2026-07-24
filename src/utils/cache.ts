@@ -1,6 +1,6 @@
 export type CacheEntry<T> = { version: number; savedAt: number; data: T }
 
-export const CACHE_VERSION = 2
+export const CACHE_VERSION = 3
 export const LIVE_CARD_TTL_MS = 60 * 60 * 1000
 export const STALE_WHILE_REFRESH_MS = 24 * 60 * 60 * 1000
 

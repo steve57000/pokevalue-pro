@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { compareVisualSignatures, type VisualSignature } from './cardVisualMatcher'
 
-function signature(luma: number[], color = luma): VisualSignature {
-  return { luma, color }
+function signature(luma: number[], color = luma, edges = luma): VisualSignature {
+  return { luma, color, edges }
 }
 
 describe('visual card matching', () => {

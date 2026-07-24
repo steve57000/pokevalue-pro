@@ -82,21 +82,13 @@ describe('buildTcgDexSearchUrl', () => {
   })
 
   it('searches French and English automatically to handle a language mismatch', () => {
-    expect(getTcgDexSearchLanguages('auto')).toEqual(['fr', 'en'])
+    expect(getTcgDexSearchLanguages('auto')).toEqual(['fr', 'en', 'ja', 'zh-cn'])
     const requests = buildTcgDexSearchRequests({
       rawText: 'Omanyte',
       nameHints: ['Omanyte'],
     }, 'auto')
-    expect(requests).toEqual([
-      {
-        language: 'fr',
-        url: 'https://api.tcgdex.net/v2/fr/cards?name=Omanyte',
-      },
-      {
-        language: 'en',
-        url: 'https://api.tcgdex.net/v2/en/cards?name=Omanyte',
-      },
-    ])
+    expect(requests.map((request) => request.language)).toEqual(['fr', 'en', 'ja', 'zh-cn'])
+    expect(requests.map((request) => request.url)).toContain('https://api.tcgdex.net/v2/ja/cards?name=Omanyte')
   })
 
   it('cross-checks both number and name instead of trusting one OCR clue', () => {
@@ -111,6 +103,10 @@ describe('buildTcgDexSearchUrl', () => {
       'https://api.tcgdex.net/v2/en/cards?name=Omanyte',
       'https://api.tcgdex.net/v2/fr/cards?localId=180',
       'https://api.tcgdex.net/v2/fr/cards?name=Omanyte',
+      'https://api.tcgdex.net/v2/ja/cards?localId=180',
+      'https://api.tcgdex.net/v2/ja/cards?name=Omanyte',
+      'https://api.tcgdex.net/v2/zh-cn/cards?localId=180',
+      'https://api.tcgdex.net/v2/zh-cn/cards?name=Omanyte',
     ])
   })
 })
