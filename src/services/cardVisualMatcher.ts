@@ -1,8 +1,9 @@
-import { computeCardCrop } from '../utils/camera'
+import { computeCardCrop, computeIllustrationCrop } from '../utils/camera'
 
 export type VisualSignature = {
   luma: number[]
   color: number[]
+  edges: number[]
 }
 
 export type VisualCandidate = {
@@ -43,7 +44,8 @@ export function compareVisualSignatures(
 ): number {
   const luma = Math.max(0, correlation(source.luma, candidate.luma))
   const color = Math.max(0, correlation(source.color, candidate.color))
-  return Math.round(Math.min(1, luma * 0.72 + color * 0.28) * 100)
+  const edges = Math.max(0, correlation(source.edges, candidate.edges))
+  return Math.round(Math.min(1, luma * 0.44 + color * 0.22 + edges * 0.34) * 100)
 }
 
 function signatureFromPixels(data: Uint8ClampedArray): VisualSignature {
@@ -60,7 +62,19 @@ function signatureFromPixels(data: Uint8ClampedArray): VisualSignature {
     }
   }
 
-  return { luma, color }
+  const edges: number[] = []
+  for (let y = 1; y < SIGNATURE_HEIGHT - 1; y += 1) {
+    for (let x = 1; x < SIGNATURE_WIDTH - 1; x += 1) {
+      const offset = (y * SIGNATURE_WIDTH + x) * 4
+      const left = data[offset - 4] * 0.299 + data[offset - 3] * 0.587 + data[offset - 2] * 0.114
+      const right = data[offset + 4] * 0.299 + data[offset + 5] * 0.587 + data[offset + 6] * 0.114
+      const top = data[offset - SIGNATURE_WIDTH * 4] * 0.299 + data[offset - SIGNATURE_WIDTH * 4 + 1] * 0.587 + data[offset - SIGNATURE_WIDTH * 4 + 2] * 0.114
+      const bottom = data[offset + SIGNATURE_WIDTH * 4] * 0.299 + data[offset + SIGNATURE_WIDTH * 4 + 1] * 0.587 + data[offset + SIGNATURE_WIDTH * 4 + 2] * 0.114
+      edges.push(Math.abs(right - left) + Math.abs(bottom - top))
+    }
+  }
+
+  return { luma, color, edges }
 }
 
 type DecodedImage = {
@@ -115,7 +129,9 @@ async function createVisualSignature(image: Blob): Promise<VisualSignature> {
     const context = canvas.getContext('2d', { alpha: false, willReadFrequently: true })
     if (!context) throw new Error('Comparaison visuelle indisponible')
 
-    const crop = computeCardCrop(decoded.width, decoded.height)
+    const crop = decoded.width / decoded.height > 0.55 && decoded.width / decoded.height < 0.9
+      ? computeIllustrationCrop(decoded.width, decoded.height)
+      : computeCardCrop(decoded.width, decoded.height)
     context.drawImage(
       decoded.source,
       crop.sx,

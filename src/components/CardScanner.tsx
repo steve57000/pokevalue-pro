@@ -73,6 +73,7 @@ export function CardScanner({
   const streamRef = useRef<MediaStream>()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const busyRef = useRef(false)
+  const scanRunRef = useRef(0)
   const lastAutoScanRef = useRef(0)
   const lastImageRef = useRef<Blob>()
   const [cameraState, setCameraState] = useState<CameraState>('idle')
@@ -181,7 +182,9 @@ export function CardScanner({
   }, [cameraState])
 
   const analyzeImage = useCallback(async (image: Blob) => {
-    if (busyRef.current) return
+    scanRunRef.current += 1
+    const runId = scanRunRef.current
+    if (busyRef.current) await terminateCardOcr()
     busyRef.current = true
     lastImageRef.current = image
     setCandidates([])
@@ -192,8 +195,11 @@ export function CardScanner({
     setOcrProgress({ progress: 0, message: 'Chargement du moteur OCR' })
 
     try {
+      setOcrProgress({ progress: 0.05, message: 'Préparation et orientation de l’image' })
       const preparedImage = await prepareCardOcrImage(image)
+      if (runId !== scanRunRef.current) return
       const ocr = await recognizeCardText(preparedImage, language, setOcrProgress)
+      if (runId !== scanRunRef.current) return
       let mergedOcrText = ocr.text
       let clues = parseCardScanText(mergedOcrText)
       if (!clues.localId) {
@@ -216,7 +222,9 @@ export function CardScanner({
       }
 
       setScanState('searching')
+      setOcrProgress({ progress: 1, message: 'Comparaison des illustrations' })
       const matches = await searchTcgDexCards(clues, language, { image })
+      if (runId !== scanRunRef.current) return
       if (matches.length === 0) {
         throw new Error('Aucune correspondance suffisamment fiable. Vérifie les indices préremplis ou reprends une photo plus nette.')
       }
@@ -228,7 +236,7 @@ export function CardScanner({
       setScanError(error instanceof Error ? error.message : 'La reconnaissance a échoué.')
       setContinuous(false)
     } finally {
-      busyRef.current = false
+      if (runId === scanRunRef.current) busyRef.current = false
     }
   }, [language])
 
@@ -331,9 +339,11 @@ export function CardScanner({
         <label className="language-select">
           Langue de la carte
           <select value={language} onChange={(event) => setLanguage(event.target.value as ScanLanguage)} disabled={isBusy}>
-            <option value="auto">Automatique (FR + EN)</option>
+            <option value="auto">Automatique (FR + EN + JA + ZH)</option>
             <option value="fr">Français</option>
             <option value="en">Anglais</option>
+            <option value="ja">Japonais</option>
+            <option value="zh-cn">Chinois simplifié</option>
           </select>
         </label>
       </div>
@@ -415,6 +425,9 @@ export function CardScanner({
             }} disabled={isBusy}><RefreshCw size={15}/> Réessayer l’analyse</button>}
           </div>}
           {ocrText && <details className="ocr-details"><summary>Texte détecté</summary><pre>{ocrText}</pre></details>}
+          {import.meta.env.DEV && candidates.length > 0 && (
+            <details className="ocr-details"><summary>Diagnostic reconnaissance</summary><pre>{JSON.stringify(candidates.map(({ id, name, localId, language, matchScore, textMatchScore, visualMatchScore, matchReasons, scoreBreakdown, contradictions }) => ({ id, name, localId, language, matchScore, textMatchScore, visualMatchScore, matchReasons, scoreBreakdown, contradictions })), null, 2)}</pre></details>
+          )}
 
           <div className="manual-search">
             <div><Search size={17}/><strong>Recherche assistée</strong></div>
@@ -433,7 +446,7 @@ export function CardScanner({
       {candidates.length > 0 && (
         <section className="scan-results">
           <div className="result-head">
-            <div><span className="eyebrow">Correspondances</span><h2>Confirme visuellement la bonne carte</h2></div>
+            <div><span className="eyebrow">Correspondances</span><h2>{hasReliableBestMatch(candidates) ? 'Carte reconnue' : 'Plusieurs correspondances possibles'}</h2></div>
             <span>{candidates.length} résultat{candidates.length > 1 ? 's' : ''}</span>
           </div>
           <div className="candidate-grid">
@@ -450,8 +463,8 @@ export function CardScanner({
                   </div>
                   <div className="candidate-content">
                     <div className={`candidate-confidence ${strength}`}>
-                      <strong>Indice {candidate.matchScore}/100</strong>
-                      <span>{candidate.matchReasons.join(' · ') || 'À vérifier'}</span>
+                      <strong>{strength === 'strong' ? 'Preuves fortes' : strength === 'possible' ? 'À confirmer' : 'Preuves faibles'}</strong>
+                      <span>{[...candidate.matchReasons, ...(candidate.contradictions ?? [])].join(' · ') || 'À vérifier'}</span>
                     </div>
                     <h3>{candidate.name}</h3>
                     <p>{candidate.setName ?? 'Extension non communiquée'} · n° {candidate.localId ?? 'inconnu'} · {candidate.language.toUpperCase()}</p>

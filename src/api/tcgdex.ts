@@ -138,8 +138,11 @@ export function buildTcgDexSearchUrls(clues: CardScanClues, language: CardLangua
 }
 
 export function getTcgDexSearchLanguages(language: ScanLanguage): CardLanguage[] {
-  if (language === 'en') return ['en', 'fr']
-  return ['fr', 'en']
+  if (language === 'fr') return ['fr', 'en', 'ja', 'zh-cn']
+  if (language === 'en') return ['en', 'fr', 'ja', 'zh-cn']
+  if (language === 'ja') return ['ja', 'en', 'fr', 'zh-cn']
+  if (language === 'zh-cn') return ['zh-cn', 'ja', 'en', 'fr']
+  return ['fr', 'en', 'ja', 'zh-cn']
 }
 
 export function buildTcgDexSearchRequests(
@@ -218,8 +221,10 @@ export async function searchTcgDexCards(
   const requests = buildTcgDexSearchRequests(clues, language)
   if (requests.length === 0) return []
 
+  const uniqueRequests = [...new Map(requests.map((request) => [`${request.language}:${request.url}`, request])).values()]
+
   const searchResponses = await Promise.allSettled(
-    requests.map(async (request) => ({
+    uniqueRequests.map(async (request) => ({
       ...request,
       data: await fetchJson<unknown>(request.url),
     })),
@@ -307,7 +312,7 @@ export async function searchTcgDexCards(
     }) => {
       const card = await tcgDexProvider.getCard(candidate.id, candidateLanguage)
       const textMatch = scoreScannerCandidate(card, clues)
-      const combined = combineScannerScores(textMatch.score, visualScore)
+      const combined = combineScannerScores(textMatch.score, visualScore, textMatch.breakdown, textMatch.contradictions)
       return {
         ...card,
         matchScore: combined.score,
@@ -317,13 +322,16 @@ export async function searchTcgDexCards(
           ...textMatch.reasons,
           ...(combined.visualReason ? [combined.visualReason] : []),
         ],
+        scoreBreakdown: combined.breakdown,
+        contradictions: combined.contradictions,
+        reliability: combined.score >= 72 && combined.contradictions.length === 0 ? 'recognized' as const : 'ambiguous' as const,
       }
     }),
   )
 
   return detailed
     .flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
-    .filter((candidate) => candidate.textMatchScore >= MIN_TEXT_MATCH_SCORE)
+    .filter((candidate) => candidate.textMatchScore >= MIN_TEXT_MATCH_SCORE && (candidate.matchScore >= 45 || (candidate.visualMatchScore ?? 0) >= 70))
     .sort((left, right) =>
       right.matchScore - left.matchScore
       || (right.visualMatchScore ?? -1) - (left.visualMatchScore ?? -1)

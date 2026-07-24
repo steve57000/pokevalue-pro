@@ -22,10 +22,23 @@ export function computeCardCrop(width: number, height: number, targetRatio = CAR
   return { sx: 0, sy: (height - sh) / 2, sw: width, sh }
 }
 
-export function computeOcrBands(width: number, height: number): OcrBand[] {
+
+export function computeInnerCardCrop(width: number, height: number, margin = 0.055): CropRect {
   const crop = computeCardCrop(width, height)
-  const topHeight = crop.sh * 0.27
-  const bottomHeight = crop.sh * 0.24
+  const mx = crop.sw * margin
+  const my = crop.sh * margin
+  return { sx: crop.sx + mx, sy: crop.sy + my, sw: crop.sw - mx * 2, sh: crop.sh - my * 2 }
+}
+
+export function computeIllustrationCrop(width: number, height: number): CropRect {
+  const crop = computeInnerCardCrop(width, height, 0.065)
+  return { sx: crop.sx + crop.sw * 0.055, sy: crop.sy + crop.sh * 0.18, sw: crop.sw * 0.89, sh: crop.sh * 0.38 }
+}
+
+export function computeOcrBands(width: number, height: number): OcrBand[] {
+  const crop = computeInnerCardCrop(width, height)
+  const topHeight = crop.sh * 0.24
+  const bottomHeight = crop.sh * 0.2
   return [
     { sx: crop.sx, sy: crop.sy, sw: crop.sw, sh: topHeight, dy: 0, dh: 400 },
     { sx: crop.sx, sy: crop.sy + crop.sh - bottomHeight, sw: crop.sw, sh: bottomHeight, dy: 430, dh: 360 },
@@ -116,7 +129,7 @@ export async function prepareCardOcrImage(image: Blob): Promise<Blob> {
     context.fillRect(0, 0, canvas.width, canvas.height)
     context.imageSmoothingEnabled = true
     context.imageSmoothingQuality = 'high'
-    context.filter = 'grayscale(1) contrast(1.7)'
+    context.filter = 'grayscale(1) contrast(1.85) brightness(1.04)'
     for (const band of computeOcrBands(decoded.width, decoded.height)) {
       context.drawImage(decoded.source, band.sx, band.sy, band.sw, band.sh, 0, band.dy, canvas.width, band.dh)
     }
@@ -145,7 +158,7 @@ export async function prepareCardNumberOcrImage(image: Blob): Promise<Blob> {
     context.fillRect(0, 0, canvas.width, canvas.height)
     context.imageSmoothingEnabled = true
     context.imageSmoothingQuality = 'high'
-    context.filter = 'grayscale(1) contrast(2.1)'
+    context.filter = 'grayscale(1) contrast(2.25) brightness(1.06)'
     context.drawImage(
       decoded.source,
       crop.sx,
