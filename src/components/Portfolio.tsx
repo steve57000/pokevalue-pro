@@ -20,9 +20,10 @@ const isOwned = (entry: CollectionEntry) => entry.quantity > 0
 const cardKey = (card: SetCard) => printingKey({ source: 'tcgdex', setId: card.id.slice(0, card.id.lastIndexOf('-')), cardId: card.id, language: 'fr', variant: 'normal' })
 const cardmarketSearch = (card: SetCard, setName: string) => `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${card.name} ${setName} ${card.localId}`)}`
 
-type Props = { document: CollectionDocument; onChange: (document: CollectionDocument) => void }
-export function Portfolio({ document, onChange }: Props) {
+type Props = { document: CollectionDocument; onChange: (document: CollectionDocument) => void; mode: 'catalogue' | 'collection' }
+export function Portfolio({ document, onChange, mode }: Props) {
   const [filter, setFilter] = useState<'all'|'owned'|'missing'>('all')
+  useEffect(() => setFilter(mode === 'collection' ? 'owned' : 'all'), [mode])
   const [connection, setConnection] = useState<GitHubConnection>(savedConnection)
   const [remember, setRemember] = useState(() => Boolean(savedConnection().token))
   const [sha, setSha] = useState<string>()
@@ -34,6 +35,7 @@ export function Portfolio({ document, onChange }: Props) {
   const [detail, setDetail] = useState<SetDetail>()
   const [catalogueError, setCatalogueError] = useState('')
   const [search, setSearch] = useState('')
+  const [seriesQuery, setSeriesQuery] = useState('')
   const [prices, setPrices] = useState<Record<string, PriceReference | null>>({})
   const importRef = useRef<HTMLInputElement>(null)
   const documentRef = useRef(document)
@@ -149,8 +151,8 @@ export function Portfolio({ document, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSet, document])
   const families = new Map<string, SetSummary[]>()
-  for (const set of sets) {
-    const family = set.id.startsWith('me') || set.id.startsWith('30th') ? 'Méga-Évolution' : set.id.startsWith('sv') ? 'Écarlate et Violet' : 'Autres séries'
+  for (const set of sets.filter(item => item.name.toLocaleLowerCase('fr').includes(seriesQuery.toLocaleLowerCase('fr')))) {
+    const family = set.id.startsWith('me') || set.id.startsWith('30th') ? 'Méga-Évolution' : set.id.startsWith('sv') ? 'Écarlate et Violet' : set.id.startsWith('swsh') ? 'Épée et Bouclier' : set.id.startsWith('sm') ? 'Soleil et Lune' : set.id.startsWith('xy') ? 'XY' : 'Autres séries'
     families.set(family, [...(families.get(family) ?? []), set])
   }
   const setEntry = (card: SetCard, change: Partial<CollectionEntry> = {}) => {
@@ -164,16 +166,16 @@ export function Portfolio({ document, onChange }: Props) {
     documentRef.current = next; onChange(next)
   }
   return <section className="portfolio-page">
-    <div className="portfolio-heading"><div><span className="eyebrow">Classeur numérique</span><h1>Ma collection</h1><p>{document.entries.filter(isOwned).reduce((sum,e)=>sum+e.quantity,0)} exemplaire(s) · {document.entries.filter(isOwned).length} impressions possédées</p></div>
+    <div className="portfolio-heading"><div><span className="eyebrow">{mode === 'catalogue' ? 'Catalogue complet des extensions' : 'Classeur numérique'}</span><h1>{mode === 'catalogue' ? 'Toutes les cartes par série' : 'Ma collection'}</h1><p>{mode === 'catalogue' ? 'Choisis une extension et coche les cartes que tu possèdes.' : `${document.entries.filter(isOwned).reduce((sum,e)=>sum+e.quantity,0)} exemplaire(s) · ${document.entries.filter(isOwned).length} impressions possédées`}</p></div>
       <div className={`sync-state ${sync}`}><Cloud size={18}/><strong>{sync === 'saved' ? 'Synchronisé' : sync === 'conflict' ? 'Conflit' : sync === 'pending' ? 'En cours' : 'Local'}</strong><small>{message}</small></div></div>
-    <div className="github-panel"><h2>Sauvegarde GitHub privée</h2><p>Jeton limité au dépôt privé, permission <b>Contents: Read and write</b>. La connexion peut être conservée sur cet appareil : évitez cette option sur un appareil partagé.</p>
+    {mode === 'collection' && <div className="github-panel"><h2>Sauvegarde GitHub privée</h2><p>Jeton limité au dépôt privé, permission <b>Contents: Read and write</b>. La connexion peut être conservée sur cet appareil : évitez cette option sur un appareil partagé.</p>
       <div className="github-fields"><label>Propriétaire<input value={connection.owner} onChange={e=>setConnection({...connection,owner:e.target.value})}/></label><label>Dépôt privé<input value={connection.repo} onChange={e=>setConnection({...connection,repo:e.target.value})}/></label><label>Jeton<input type="password" autoComplete="off" value={connection.token} onChange={e=>setConnection({...connection,token:e.target.value})}/></label></div>
       <div className="sync-actions"><label><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/> Rester connecté sur cet appareil</label><button onClick={connect} disabled={!connection.owner||!connection.repo||!connection.token}>Vérifier et charger</button>{account&&<><span>Compte : <b>@{account}</b></span><button onClick={()=>{connectedRef.current=false;hydratedRef.current=false;setAccount('');setConnection({owner:'',repo:'',token:''});setRemember(false);setSync('local');setMessage('Déconnecté')}}>Déconnexion</button></>}</div>
       {sync==='conflict'&&<p className="conflict"><AlertTriangle size={16}/> Une autre session a modifié la sauvegarde. <button onClick={resolveConflict}>Fusionner et réessayer</button></p>}
       {sync==='error'&&account&&<button onClick={()=>void flush()}>Réessayer la sauvegarde</button>}
-    </div>
-    <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Import JSON</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) { try { onChange(parseCollection(JSON.parse(await file.text()))); setMessage('Import chargé localement') } catch(error) { setSync('error'); setMessage((error as Error).message) } }}}/></div>
-    <div className="series-layout"><aside className="series-nav"><h2>Les séries</h2>{[...families].map(([family, group])=><div key={family}><h3>{family}</h3>{group.sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>{setSelectedSet(set.id);setFilter('all');setSearch('')}}>{set.name} <small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div>)}</aside>
+    </div>}
+    {mode === 'collection' && <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Import JSON</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) { try { onChange(parseCollection(JSON.parse(await file.text()))); setMessage('Import chargé localement') } catch(error) { setSync('error'); setMessage((error as Error).message) } }}}/></div>}
+    <div className="series-layout"><aside className="series-nav"><h2>Les séries</h2><input className="series-search" placeholder="Rechercher une extension…" value={seriesQuery} onChange={e=>setSeriesQuery(e.target.value)}/>{[...families].map(([family, group])=><div key={family}><h3>{family}</h3>{group.sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>{setSelectedSet(set.id);setFilter('all');setSearch('')}}>{set.name} <small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div>)}</aside>
       <div className="series-content"><h2>{detail?.serie?.name ?? 'Série'} · {detail?.name ?? selectedSet}</h2><p>{setEntries.length}/{detail?.cardCount.total ?? '…'} cartes possédées · {detail?.cards.length ?? '…'} cartes au catalogue</p>
         <div className="series-controls"><input placeholder="Nom ou numéro dans cette série" value={search} onChange={e=>setSearch(e.target.value)}/>{(['all','owned','missing'] as const).map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f==='all'?'Toutes':f==='owned'?'Possédées':'Manquantes'}</button>)}</div>
         {catalogueError&&<p role="alert">{catalogueError} <button onClick={()=>void getSet(selectedSet).then(setDetail).catch(e=>setCatalogueError((e as Error).message))}>Réessayer</button></p>}

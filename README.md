@@ -4,7 +4,8 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 
 ## Fonctionnalités
 
-- catalogue avec recherche, filtres, favoris et collection locale ;
+- catalogue complet des extensions françaises avec toutes les cartes, recherche par série et cases de possession ;
+- sélection séparée de cartes à surveiller avec recherche et favoris ;
 - 30 cartes du catalogue reliées à leurs identifiants TCGdex vérifiés ;
 - images réelles TCGdex, avec repli Pokémon TCG API lorsque le scan TCGdex manque ;
 - prix Cardmarket actualisés lorsqu’ils sont disponibles ;

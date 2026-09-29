@@ -18,7 +18,7 @@ import { readStoredJson, readStoredStringArray } from './utils/storage'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 
-type View = 'catalogue' | 'scanner' | 'favorites' | 'collection' | 'estimator' | 'guide'
+type View = 'catalogue' | 'featured' | 'scanner' | 'favorites' | 'collection' | 'estimator' | 'guide'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
 
@@ -98,7 +98,8 @@ function App() {
   }
 
   const nav = [
-    {id:'catalogue', label:'Catalogue', icon:Search},
+    {id:'catalogue', label:'Toutes les extensions', icon:BookOpen},
+    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp},
     {id:'scanner', label:'Scanner une carte', icon:ScanLine},
     {id:'favorites', label:'Favoris', icon:Heart},
     {id:'collection', label:'Ma collection', icon:Library},
@@ -140,12 +141,12 @@ function App() {
         </header>
 
         <div className="content">
-          <div style={{display:view==='collection'?'block':'none'}}><Portfolio document={portfolio} onChange={setPortfolio}/></div>
-          {(view==='catalogue' || view==='favorites') && <>
+          <div style={{display:view==='collection'||view==='catalogue'?'block':'none'}}><Portfolio document={portfolio} onChange={setPortfolio} mode={view==='catalogue'?'catalogue':'collection'}/></div>
+          {(view==='featured' || view==='favorites') && <>
             <section className="hero">
               <div>
                 <span className="eyebrow"><TrendingUp size={15}/> Guide de valeur 2026</span>
-                <h1>{view==='catalogue'?'Les cartes Pokémon à surveiller':view==='favorites'?'Tes cartes favorites':'Ta collection'}</h1>
+                <h1>{view==='featured'?'Les cartes Pokémon à surveiller':'Tes cartes favorites'}</h1>
                 <p>Recherche, compare et organise rapidement les cartes qui ont le plus d’intérêt sur le marché.</p>
               </div>
               <div className="hero-stat">
