@@ -205,8 +205,8 @@ export class TcgDexProvider implements CardDataProvider {
       image: data.image,
       fallbackImage: buildPokemonTcgImageFallback(data.id),
       language,
-      updatedAt: normalizeApiDate(data.pricing?.cardmarket?.updatedAt ?? data.updated),
-      pricing: data.pricing,
+      updatedAt: normalizeApiDate(data.pricing?.cardmarket?.updatedAt ?? (data.pricing?.cardmarket as { updated?: string } | undefined)?.updated ?? data.updated),
+      pricing: data.pricing?.cardmarket ? { ...data.pricing, cardmarket: { ...data.pricing.cardmarket, updatedAt: data.pricing.cardmarket.updatedAt ?? (data.pricing.cardmarket as { updated?: string }).updated } } : data.pricing,
     }
   }
 }

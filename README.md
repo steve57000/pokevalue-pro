@@ -27,7 +27,7 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 
 ## Classeur et modèle de données
 
-La page **Ma collection** est le classeur. Le bouton « Je possède » ajoute l'impression exacte ;
+La page **Ma collection** classe toutes les cartes françaises par famille et extension (notamment Méga-Évolution : Chaos Ascendant, Nuit Noire, 30e Anniversaire et Collection Classique). Aucune carte n’est cochée au départ. Le prix Cardmarket est indicatif, un prix manuel peut être saisi pour chaque carte possédée ; un lien lance une recherche Cardmarket à confirmer. La page **Ma collection** est le classeur. Le bouton « Je possède » ajoute l'impression exacte ;
 la recherche et le scanner réutilisent le même identifiant TCGdex et demandent toujours une
 confirmation. Une impression est identifiée par `source`, `setId`, `cardId`, `language` et
 `variant` — jamais par son seul nom ou numéro. Le document local versionné est conservé dans
@@ -45,8 +45,8 @@ pour les sources, limites de prix et vérifications de séries.
 4. Dans **Repository permissions**, accorder seulement **Contents: Read and write**. Choisir une
    expiration courte et créer le jeton.
 5. Dans l'interface **Ma collection**, saisir le propriétaire, le nom du dépôt et le jeton. Ne jamais
-   le coller dans une issue, un chat, une URL ou le dépôt de code. Le jeton reste en mémoire et est
-   oublié au rechargement.
+   le coller dans une issue, un chat, une URL ou le dépôt de code. Par défaut le jeton reste en mémoire. L’option « Rester connecté » le conserve
+   dans le stockage de ce navigateur ; ne pas l’activer sur un appareil partagé.
 6. Cliquer **Vérifier et charger** : l'application affiche le compte GitHub réellement authentifié
    et charge `collection/v1/portfolio.json` s'il existe. Cliquer ensuite **Sauvegarder**.
 

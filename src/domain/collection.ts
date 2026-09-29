@@ -20,6 +20,7 @@ export type CollectionEntry = PrintingIdentity & {
   quantity: number
   condition: CardCondition
   notes: string
+  manualPrice?: number
   updatedAt: string
 }
 
@@ -48,9 +49,8 @@ export function upsertEntry(document: CollectionDocument, input: Omit<Collection
   const key = printingKey(input)
   const now = new Date().toISOString()
   const entry = { ...input, quantity: Math.max(0, Math.floor(input.quantity)), key, updatedAt: now }
-  const entries = entry.quantity === 0
-    ? document.entries.filter((item) => item.key !== key)
-    : [...document.entries.filter((item) => item.key !== key), entry]
+  // Keep zero quantity as a tombstone so a second device cannot resurrect a removal.
+  const entries = [...document.entries.filter((item) => item.key !== key), entry]
   return { ...document, revision: document.revision + 1, updatedAt: now, entries }
 }
 
@@ -58,7 +58,7 @@ export function mergeCollections(local: CollectionDocument, remote: CollectionDo
   const entries = new Map<string, CollectionEntry>()
   for (const entry of [...local.entries, ...remote.entries]) {
     const current = entries.get(entry.key)
-    if (!current || entry.updatedAt > current.updatedAt) entries.set(entry.key, entry)
+    if (!current || entry.updatedAt > current.updatedAt || (entry.updatedAt === current.updatedAt && entry.quantity === 0)) entries.set(entry.key, entry)
   }
   return {
     schemaVersion: COLLECTION_SCHEMA,
