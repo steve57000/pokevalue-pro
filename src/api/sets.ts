@@ -9,3 +9,7 @@ async function fetchSet<T>(url: string): Promise<T> {
 }
 export const listSets = () => fetchSet<SetSummary[]>(base)
 export const getSet = (id: string) => fetchSet<SetDetail>(`${base}/${encodeURIComponent(id)}`)
+export type SeriesSummary = { id: string; name: string }
+export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
+export const listSeries = () => fetchSet<SeriesSummary[]>('https://api.tcgdex.net/v2/fr/series')
+export const getSeries = (id: string) => fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/fr/series/${encodeURIComponent(id)}`)

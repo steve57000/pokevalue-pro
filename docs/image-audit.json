@@ -1,0 +1,2342 @@
+{
+  "checkedAt": "2026-09-29",
+  "scope": "French set metadata only; requests with errors remain unverified. Image URLs are checked lazily by the app with PNG/English fallbacks.",
+  "sets": 202,
+  "results": [
+    {
+      "id": "base1",
+      "name": "Set de Base",
+      "cards": 102,
+      "missingImageIds": []
+    },
+    {
+      "id": "base2",
+      "name": "Jungle",
+      "cards": 64,
+      "missingImageIds": []
+    },
+    {
+      "id": "basep",
+      "name": "Wizards Black Star Promos",
+      "cards": 26,
+      "missingImageIds": [
+        "basep-2",
+        "basep-3",
+        "basep-4",
+        "basep-5",
+        "basep-6",
+        "basep-8",
+        "basep-9",
+        "basep-14",
+        "basep-20",
+        "basep-21",
+        "basep-22",
+        "basep-23",
+        "basep-24",
+        "basep-25",
+        "basep-26",
+        "basep-28",
+        "basep-29",
+        "basep-30",
+        "basep-31",
+        "basep-32",
+        "basep-33",
+        "basep-35",
+        "basep-36",
+        "basep-37",
+        "basep-38",
+        "basep-39"
+      ]
+    },
+    {
+      "id": "wp",
+      "name": "W Promotional",
+      "cards": 0,
+      "missingImageIds": []
+    },
+    {
+      "id": "base3",
+      "name": "Fossile",
+      "cards": 62,
+      "missingImageIds": []
+    },
+    {
+      "id": "jumbo",
+      "name": "Cartes Jumbo",
+      "cards": 0,
+      "missingImageIds": []
+    },
+    {
+      "id": "base5",
+      "name": "Team Rocket",
+      "cards": 83,
+      "missingImageIds": []
+    },
+    {
+      "id": "neo1",
+      "name": "Neo Genesis",
+      "cards": 111,
+      "missingImageIds": []
+    },
+    {
+      "id": "neo2",
+      "name": "Neo Discovery",
+      "cards": 75,
+      "missingImageIds": []
+    },
+    {
+      "id": "neo3",
+      "name": "Neo Revelation",
+      "cards": 66,
+      "missingImageIds": []
+    },
+    {
+      "id": "neo4",
+      "name": "Neo Destiny",
+      "cards": 113,
+      "missingImageIds": []
+    },
+    {
+      "id": "ecard1",
+      "name": "Expedition",
+      "cards": 165,
+      "missingImageIds": []
+    },
+    {
+      "id": "ecard2",
+      "name": "Aquapolis",
+      "cards": 186,
+      "missingImageIds": [
+        "ecard2-H01",
+        "ecard2-H02",
+        "ecard2-H03",
+        "ecard2-H04",
+        "ecard2-H05",
+        "ecard2-H06",
+        "ecard2-H07",
+        "ecard2-H08",
+        "ecard2-H09",
+        "ecard2-H14",
+        "ecard2-H16",
+        "ecard2-H17",
+        "ecard2-H24",
+        "ecard2-H32"
+      ]
+    },
+    {
+      "id": "ex1",
+      "name": "EX Rubis & Saphir",
+      "cards": 109,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex2",
+      "name": "EX Tempête de sable",
+      "cards": 100,
+      "missingImageIds": []
+    },
+    {
+      "id": "np",
+      "name": "Promo Nintendo",
+      "cards": 21,
+      "missingImageIds": [
+        "np-3",
+        "np-4",
+        "np-5",
+        "np-6",
+        "np-7",
+        "np-8",
+        "np-9",
+        "np-10",
+        "np-11",
+        "np-25",
+        "np-26",
+        "np-27",
+        "np-29",
+        "np-30",
+        "np-31",
+        "np-32",
+        "np-33",
+        "np-36",
+        "np-37",
+        "np-38",
+        "np-39"
+      ]
+    },
+    {
+      "id": "ex3",
+      "name": "EX Dragon",
+      "cards": 100,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex4",
+      "name": "EX Team Magma vs Team Aqua",
+      "cards": 97,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex5",
+      "name": "EX Légendes Oubliées",
+      "cards": 102,
+      "missingImageIds": []
+    },
+    {
+      "id": "tk-ex-latia",
+      "name": "EX Kit dresseur (Latias)",
+      "cards": 10,
+      "missingImageIds": [
+        "tk-ex-latia-1",
+        "tk-ex-latia-2",
+        "tk-ex-latia-3",
+        "tk-ex-latia-4",
+        "tk-ex-latia-5",
+        "tk-ex-latia-6",
+        "tk-ex-latia-7",
+        "tk-ex-latia-8",
+        "tk-ex-latia-9",
+        "tk-ex-latia-10"
+      ]
+    },
+    {
+      "id": "tk-ex-latio",
+      "name": "EX Kit dresseur (Latios)",
+      "cards": 10,
+      "missingImageIds": [
+        "tk-ex-latio-1",
+        "tk-ex-latio-2",
+        "tk-ex-latio-3",
+        "tk-ex-latio-4",
+        "tk-ex-latio-5",
+        "tk-ex-latio-6",
+        "tk-ex-latio-7",
+        "tk-ex-latio-8",
+        "tk-ex-latio-9",
+        "tk-ex-latio-10"
+      ]
+    },
+    {
+      "id": "ex6",
+      "name": "EX Rouge Feu & Vert Feuille",
+      "cards": 116,
+      "missingImageIds": []
+    },
+    {
+      "id": "pop1",
+      "name": "POP Série 1",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex8",
+      "name": "EX Deoxys",
+      "cards": 108,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex9",
+      "name": "EX Émeraude",
+      "cards": 107,
+      "missingImageIds": []
+    },
+    {
+      "id": "pop2",
+      "name": "POP Série 2",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex10",
+      "name": "EX Forces Cachées",
+      "cards": 117,
+      "missingImageIds": []
+    },
+    {
+      "id": "exu",
+      "name": "EX Forces Cachées Collection Zarbi",
+      "cards": 28,
+      "missingImageIds": [
+        "exu-!",
+        "exu-%3F",
+        "exu-A",
+        "exu-B",
+        "exu-C",
+        "exu-D",
+        "exu-E",
+        "exu-F",
+        "exu-G",
+        "exu-H",
+        "exu-I",
+        "exu-J",
+        "exu-K",
+        "exu-L",
+        "exu-M",
+        "exu-N",
+        "exu-O",
+        "exu-P",
+        "exu-Q",
+        "exu-R",
+        "exu-S",
+        "exu-T",
+        "exu-U",
+        "exu-V",
+        "exu-W",
+        "exu-X",
+        "exu-Y",
+        "exu-Z"
+      ]
+    },
+    {
+      "id": "ex11",
+      "name": "EX Espèces Delta",
+      "cards": 114,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex12",
+      "name": "EX Créateurs de légendes",
+      "cards": 93,
+      "missingImageIds": []
+    },
+    {
+      "id": "tk-ex-m",
+      "name": "EX Kit dresseur (Négapi)",
+      "cards": 12,
+      "missingImageIds": [
+        "tk-ex-m-1",
+        "tk-ex-m-2",
+        "tk-ex-m-3",
+        "tk-ex-m-4",
+        "tk-ex-m-5",
+        "tk-ex-m-6",
+        "tk-ex-m-7",
+        "tk-ex-m-8",
+        "tk-ex-m-9",
+        "tk-ex-m-10",
+        "tk-ex-m-11",
+        "tk-ex-m-12"
+      ]
+    },
+    {
+      "id": "tk-ex-p",
+      "name": "EX Kit dresseur (Positi)",
+      "cards": 12,
+      "missingImageIds": [
+        "tk-ex-p-1",
+        "tk-ex-p-2",
+        "tk-ex-p-3",
+        "tk-ex-p-4",
+        "tk-ex-p-5",
+        "tk-ex-p-6",
+        "tk-ex-p-7",
+        "tk-ex-p-8",
+        "tk-ex-p-9",
+        "tk-ex-p-10",
+        "tk-ex-p-11",
+        "tk-ex-p-12"
+      ]
+    },
+    {
+      "id": "pop3",
+      "name": "POP Série 3",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex13",
+      "name": "EX Fantômes Holon",
+      "cards": 111,
+      "missingImageIds": []
+    },
+    {
+      "id": "pop4",
+      "name": "POP Série 4",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex14",
+      "name": "EX Gardiens de Cristal",
+      "cards": 100,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex15",
+      "name": "EX Île des Dragons",
+      "cards": 101,
+      "missingImageIds": []
+    },
+    {
+      "id": "ex16",
+      "name": "EX Gardiens du Pouvoir",
+      "cards": 108,
+      "missingImageIds": []
+    },
+    {
+      "id": "dpp",
+      "name": "Promo DP",
+      "cards": 42,
+      "missingImageIds": [
+        "dpp-DP01",
+        "dpp-DP02",
+        "dpp-DP03",
+        "dpp-DP05",
+        "dpp-DP07",
+        "dpp-DP08",
+        "dpp-DP09",
+        "dpp-DP10",
+        "dpp-DP11",
+        "dpp-DP12",
+        "dpp-DP16",
+        "dpp-DP17",
+        "dpp-DP18",
+        "dpp-DP19",
+        "dpp-DP20",
+        "dpp-DP21",
+        "dpp-DP22",
+        "dpp-DP23",
+        "dpp-DP24",
+        "dpp-DP25",
+        "dpp-DP26",
+        "dpp-DP27",
+        "dpp-DP28",
+        "dpp-DP29",
+        "dpp-DP30",
+        "dpp-DP31",
+        "dpp-DP32",
+        "dpp-DP33",
+        "dpp-DP34",
+        "dpp-DP35",
+        "dpp-DP36",
+        "dpp-DP37",
+        "dpp-DP38",
+        "dpp-DP39",
+        "dpp-DP40",
+        "dpp-DP42",
+        "dpp-DP43",
+        "dpp-DP48",
+        "dpp-DP50",
+        "dpp-DP53",
+        "dpp-DP54",
+        "dpp-DP55"
+      ]
+    },
+    {
+      "id": "dp1",
+      "name": "Diamant & Perle",
+      "cards": 130,
+      "missingImageIds": [
+        "dp1-1",
+        "dp1-2",
+        "dp1-3",
+        "dp1-4",
+        "dp1-5",
+        "dp1-6",
+        "dp1-7",
+        "dp1-8",
+        "dp1-9",
+        "dp1-10",
+        "dp1-11",
+        "dp1-12",
+        "dp1-13",
+        "dp1-14",
+        "dp1-15",
+        "dp1-16",
+        "dp1-17",
+        "dp1-18",
+        "dp1-19",
+        "dp1-20",
+        "dp1-21",
+        "dp1-22",
+        "dp1-23",
+        "dp1-24",
+        "dp1-25",
+        "dp1-26",
+        "dp1-27",
+        "dp1-28",
+        "dp1-29",
+        "dp1-30",
+        "dp1-31",
+        "dp1-32",
+        "dp1-33",
+        "dp1-34",
+        "dp1-35",
+        "dp1-36",
+        "dp1-37",
+        "dp1-38",
+        "dp1-39",
+        "dp1-40",
+        "dp1-41",
+        "dp1-42",
+        "dp1-43",
+        "dp1-44",
+        "dp1-45",
+        "dp1-46",
+        "dp1-47",
+        "dp1-48",
+        "dp1-49",
+        "dp1-50",
+        "dp1-51",
+        "dp1-52",
+        "dp1-53",
+        "dp1-54",
+        "dp1-55",
+        "dp1-56",
+        "dp1-57",
+        "dp1-58",
+        "dp1-59",
+        "dp1-60",
+        "dp1-61",
+        "dp1-62",
+        "dp1-63",
+        "dp1-64",
+        "dp1-65",
+        "dp1-66",
+        "dp1-67",
+        "dp1-68",
+        "dp1-69",
+        "dp1-70",
+        "dp1-71",
+        "dp1-72",
+        "dp1-73",
+        "dp1-74",
+        "dp1-75",
+        "dp1-76",
+        "dp1-77",
+        "dp1-78",
+        "dp1-79",
+        "dp1-80",
+        "dp1-81",
+        "dp1-82",
+        "dp1-83",
+        "dp1-84",
+        "dp1-85",
+        "dp1-86",
+        "dp1-87",
+        "dp1-88",
+        "dp1-89",
+        "dp1-90",
+        "dp1-91",
+        "dp1-92",
+        "dp1-93",
+        "dp1-94",
+        "dp1-95",
+        "dp1-96",
+        "dp1-97",
+        "dp1-98",
+        "dp1-99",
+        "dp1-100",
+        "dp1-101",
+        "dp1-102",
+        "dp1-103",
+        "dp1-104",
+        "dp1-105",
+        "dp1-106",
+        "dp1-107",
+        "dp1-108",
+        "dp1-109",
+        "dp1-110",
+        "dp1-111",
+        "dp1-112",
+        "dp1-113",
+        "dp1-114",
+        "dp1-115",
+        "dp1-116",
+        "dp1-117",
+        "dp1-118",
+        "dp1-119",
+        "dp1-120",
+        "dp1-121",
+        "dp1-122",
+        "dp1-123",
+        "dp1-124",
+        "dp1-125",
+        "dp1-126",
+        "dp1-127",
+        "dp1-128",
+        "dp1-129",
+        "dp1-130"
+      ]
+    },
+    {
+      "id": "dp2",
+      "name": "Trésors Mystérieux",
+      "cards": 124,
+      "missingImageIds": [
+        "dp2-1",
+        "dp2-2",
+        "dp2-3",
+        "dp2-4",
+        "dp2-5",
+        "dp2-6",
+        "dp2-7",
+        "dp2-8",
+        "dp2-9",
+        "dp2-10",
+        "dp2-11",
+        "dp2-12",
+        "dp2-13",
+        "dp2-14",
+        "dp2-15",
+        "dp2-16",
+        "dp2-17",
+        "dp2-18",
+        "dp2-19",
+        "dp2-20",
+        "dp2-21",
+        "dp2-22",
+        "dp2-23",
+        "dp2-24",
+        "dp2-25",
+        "dp2-26",
+        "dp2-27",
+        "dp2-28",
+        "dp2-29",
+        "dp2-30",
+        "dp2-31",
+        "dp2-32",
+        "dp2-33",
+        "dp2-34",
+        "dp2-35",
+        "dp2-36",
+        "dp2-37",
+        "dp2-38",
+        "dp2-39",
+        "dp2-40",
+        "dp2-41",
+        "dp2-42",
+        "dp2-43",
+        "dp2-44",
+        "dp2-45",
+        "dp2-46",
+        "dp2-47",
+        "dp2-48",
+        "dp2-49",
+        "dp2-50",
+        "dp2-51",
+        "dp2-52",
+        "dp2-53",
+        "dp2-54",
+        "dp2-55",
+        "dp2-56",
+        "dp2-57",
+        "dp2-58",
+        "dp2-59",
+        "dp2-60",
+        "dp2-61",
+        "dp2-62",
+        "dp2-63",
+        "dp2-64",
+        "dp2-65",
+        "dp2-66",
+        "dp2-67",
+        "dp2-68",
+        "dp2-69",
+        "dp2-70",
+        "dp2-71",
+        "dp2-72",
+        "dp2-73",
+        "dp2-74",
+        "dp2-75",
+        "dp2-76",
+        "dp2-77",
+        "dp2-78",
+        "dp2-79",
+        "dp2-80",
+        "dp2-81",
+        "dp2-82",
+        "dp2-83",
+        "dp2-84",
+        "dp2-85",
+        "dp2-86",
+        "dp2-87",
+        "dp2-88",
+        "dp2-89",
+        "dp2-90",
+        "dp2-91",
+        "dp2-92",
+        "dp2-93",
+        "dp2-94",
+        "dp2-95",
+        "dp2-96",
+        "dp2-97",
+        "dp2-98",
+        "dp2-99",
+        "dp2-100",
+        "dp2-101",
+        "dp2-102",
+        "dp2-103",
+        "dp2-104",
+        "dp2-105",
+        "dp2-106",
+        "dp2-107",
+        "dp2-108",
+        "dp2-109",
+        "dp2-110",
+        "dp2-111",
+        "dp2-112",
+        "dp2-113",
+        "dp2-114",
+        "dp2-115",
+        "dp2-116",
+        "dp2-117",
+        "dp2-118",
+        "dp2-119",
+        "dp2-120",
+        "dp2-121",
+        "dp2-122",
+        "dp2-123",
+        "dp2-124"
+      ]
+    },
+    {
+      "id": "tk-dp-l",
+      "name": "DP Kit dresseur (Lucario)",
+      "cards": 11,
+      "missingImageIds": [
+        "tk-dp-l-1",
+        "tk-dp-l-2",
+        "tk-dp-l-3",
+        "tk-dp-l-4",
+        "tk-dp-l-5",
+        "tk-dp-l-6",
+        "tk-dp-l-7",
+        "tk-dp-l-8",
+        "tk-dp-l-9",
+        "tk-dp-l-10",
+        "tk-dp-l-11"
+      ]
+    },
+    {
+      "id": "tk-dp-m",
+      "name": "DP Kit dresseur (Manaphy)",
+      "cards": 12,
+      "missingImageIds": [
+        "tk-dp-m-1",
+        "tk-dp-m-2",
+        "tk-dp-m-3",
+        "tk-dp-m-4",
+        "tk-dp-m-5",
+        "tk-dp-m-6",
+        "tk-dp-m-7",
+        "tk-dp-m-8",
+        "tk-dp-m-9",
+        "tk-dp-m-10",
+        "tk-dp-m-11",
+        "tk-dp-m-12"
+      ]
+    },
+    {
+      "id": "dp3",
+      "name": "Merveilles Secrètes",
+      "cards": 132,
+      "missingImageIds": []
+    },
+    {
+      "id": "dp4",
+      "name": "Duels au Sommets",
+      "cards": 106,
+      "missingImageIds": [
+        "dp4-1",
+        "dp4-2",
+        "dp4-3",
+        "dp4-4",
+        "dp4-5",
+        "dp4-6",
+        "dp4-7",
+        "dp4-8",
+        "dp4-9",
+        "dp4-10",
+        "dp4-11",
+        "dp4-12",
+        "dp4-13",
+        "dp4-14",
+        "dp4-15",
+        "dp4-16",
+        "dp4-17",
+        "dp4-18",
+        "dp4-19",
+        "dp4-20",
+        "dp4-21",
+        "dp4-22",
+        "dp4-23",
+        "dp4-24",
+        "dp4-25",
+        "dp4-26",
+        "dp4-27",
+        "dp4-28",
+        "dp4-29",
+        "dp4-30",
+        "dp4-31",
+        "dp4-32",
+        "dp4-33",
+        "dp4-34",
+        "dp4-35",
+        "dp4-36",
+        "dp4-37",
+        "dp4-38",
+        "dp4-39",
+        "dp4-40",
+        "dp4-41",
+        "dp4-42",
+        "dp4-43",
+        "dp4-44",
+        "dp4-45",
+        "dp4-46",
+        "dp4-47",
+        "dp4-48",
+        "dp4-49",
+        "dp4-50",
+        "dp4-51",
+        "dp4-52",
+        "dp4-53",
+        "dp4-54",
+        "dp4-55",
+        "dp4-56",
+        "dp4-57",
+        "dp4-58",
+        "dp4-59",
+        "dp4-60",
+        "dp4-61",
+        "dp4-62",
+        "dp4-63",
+        "dp4-64",
+        "dp4-65",
+        "dp4-66",
+        "dp4-67",
+        "dp4-68",
+        "dp4-69",
+        "dp4-70",
+        "dp4-71",
+        "dp4-72",
+        "dp4-73",
+        "dp4-74",
+        "dp4-75",
+        "dp4-76",
+        "dp4-77",
+        "dp4-78",
+        "dp4-79",
+        "dp4-80",
+        "dp4-81",
+        "dp4-82",
+        "dp4-83",
+        "dp4-84",
+        "dp4-85",
+        "dp4-86",
+        "dp4-87",
+        "dp4-88",
+        "dp4-89",
+        "dp4-90",
+        "dp4-91",
+        "dp4-92",
+        "dp4-93",
+        "dp4-94",
+        "dp4-95",
+        "dp4-96",
+        "dp4-97",
+        "dp4-98",
+        "dp4-99",
+        "dp4-100",
+        "dp4-101",
+        "dp4-102",
+        "dp4-103",
+        "dp4-104",
+        "dp4-105",
+        "dp4-106"
+      ]
+    },
+    {
+      "id": "pop7",
+      "name": "POP Série 7",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "dp5",
+      "name": "Aube Majestueuse",
+      "cards": 100,
+      "missingImageIds": [
+        "dp5-1",
+        "dp5-2",
+        "dp5-3",
+        "dp5-4",
+        "dp5-5",
+        "dp5-6",
+        "dp5-7",
+        "dp5-8",
+        "dp5-9",
+        "dp5-10",
+        "dp5-11",
+        "dp5-12",
+        "dp5-13",
+        "dp5-14",
+        "dp5-15",
+        "dp5-16",
+        "dp5-17",
+        "dp5-18",
+        "dp5-19",
+        "dp5-20",
+        "dp5-21",
+        "dp5-22",
+        "dp5-23",
+        "dp5-24",
+        "dp5-25",
+        "dp5-26",
+        "dp5-27",
+        "dp5-28",
+        "dp5-29",
+        "dp5-30",
+        "dp5-31",
+        "dp5-32",
+        "dp5-33",
+        "dp5-34",
+        "dp5-35",
+        "dp5-36",
+        "dp5-37",
+        "dp5-38",
+        "dp5-39",
+        "dp5-40",
+        "dp5-41",
+        "dp5-42",
+        "dp5-43",
+        "dp5-44",
+        "dp5-45",
+        "dp5-46",
+        "dp5-47",
+        "dp5-48",
+        "dp5-49",
+        "dp5-50",
+        "dp5-51",
+        "dp5-52",
+        "dp5-53",
+        "dp5-54",
+        "dp5-55",
+        "dp5-56",
+        "dp5-57",
+        "dp5-58",
+        "dp5-59",
+        "dp5-60",
+        "dp5-61",
+        "dp5-62",
+        "dp5-63",
+        "dp5-64",
+        "dp5-65",
+        "dp5-66",
+        "dp5-67",
+        "dp5-68",
+        "dp5-69",
+        "dp5-70",
+        "dp5-71",
+        "dp5-72",
+        "dp5-73",
+        "dp5-74",
+        "dp5-75",
+        "dp5-76",
+        "dp5-77",
+        "dp5-78",
+        "dp5-79",
+        "dp5-80",
+        "dp5-81",
+        "dp5-82",
+        "dp5-83",
+        "dp5-84",
+        "dp5-85",
+        "dp5-86",
+        "dp5-87",
+        "dp5-88",
+        "dp5-89",
+        "dp5-90",
+        "dp5-91",
+        "dp5-92",
+        "dp5-93",
+        "dp5-94",
+        "dp5-95",
+        "dp5-96",
+        "dp5-97",
+        "dp5-98",
+        "dp5-99",
+        "dp5-100"
+      ]
+    },
+    {
+      "id": "dp6",
+      "name": "Éveil des Légendes",
+      "cards": 146,
+      "missingImageIds": [
+        "dp6-1",
+        "dp6-2",
+        "dp6-3",
+        "dp6-4",
+        "dp6-5",
+        "dp6-6",
+        "dp6-7",
+        "dp6-8",
+        "dp6-9",
+        "dp6-10",
+        "dp6-11",
+        "dp6-12",
+        "dp6-13",
+        "dp6-14",
+        "dp6-15",
+        "dp6-16",
+        "dp6-17",
+        "dp6-18",
+        "dp6-19",
+        "dp6-20",
+        "dp6-21",
+        "dp6-22",
+        "dp6-23",
+        "dp6-24",
+        "dp6-25",
+        "dp6-26",
+        "dp6-27",
+        "dp6-28",
+        "dp6-29",
+        "dp6-30",
+        "dp6-31",
+        "dp6-32",
+        "dp6-33",
+        "dp6-34",
+        "dp6-35",
+        "dp6-36",
+        "dp6-37",
+        "dp6-38",
+        "dp6-39",
+        "dp6-40",
+        "dp6-41",
+        "dp6-42",
+        "dp6-43",
+        "dp6-44",
+        "dp6-45",
+        "dp6-46",
+        "dp6-47",
+        "dp6-48",
+        "dp6-49",
+        "dp6-50",
+        "dp6-51",
+        "dp6-52",
+        "dp6-53",
+        "dp6-54",
+        "dp6-55",
+        "dp6-56",
+        "dp6-57",
+        "dp6-58",
+        "dp6-59",
+        "dp6-60",
+        "dp6-61",
+        "dp6-62",
+        "dp6-63",
+        "dp6-64",
+        "dp6-65",
+        "dp6-66",
+        "dp6-67",
+        "dp6-68",
+        "dp6-69",
+        "dp6-70",
+        "dp6-71",
+        "dp6-72",
+        "dp6-73",
+        "dp6-74",
+        "dp6-75",
+        "dp6-76",
+        "dp6-77",
+        "dp6-78",
+        "dp6-79",
+        "dp6-80",
+        "dp6-81",
+        "dp6-82",
+        "dp6-83",
+        "dp6-84",
+        "dp6-85",
+        "dp6-86",
+        "dp6-87",
+        "dp6-88",
+        "dp6-89",
+        "dp6-90",
+        "dp6-91",
+        "dp6-92",
+        "dp6-93",
+        "dp6-94",
+        "dp6-95",
+        "dp6-96",
+        "dp6-97",
+        "dp6-98",
+        "dp6-99",
+        "dp6-100",
+        "dp6-101",
+        "dp6-102",
+        "dp6-103",
+        "dp6-104",
+        "dp6-105",
+        "dp6-106",
+        "dp6-107",
+        "dp6-108",
+        "dp6-109",
+        "dp6-110",
+        "dp6-111",
+        "dp6-112",
+        "dp6-113",
+        "dp6-114",
+        "dp6-115",
+        "dp6-116",
+        "dp6-117",
+        "dp6-118",
+        "dp6-119",
+        "dp6-120",
+        "dp6-121",
+        "dp6-122",
+        "dp6-123",
+        "dp6-124",
+        "dp6-125",
+        "dp6-126",
+        "dp6-127",
+        "dp6-128",
+        "dp6-129",
+        "dp6-130",
+        "dp6-131",
+        "dp6-132",
+        "dp6-133",
+        "dp6-134",
+        "dp6-135",
+        "dp6-136",
+        "dp6-137",
+        "dp6-138",
+        "dp6-139",
+        "dp6-140",
+        "dp6-141",
+        "dp6-142",
+        "dp6-143",
+        "dp6-144",
+        "dp6-145",
+        "dp6-146"
+      ]
+    },
+    {
+      "id": "dp7",
+      "name": "Tempête",
+      "cards": 106,
+      "missingImageIds": [
+        "dp7-1",
+        "dp7-2",
+        "dp7-3",
+        "dp7-4",
+        "dp7-5",
+        "dp7-6",
+        "dp7-7",
+        "dp7-8",
+        "dp7-9",
+        "dp7-10",
+        "dp7-11",
+        "dp7-12",
+        "dp7-13",
+        "dp7-14",
+        "dp7-15",
+        "dp7-16",
+        "dp7-17",
+        "dp7-18",
+        "dp7-19",
+        "dp7-20",
+        "dp7-21",
+        "dp7-22",
+        "dp7-23",
+        "dp7-24",
+        "dp7-25",
+        "dp7-26",
+        "dp7-27",
+        "dp7-28",
+        "dp7-29",
+        "dp7-30",
+        "dp7-31",
+        "dp7-32",
+        "dp7-33",
+        "dp7-34",
+        "dp7-35",
+        "dp7-36",
+        "dp7-37",
+        "dp7-38",
+        "dp7-39",
+        "dp7-40",
+        "dp7-41",
+        "dp7-42",
+        "dp7-43",
+        "dp7-44",
+        "dp7-45",
+        "dp7-46",
+        "dp7-47",
+        "dp7-48",
+        "dp7-49",
+        "dp7-50",
+        "dp7-51",
+        "dp7-52",
+        "dp7-53",
+        "dp7-54",
+        "dp7-55",
+        "dp7-56",
+        "dp7-57",
+        "dp7-58",
+        "dp7-59",
+        "dp7-60",
+        "dp7-61",
+        "dp7-62",
+        "dp7-63",
+        "dp7-64",
+        "dp7-65",
+        "dp7-66",
+        "dp7-67",
+        "dp7-68",
+        "dp7-69",
+        "dp7-70",
+        "dp7-71",
+        "dp7-72",
+        "dp7-73",
+        "dp7-74",
+        "dp7-75",
+        "dp7-76",
+        "dp7-77",
+        "dp7-78",
+        "dp7-79",
+        "dp7-80",
+        "dp7-81",
+        "dp7-82",
+        "dp7-83",
+        "dp7-84",
+        "dp7-85",
+        "dp7-86",
+        "dp7-87",
+        "dp7-88",
+        "dp7-89",
+        "dp7-90",
+        "dp7-91",
+        "dp7-92",
+        "dp7-93",
+        "dp7-94",
+        "dp7-95",
+        "dp7-96",
+        "dp7-97",
+        "dp7-98",
+        "dp7-99",
+        "dp7-100",
+        "dp7-101",
+        "dp7-102",
+        "dp7-103",
+        "dp7-SH1",
+        "dp7-SH2",
+        "dp7-SH3"
+      ]
+    },
+    {
+      "id": "pl1",
+      "name": "Platine",
+      "cards": 133,
+      "missingImageIds": []
+    },
+    {
+      "id": "pop9",
+      "name": "POP Série 9",
+      "cards": 17,
+      "missingImageIds": []
+    },
+    {
+      "id": "pl2",
+      "name": "Rivaux Émergeants",
+      "cards": 120,
+      "missingImageIds": []
+    },
+    {
+      "id": "pl3",
+      "name": "Vainqueurs Suprêmes",
+      "cards": 162,
+      "missingImageIds": []
+    },
+    {
+      "id": "hgss1",
+      "name": "HeartGold SoulSilver",
+      "cards": 124,
+      "missingImageIds": [
+        "hgss1-ONE"
+      ]
+    },
+    {
+      "id": "hgssp",
+      "name": "Promo HGSS",
+      "cards": 25,
+      "missingImageIds": [
+        "hgssp-HGSS01",
+        "hgssp-HGSS02",
+        "hgssp-HGSS03",
+        "hgssp-HGSS04",
+        "hgssp-HGSS05",
+        "hgssp-HGSS06",
+        "hgssp-HGSS07",
+        "hgssp-HGSS08",
+        "hgssp-HGSS09",
+        "hgssp-HGSS10",
+        "hgssp-HGSS11",
+        "hgssp-HGSS12",
+        "hgssp-HGSS13",
+        "hgssp-HGSS14",
+        "hgssp-HGSS15",
+        "hgssp-HGSS16",
+        "hgssp-HGSS17",
+        "hgssp-HGSS18",
+        "hgssp-HGSS19",
+        "hgssp-HGSS20",
+        "hgssp-HGSS21",
+        "hgssp-HGSS22",
+        "hgssp-HGSS23",
+        "hgssp-HGSS24",
+        "hgssp-HGSS25"
+      ]
+    },
+    {
+      "id": "tk-hs-r",
+      "name": "HS Kit du dresseur (Raichu)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-hs-r-1",
+        "tk-hs-r-2",
+        "tk-hs-r-3",
+        "tk-hs-r-4",
+        "tk-hs-r-5",
+        "tk-hs-r-6",
+        "tk-hs-r-7",
+        "tk-hs-r-8",
+        "tk-hs-r-9",
+        "tk-hs-r-10",
+        "tk-hs-r-11",
+        "tk-hs-r-12",
+        "tk-hs-r-13",
+        "tk-hs-r-14",
+        "tk-hs-r-15",
+        "tk-hs-r-16",
+        "tk-hs-r-17",
+        "tk-hs-r-18",
+        "tk-hs-r-19",
+        "tk-hs-r-20",
+        "tk-hs-r-21",
+        "tk-hs-r-22",
+        "tk-hs-r-23",
+        "tk-hs-r-24",
+        "tk-hs-r-25",
+        "tk-hs-r-26",
+        "tk-hs-r-27",
+        "tk-hs-r-28",
+        "tk-hs-r-29",
+        "tk-hs-r-30"
+      ]
+    },
+    {
+      "id": "tk-hs-g",
+      "name": "HS Kit du dresseur (Léviator)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-hs-g-1",
+        "tk-hs-g-2",
+        "tk-hs-g-3",
+        "tk-hs-g-4",
+        "tk-hs-g-5",
+        "tk-hs-g-6",
+        "tk-hs-g-7",
+        "tk-hs-g-8",
+        "tk-hs-g-9",
+        "tk-hs-g-10",
+        "tk-hs-g-11",
+        "tk-hs-g-12",
+        "tk-hs-g-13",
+        "tk-hs-g-14",
+        "tk-hs-g-15",
+        "tk-hs-g-16",
+        "tk-hs-g-17",
+        "tk-hs-g-18",
+        "tk-hs-g-19",
+        "tk-hs-g-20",
+        "tk-hs-g-21",
+        "tk-hs-g-22",
+        "tk-hs-g-23",
+        "tk-hs-g-24",
+        "tk-hs-g-25",
+        "tk-hs-g-26",
+        "tk-hs-g-27",
+        "tk-hs-g-28",
+        "tk-hs-g-29",
+        "tk-hs-g-30"
+      ]
+    },
+    {
+      "id": "hgss2",
+      "name": "Déchaînement",
+      "cards": 96,
+      "missingImageIds": [
+        "hgss2-TWO"
+      ]
+    },
+    {
+      "id": "hgss3",
+      "name": "Indomptable",
+      "cards": 91,
+      "missingImageIds": [
+        "hgss3-THREE"
+      ]
+    },
+    {
+      "id": "hgss4",
+      "name": "Triomphant",
+      "cards": 103,
+      "missingImageIds": [
+        "hgss4-FOUR"
+      ]
+    },
+    {
+      "id": "col1",
+      "name": "L'appel des Légendes",
+      "cards": 106,
+      "missingImageIds": [
+        "col1-1",
+        "col1-2",
+        "col1-3",
+        "col1-4",
+        "col1-5",
+        "col1-6",
+        "col1-7",
+        "col1-8",
+        "col1-9",
+        "col1-10",
+        "col1-11",
+        "col1-12",
+        "col1-13",
+        "col1-14",
+        "col1-15",
+        "col1-16",
+        "col1-17",
+        "col1-18",
+        "col1-19",
+        "col1-20",
+        "col1-21",
+        "col1-22",
+        "col1-23",
+        "col1-24",
+        "col1-25",
+        "col1-26",
+        "col1-27",
+        "col1-28",
+        "col1-29",
+        "col1-30",
+        "col1-31",
+        "col1-32",
+        "col1-33",
+        "col1-34",
+        "col1-35",
+        "col1-36",
+        "col1-37",
+        "col1-38",
+        "col1-39",
+        "col1-40",
+        "col1-41",
+        "col1-42",
+        "col1-43",
+        "col1-44",
+        "col1-45",
+        "col1-46",
+        "col1-47",
+        "col1-48",
+        "col1-49",
+        "col1-50",
+        "col1-51",
+        "col1-52",
+        "col1-53",
+        "col1-54",
+        "col1-55",
+        "col1-56",
+        "col1-57",
+        "col1-58",
+        "col1-59",
+        "col1-60",
+        "col1-61",
+        "col1-62",
+        "col1-63",
+        "col1-64",
+        "col1-65",
+        "col1-66",
+        "col1-67",
+        "col1-68",
+        "col1-69",
+        "col1-70",
+        "col1-71",
+        "col1-72",
+        "col1-73",
+        "col1-74",
+        "col1-75",
+        "col1-76",
+        "col1-77",
+        "col1-78",
+        "col1-79",
+        "col1-80",
+        "col1-81",
+        "col1-82",
+        "col1-83",
+        "col1-84",
+        "col1-85",
+        "col1-86",
+        "col1-87",
+        "col1-88",
+        "col1-89",
+        "col1-90",
+        "col1-91",
+        "col1-92",
+        "col1-93",
+        "col1-94",
+        "col1-95",
+        "col1-SL1",
+        "col1-SL10",
+        "col1-SL11",
+        "col1-SL2",
+        "col1-SL3",
+        "col1-SL4",
+        "col1-SL5",
+        "col1-SL6",
+        "col1-SL7",
+        "col1-SL8",
+        "col1-SL9"
+      ]
+    },
+    {
+      "id": "bw1",
+      "name": "Noir & Blanc",
+      "cards": 115,
+      "missingImageIds": []
+    },
+    {
+      "id": "bwp",
+      "name": "Promo BW",
+      "cards": 101,
+      "missingImageIds": []
+    },
+    {
+      "id": "2011bw",
+      "name": "Collection McDonald's 2011",
+      "cards": 12,
+      "missingImageIds": [
+        "2011bw-1",
+        "2011bw-2",
+        "2011bw-3",
+        "2011bw-4",
+        "2011bw-5",
+        "2011bw-6",
+        "2011bw-7",
+        "2011bw-8",
+        "2011bw-9",
+        "2011bw-10",
+        "2011bw-11",
+        "2011bw-12"
+      ]
+    },
+    {
+      "id": "bw2",
+      "name": "Pouvoirs Émergents",
+      "cards": 98,
+      "missingImageIds": []
+    },
+    {
+      "id": "tk-bw-e",
+      "name": "BW Kit du dresseur (Minitaupe)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-bw-e-1",
+        "tk-bw-e-2",
+        "tk-bw-e-3",
+        "tk-bw-e-4",
+        "tk-bw-e-5",
+        "tk-bw-e-6",
+        "tk-bw-e-7",
+        "tk-bw-e-8",
+        "tk-bw-e-9",
+        "tk-bw-e-10",
+        "tk-bw-e-11",
+        "tk-bw-e-12",
+        "tk-bw-e-13",
+        "tk-bw-e-14",
+        "tk-bw-e-15",
+        "tk-bw-e-16",
+        "tk-bw-e-17",
+        "tk-bw-e-18",
+        "tk-bw-e-19",
+        "tk-bw-e-20",
+        "tk-bw-e-21",
+        "tk-bw-e-22",
+        "tk-bw-e-23",
+        "tk-bw-e-24",
+        "tk-bw-e-25",
+        "tk-bw-e-26",
+        "tk-bw-e-27",
+        "tk-bw-e-28",
+        "tk-bw-e-29",
+        "tk-bw-e-30"
+      ]
+    },
+    {
+      "id": "tk-bw-z",
+      "name": "BW Kit du dresseur (Zoroark)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-bw-z-1",
+        "tk-bw-z-2",
+        "tk-bw-z-3",
+        "tk-bw-z-4",
+        "tk-bw-z-5",
+        "tk-bw-z-6",
+        "tk-bw-z-7",
+        "tk-bw-z-8",
+        "tk-bw-z-9",
+        "tk-bw-z-10",
+        "tk-bw-z-11",
+        "tk-bw-z-12",
+        "tk-bw-z-13",
+        "tk-bw-z-14",
+        "tk-bw-z-15",
+        "tk-bw-z-16",
+        "tk-bw-z-17",
+        "tk-bw-z-18",
+        "tk-bw-z-19",
+        "tk-bw-z-20",
+        "tk-bw-z-21",
+        "tk-bw-z-22",
+        "tk-bw-z-23",
+        "tk-bw-z-24",
+        "tk-bw-z-25",
+        "tk-bw-z-26",
+        "tk-bw-z-27",
+        "tk-bw-z-28",
+        "tk-bw-z-29",
+        "tk-bw-z-30"
+      ]
+    },
+    {
+      "id": "bw3",
+      "name": "Nobles Victoires",
+      "cards": 102,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw4",
+      "name": "Destinées Futures",
+      "cards": 103,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw5",
+      "name": "Explorateurs Obscurs",
+      "cards": 111,
+      "missingImageIds": []
+    },
+    {
+      "id": "2012bw",
+      "name": "Collection McDonald's 2012",
+      "cards": 12,
+      "missingImageIds": [
+        "2012bw-1",
+        "2012bw-2",
+        "2012bw-3",
+        "2012bw-4",
+        "2012bw-5",
+        "2012bw-6",
+        "2012bw-7",
+        "2012bw-8",
+        "2012bw-9",
+        "2012bw-10",
+        "2012bw-11",
+        "2012bw-12"
+      ]
+    },
+    {
+      "id": "bw6",
+      "name": "Dragons Éxaltés",
+      "cards": 128,
+      "missingImageIds": []
+    },
+    {
+      "id": "dv1",
+      "name": "Coffre des Dragons",
+      "cards": 21,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw7",
+      "name": "Frontières Franchies",
+      "cards": 153,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw8",
+      "name": "Tempète Plasma",
+      "cards": 138,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw9",
+      "name": "Glaciation Plasma",
+      "cards": 122,
+      "missingImageIds": []
+    },
+    {
+      "id": "bw10",
+      "name": "Explosion Plasma",
+      "cards": 105,
+      "missingImageIds": []
+    },
+    {
+      "id": "xyp",
+      "name": "Promo XY",
+      "cards": 216,
+      "missingImageIds": [
+        "xyp-XY91",
+        "xyp-XY94"
+      ]
+    },
+    {
+      "id": "2013bw",
+      "name": "Collection McDonald's 2013",
+      "cards": 12,
+      "missingImageIds": [
+        "2013bw-1",
+        "2013bw-2",
+        "2013bw-3",
+        "2013bw-4",
+        "2013bw-5",
+        "2013bw-6",
+        "2013bw-7",
+        "2013bw-8",
+        "2013bw-9",
+        "2013bw-10",
+        "2013bw-11",
+        "2013bw-12"
+      ]
+    },
+    {
+      "id": "rc",
+      "name": "Radiant Collection",
+      "cards": 0,
+      "missingImageIds": []
+    },
+    {
+      "id": "xy0",
+      "name": "Bienvenue à Kalos",
+      "cards": 39,
+      "missingImageIds": []
+    },
+    {
+      "id": "xy1",
+      "name": "XY",
+      "cards": 146,
+      "missingImageIds": []
+    },
+    {
+      "id": "xya",
+      "name": "carte alternative A Jaune",
+      "cards": 6,
+      "missingImageIds": [
+        "xya-24a",
+        "xya-28a",
+        "xya-54a",
+        "xya-55a",
+        "xya-92a",
+        "xya-107a"
+      ]
+    },
+    {
+      "id": "tk-xy-n",
+      "name": "XY Kit du dresseur (Bruyverne)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-xy-n-1",
+        "tk-xy-n-2",
+        "tk-xy-n-3",
+        "tk-xy-n-4",
+        "tk-xy-n-5",
+        "tk-xy-n-6",
+        "tk-xy-n-7",
+        "tk-xy-n-8",
+        "tk-xy-n-9",
+        "tk-xy-n-10",
+        "tk-xy-n-11",
+        "tk-xy-n-12",
+        "tk-xy-n-13",
+        "tk-xy-n-14",
+        "tk-xy-n-15",
+        "tk-xy-n-16",
+        "tk-xy-n-17",
+        "tk-xy-n-18",
+        "tk-xy-n-19",
+        "tk-xy-n-20",
+        "tk-xy-n-21",
+        "tk-xy-n-22",
+        "tk-xy-n-23",
+        "tk-xy-n-24",
+        "tk-xy-n-25",
+        "tk-xy-n-26",
+        "tk-xy-n-27",
+        "tk-xy-n-28",
+        "tk-xy-n-29",
+        "tk-xy-n-30"
+      ]
+    },
+    {
+      "id": "tk-xy-sy",
+      "name": "XY Kit du dresseur (Nymphali)",
+      "cards": 30,
+      "missingImageIds": [
+        "tk-xy-sy-1",
+        "tk-xy-sy-2",
+        "tk-xy-sy-3",
+        "tk-xy-sy-4",
+        "tk-xy-sy-5",
+        "tk-xy-sy-6",
+        "tk-xy-sy-7",
+        "tk-xy-sy-8",
+        "tk-xy-sy-9",
+        "tk-xy-sy-10",
+        "tk-xy-sy-11",
+        "tk-xy-sy-12",
+        "tk-xy-sy-13",
+        "tk-xy-sy-14",
+        "tk-xy-sy-15",
+        "tk-xy-sy-16",
+        "tk-xy-sy-17",
+        "tk-xy-sy-18",
+        "tk-xy-sy-19",
+        "tk-xy-sy-20",
+        "tk-xy-sy-21",
+        "tk-xy-sy-22",
+        "tk-xy-sy-23",
+        "tk-xy-sy-24",
+        "tk-xy-sy-25",
+        "tk-xy-sy-26",
+        "tk-xy-sy-27",
+        "tk-xy-sy-28",
+        "tk-xy-sy-29",
+        "tk-xy-sy-30"
+      ]
+    },
+    {
+      "id": "xy2",
+      "name": "Étincelles",
+      "cards": 110,
+      "missingImageIds": []
+    },
+    {
+      "id": "2014xy",
+      "name": "Collection McDonald's 2014",
+      "cards": 12,
+      "missingImageIds": [
+        "2014xy-1",
+        "2014xy-2",
+        "2014xy-3",
+        "2014xy-4",
+        "2014xy-5",
+        "2014xy-6",
+        "2014xy-7",
+        "2014xy-8",
+        "2014xy-9",
+        "2014xy-10",
+        "2014xy-11",
+        "2014xy-12"
+      ]
+    },
+    {
+      "id": "xy3",
+      "name": "Poings Furieux",
+      "cards": 114,
+      "missingImageIds": []
+    },
+    {
+      "id": "tk-xy-b",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-xy-w",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy4",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "dc1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-xy-latio",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-xy-latia",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy6",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy7",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy8",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2015xy",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy9",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "g1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-xy-p",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-xy-su",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy10",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy11",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2016xy",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "xy12",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "smp",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-sm-r",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "tk-sm-l",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm2",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2017sm",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm3",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm3.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm4",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm6",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2018sm-fr",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm7",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm7.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm8",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm9",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "det1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm10",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm11",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sma",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm115",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2019sm-fr",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sm12",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swshp",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh2",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh3",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh3.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh4",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2021swsh",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh4.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh4.5sv",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh6",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh7",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "cel25cc",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "cel25",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh8",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh9tg",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh9",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh10",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh10tg",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh10.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2022swsh",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh11",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh11tg",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh12",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh12tg",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh12.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "swsh12.5gg",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv01",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sve",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "svp",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv02",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2023sv",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv03",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv03.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv04",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv04.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv05",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv06",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv06.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv07",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "P-A",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv08",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "2024sv",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A1a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv08.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A2",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A2a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A2b",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv09",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A3",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A3a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv10",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A3b",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv10.5b",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "sv10.5w",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A4",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "A4a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "mee",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me01",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "mep",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "B1",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me02",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "B1a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "B2",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me02.5",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "B2a",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me03",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me04",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "me05",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    },
+    {
+      "id": "30th",
+      "name": "30e Anniversaire",
+      "cards": 158,
+      "missingImageIds": []
+    },
+    {
+      "id": "30th-c",
+      "name": "Collection Classique30ᵉ Anniversaire",
+      "cards": 30,
+      "missingImageIds": [
+        "30th-c-001",
+        "30th-c-002",
+        "30th-c-003",
+        "30th-c-004",
+        "30th-c-005",
+        "30th-c-006",
+        "30th-c-007",
+        "30th-c-008",
+        "30th-c-009",
+        "30th-c-010",
+        "30th-c-011",
+        "30th-c-012",
+        "30th-c-013",
+        "30th-c-014",
+        "30th-c-015",
+        "30th-c-016",
+        "30th-c-017",
+        "30th-c-018",
+        "30th-c-019",
+        "30th-c-020",
+        "30th-c-021",
+        "30th-c-022",
+        "30th-c-023",
+        "30th-c-024",
+        "30th-c-025",
+        "30th-c-026",
+        "30th-c-027",
+        "30th-c-028",
+        "30th-c-029",
+        "30th-c-030"
+      ]
+    }
+  ]
+}

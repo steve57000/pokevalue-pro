@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { X, RotateCcw, ExternalLink } from 'lucide-react'
-import { buildTcgDexImageUrl } from '../api/tcgdex'
+import { CatalogueImage } from './CatalogueImage'
 import type { SetCard } from '../api/sets'
 
-const POKEMON_CARD_BACK = 'https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg'
+const POKEMON_CARD_BACK = `${import.meta.env.BASE_URL}images/pokemon-card-back.jpg`
 
 type Props = {
   card: SetCard
@@ -44,7 +44,6 @@ export function CardShowcase({ card, setName, owned, onToggle, onClose, cardmark
     setDragging(false)
     setRotation({ x: 0, y: 0 })
   }
-  const image = buildTcgDexImageUrl(card.image, 'high')
   const lighting = {
     '--light-x': `${50 + rotation.y / 3}%`, '--light-y': `${50 + rotation.x / 3}%`,
     '--shadow-x': `${Math.round(rotation.y * .25)}px`, '--shadow-y': `${Math.round(32 - rotation.x * .1)}px`,
@@ -55,12 +54,12 @@ export function CardShowcase({ card, setName, owned, onToggle, onClose, cardmark
       <div className="showcase-spotlight" aria-hidden="true" />
       <div className="showcase-stage">
         <div className={`showcase-card ${dragging ? 'dragging' : ''}`} style={{ transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`, ...lighting }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-          <div className="showcase-face showcase-front">{image ? <img src={image} alt={`${card.name}, carte ${card.localId} de ${setName}`} draggable={false}/> : <div className="showcase-no-image">Image indisponible</div>}<div className="showcase-sheen" aria-hidden="true"/></div>
+          <div className="showcase-face showcase-front"><CatalogueImage key={card.id} card={card} quality="high"/><div className="showcase-sheen" aria-hidden="true"/></div>
           <div className="showcase-face showcase-back"><img src={POKEMON_CARD_BACK} alt="Dos officiel d’une carte Pokémon" draggable={false}/></div>
         </div>
       </div>
       <div className="showcase-info"><span className="showcase-overline">{setName} · Nº {card.localId}</span><h2>{card.name}</h2><p>Maintiens et déplace la carte pour la faire pivoter. Glisse avec le doigt sur mobile.</p>
-        <div className="showcase-actions"><button onClick={onToggle} className={owned?'showcase-owned':''}>{owned?'✓ Dans ma collection':'Ajouter à ma collection'}</button><a href={cardmarketUrl} target="_blank" rel="noopener noreferrer">Voir sur Cardmarket <ExternalLink size={15}/></a><button onClick={()=>setRotation({x:0,y:0})} aria-label="Recentrer la carte"><RotateCcw size={18}/></button></div>
+        <div className="showcase-actions"><button onClick={onToggle} className={owned?'showcase-owned':''}>{owned?'✓ Dans ma collection':'Ajouter à ma collection'}</button><button onClick={()=>setRotation({x:0,y:rotation.y===180?0:180})}>Recto / Verso</button><a href={cardmarketUrl} target="_blank" rel="noopener noreferrer">Voir sur Cardmarket <ExternalLink size={15}/></a><button onClick={()=>setRotation({x:0,y:0})} aria-label="Recentrer la carte"><RotateCcw size={18}/></button></div>
       </div>
     </div>
   </div>, document.body)

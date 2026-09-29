@@ -52,3 +52,9 @@ La sauvegarde emploie l'[API Contents GitHub](https://docs.github.com/rest/repos
 SHA du fichier. Le jeton n'est transmis qu'à `api.github.com` dans l'en-tête `Authorization`, n'est
 ni journalisé ni placé dans une URL, et reste en mémoire. Le fichier cible est exclusivement
 `collection/v1/portfolio.json` dans le dépôt choisi par l'utilisateur.
+
+## Images et dos de carte
+Le dos standard occidental est livré avec le site (`public/images/pokemon-card-back.jpg`), téléchargé depuis https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg. Illustration Pokémon, utilisée pour la visualisation des cartes.
+La galerie essaie WebP puis PNG. Si le visuel français échoue ou manque, elle demande le même identifiant au catalogue anglais et affiche « Visuel anglais ». Si les deux sources n'ont aucun visuel, elle le signale explicitement.
+`node scripts/audit-images.mjs` produit l'audit des métadonnées de toutes les extensions françaises ; ajouter `--check-urls` pour contrôler également chaque URL. Les requêtes échouées sont signalées comme non vérifiées dans `docs/image-audit.json`.
+Le 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` fournit 30 cartes sans image, en français comme en anglais. Les visuels ne sont pas inventés ni remplacés par une autre impression.
