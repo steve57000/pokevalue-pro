@@ -7,6 +7,7 @@ import { selectCardmarketPrice, type PriceReference } from '../domain/pricing'
 import type { CollectionDocument, CollectionEntry } from '../domain/collection'
 import { emptyCollection, mergeCollections, parseCollection, printingKey, upsertEntry } from '../domain/collection'
 import { readRemotePortfolio, writeRemotePortfolio, type GitHubConnection } from '../services/githubSync'
+import { CardShowcase } from './CardShowcase'
 
 const CONNECTION_KEY = 'pv-github-connection-v1'
 const favorites = ['30th', '30th-c', 'me04', 'me05']
@@ -36,6 +37,8 @@ export function Portfolio({ document, onChange, mode }: Props) {
   const [catalogueError, setCatalogueError] = useState('')
   const [search, setSearch] = useState('')
   const [seriesQuery, setSeriesQuery] = useState('')
+  const [setPickerOpen, setSetPickerOpen] = useState(false)
+  const [spotlight, setSpotlight] = useState<SetCard | null>(null)
   const [prices, setPrices] = useState<Record<string, PriceReference | null>>({})
   const importRef = useRef<HTMLInputElement>(null)
   const documentRef = useRef(document)
@@ -165,6 +168,7 @@ export function Portfolio({ document, onChange, mode }: Props) {
     })
     documentRef.current = next; onChange(next)
   }
+  const chooseSet = (id: string) => { setSelectedSet(id); setFilter(mode === 'collection' ? 'owned' : 'all'); setSearch(''); setSetPickerOpen(false); setSeriesQuery('') }
   return <section className="portfolio-page">
     <div className="portfolio-heading"><div><span className="eyebrow">{mode === 'catalogue' ? 'Catalogue complet des extensions' : 'Classeur numérique'}</span><h1>{mode === 'catalogue' ? 'Toutes les cartes par série' : 'Ma collection'}</h1><p>{mode === 'catalogue' ? 'Choisis une extension et coche les cartes que tu possèdes.' : `${document.entries.filter(isOwned).reduce((sum,e)=>sum+e.quantity,0)} exemplaire(s) · ${document.entries.filter(isOwned).length} impressions possédées`}</p></div>
       <div className={`sync-state ${sync}`}><Cloud size={18}/><strong>{sync === 'saved' ? 'Synchronisé' : sync === 'conflict' ? 'Conflit' : sync === 'pending' ? 'En cours' : 'Local'}</strong><small>{message}</small></div></div>
@@ -175,17 +179,22 @@ export function Portfolio({ document, onChange, mode }: Props) {
       {sync==='error'&&account&&<button onClick={()=>void flush()}>Réessayer la sauvegarde</button>}
     </div>}
     {mode === 'collection' && <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Import JSON</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) { try { onChange(parseCollection(JSON.parse(await file.text()))); setMessage('Import chargé localement') } catch(error) { setSync('error'); setMessage((error as Error).message) } }}}/></div>}
-    <div className="series-layout"><aside className="series-nav"><h2>Les séries</h2><input className="series-search" placeholder="Rechercher une extension…" value={seriesQuery} onChange={e=>setSeriesQuery(e.target.value)}/>{[...families].map(([family, group])=><div key={family}><h3>{family}</h3>{group.sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>{setSelectedSet(set.id);setFilter('all');setSearch('')}}>{set.name} <small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div>)}</aside>
-      <div className="series-content"><h2>{detail?.serie?.name ?? 'Série'} · {detail?.name ?? selectedSet}</h2><p>{setEntries.length}/{detail?.cardCount.total ?? '…'} cartes possédées · {detail?.cards.length ?? '…'} cartes au catalogue</p>
+    <div className="series-layout"><div className="series-selector"><div><span className="eyebrow">Explorer les extensions</span><h2>{detail?.name ?? 'Choisir une série'}</h2><p>{detail?.serie?.name ?? 'Catalogue français'} · {setEntries.length}/{detail?.cardCount.total ?? '…'} cartes possédées · {detail?.cards.length ?? '…'} cartes au catalogue</p></div>
+      <button className="series-picker-trigger" aria-expanded={setPickerOpen} onClick={()=>setSetPickerOpen(open=>!open)}>Changer de série <span aria-hidden="true">⌄</span></button>
+      {setPickerOpen&&<div className="series-picker"><input autoFocus className="series-search" placeholder="Rechercher une extension…" value={seriesQuery} onChange={e=>setSeriesQuery(e.target.value)}/><div className="series-picker-list">{[...families].map(([family, group])=><div key={family}><h3>{family}</h3>{group.sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>chooseSet(set.id)}>{set.name} <small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div>)}{families.size===0&&<p>Aucune série trouvée.</p>}</div></div>}
+      <div className="series-shortcuts">{favorites.map(id=>sets.find(s=>s.id===id)).filter((s):s is SetSummary=>Boolean(s)).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>chooseSet(set.id)}>{set.name}</button>)}</div>
+    </div>
+      <div className="series-content">
         <div className="series-controls"><input placeholder="Nom ou numéro dans cette série" value={search} onChange={e=>setSearch(e.target.value)}/>{(['all','owned','missing'] as const).map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f==='all'?'Toutes':f==='owned'?'Possédées':'Manquantes'}</button>)}</div>
         {catalogueError&&<p role="alert">{catalogueError} <button onClick={()=>void getSet(selectedSet).then(setDetail).catch(e=>setCatalogueError((e as Error).message))}>Réessayer</button></p>}
         {!detail&&!catalogueError&&<p>Chargement des cartes…</p>}
         <div className="binder-grid">{shown.map(card=>{const entry=document.entries.find(e=>e.key===cardKey(card));const has=!!entry&&isOwned(entry);return <article key={card.id} className={has?'owned':''}>
-          {card.image ? <img className="binder-image" src={buildTcgDexImageUrl(card.image,'low')} loading="lazy" alt={`Carte ${card.name} ${card.localId}`}/> : <div className="binder-placeholder">Image indisponible</div>}
+          <button className="binder-preview" onClick={()=>setSpotlight(card)} aria-label={`Voir ${card.name} en grand`}>{card.image ? <img className="binder-image" src={buildTcgDexImageUrl(card.image,'low')} loading="lazy" alt={`Carte ${card.name} ${card.localId}`}/> : <div className="binder-placeholder">Image indisponible</div>}<span>Voir en grand ↗</span></button>
           <strong>{card.name}</strong><span>{card.localId} · {detail?.name}</span><button aria-pressed={has} onClick={()=>setEntry(card,{quantity:has?0:1})}>{has?'✓ Je possède':'Je possède'}</button>
           <a href={cardmarketSearch(card,detail?.name??'')} target="_blank" rel="noopener noreferrer">Rechercher sur Cardmarket ↗</a>
           {has&&entry&&<div className="copy-editor"><label>Quantité<input type="number" min="0" value={entry.quantity} onChange={e=>setEntry(card,{quantity:Number(e.target.value)})}/></label><label>État<select value={entry.condition} onChange={e=>setEntry(card,{condition:e.target.value as CollectionEntry['condition']})}><option value="mint">Mint</option><option value="near-mint">Near Mint</option><option value="excellent">Excellent</option><option value="good">Bon</option><option value="played">Jouée</option><option value="poor">Abîmée</option></select></label><label>Prix manuel (€)<input type="number" min="0" step="0.01" placeholder="Laisser vide pour le prix automatique" value={entry.manualPrice??''} onChange={e=>setEntry(card,{manualPrice:e.target.value===''?undefined:Number(e.target.value)})}/></label><small>{entry.manualPrice!==undefined?`Prix retenu : ${entry.manualPrice.toFixed(2)} € (manuel)` : prices[card.id] ? `Prix retenu : ${prices[card.id]!.value.toFixed(2)} € (Cardmarket, ${prices[card.id]!.label})` : 'Prix automatique indisponible'}{prices[card.id]?.updatedAt && ` · ${new Date(prices[card.id]!.updatedAt!).toLocaleDateString('fr-FR')}`}</small><label>Notes<input value={entry.notes} onChange={e=>setEntry(card,{notes:e.target.value})}/></label></div>}
         </article>})}</div>
       </div></div>
+    {spotlight&&<CardShowcase card={spotlight} setName={detail?.name??selectedSet} owned={owned.has(cardKey(spotlight))} onToggle={()=>setEntry(spotlight,{quantity:owned.has(cardKey(spotlight))?0:1})} onClose={()=>setSpotlight(null)} cardmarketUrl={cardmarketSearch(spotlight,detail?.name??'')}/>}
   </section>
 }
