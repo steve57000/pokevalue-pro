@@ -8,6 +8,7 @@ import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
 import { CardScanner } from './components/CardScanner'
+import { Portfolio } from './components/Portfolio'
 import { LivePrice } from './components/LivePrice'
 import { selectCardmarketPrice } from './domain/pricing'
 import type { ScannerCandidate } from './domain/scanner'
@@ -15,6 +16,7 @@ import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
 import { readStoredJson, readStoredStringArray } from './utils/storage'
 import type { Card } from './types'
+import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 
 type View = 'catalogue' | 'scanner' | 'favorites' | 'collection' | 'estimator' | 'guide'
 
@@ -48,6 +50,9 @@ function App() {
   const [selected, setSelected] = useState<Card|null>(null)
   const [favorites, setFavorites] = useState<string[]>(() => readStoredStringArray('pv-favorites'))
   const [collection, setCollection] = useState<string[]>(() => readStoredStringArray('pv-collection'))
+  const [portfolio, setPortfolio] = useState<CollectionDocument>(() => {
+    try { return parseCollection(readStoredJson<unknown>('pv-portfolio-v1', emptyCollection())) } catch { return emptyCollection() }
+  })
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const { entries: liveCards, retry } = useLiveCards(cards)
 
@@ -57,6 +62,7 @@ function App() {
   }, [theme])
   useEffect(() => localStorage.setItem('pv-favorites', JSON.stringify(favorites)), [favorites])
   useEffect(() => localStorage.setItem('pv-collection', JSON.stringify(collection)), [collection])
+  useEffect(() => localStorage.setItem('pv-portfolio-v1', JSON.stringify(portfolio)), [portfolio])
   useEffect(() => localStorage.setItem(SCANNED_CARDS_STORAGE_KEY, JSON.stringify(recentScans)), [recentScans])
 
   const filtered = useMemo(() => cards.filter(card => {
@@ -77,16 +83,28 @@ function App() {
 
   const isScannedCardCollected = (tcgdexId: string) => collection.includes(collectionIdForTcgDexCard(tcgdexId))
 
+  const togglePortfolioCard = (card: Card) => {
+    const cardId = card.tcgdexId ?? card.id
+    const existing = portfolio.entries.find(entry => entry.cardId === cardId && entry.variant === 'normal' && entry.language === card.language.toLowerCase())
+    setPortfolio(upsertEntry(portfolio, {
+      source: 'tcgdex', setId: setIdFromCardId(cardId), cardId, language: card.language.toLowerCase(), variant: 'normal',
+      name: card.name, setName: card.set, number: card.number, rarity: card.rarity,
+      quantity: existing ? 0 : 1, condition: 'near-mint', notes: '',
+    }))
+    toggle(card.id, collection, setCollection)
+  }
+
   const toggleScannedCollection = (candidate: ScannerCandidate) => {
     rememberScannedCard(candidate)
     const collectionId = collectionIdForTcgDexCard(candidate.id)
     toggle(collectionId, collection, setCollection)
+    const existing = portfolio.entries.find(entry => entry.cardId === candidate.id && entry.language === candidate.language)
+    setPortfolio(upsertEntry(portfolio, {
+      source: 'tcgdex', setId: setIdFromCardId(candidate.id), cardId: candidate.id, language: candidate.language, variant: 'normal',
+      name: candidate.name, setName: candidate.setName ?? 'Série inconnue', number: candidate.localId,
+      image: candidate.image, rarity: candidate.rarity, quantity: existing ? 0 : 1, condition: 'near-mint', notes: '',
+    }))
   }
-
-  const scannedCollection = recentScans.filter((candidate) =>
-    isScannedCardCollected(candidate.id) &&
-    !cards.some((card) => card.tcgdexId === candidate.id),
-  )
 
   const nav = [
     {id:'catalogue', label:'Catalogue', icon:Search},
@@ -131,7 +149,8 @@ function App() {
         </header>
 
         <div className="content">
-          {(view==='catalogue' || view==='favorites' || view==='collection') && <>
+          {view==='collection' && <Portfolio cards={cards} document={portfolio} onChange={setPortfolio} onToggle={togglePortfolioCard}/>}
+          {(view==='catalogue' || view==='favorites') && <>
             <section className="hero">
               <div>
                 <span className="eyebrow"><TrendingUp size={15}/> Guide de valeur 2026</span>
@@ -162,36 +181,17 @@ function App() {
               {(setFilter!=='Toutes'||rarityFilter!=='Toutes'||minValue>0||query) && <button className="reset" onClick={()=>{setSetFilter('Toutes');setRarityFilter('Toutes');setMinValue(0);setQuery('')}}><X size={15}/> Réinitialiser</button>}
             </section>
 
-            <div className="result-head"><strong>{filtered.length + (view === 'collection' ? scannedCollection.length : 0)} carte{filtered.length + (view === 'collection' ? scannedCollection.length : 0)!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
+            <div className="result-head"><strong>{filtered.length} carte{filtered.length!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
             <section className="card-grid">
               {[...filtered].sort((a,b)=>b.score-a.score).map(card =>
                 <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={favorites.includes(card.id)} collected={collection.includes(card.id)}
                   onOpen={()=>setSelected(card)} onRetry={()=>retry(card.id)}
                   onFavorite={()=>toggle(card.id,favorites,setFavorites)}
-                  onCollect={()=>toggle(card.id,collection,setCollection)}
+                  onCollect={()=>togglePortfolioCard(card)}
                 />
               )}
             </section>
-            {view === 'collection' && scannedCollection.length > 0 && (
-              <section className="scanned-collection">
-                <div className="result-head"><strong>Cartes ajoutées avec le scanner</strong><span>Données TCGdex mémorisées dans ce navigateur</span></div>
-                <div className="scanned-collection-grid">
-                  {scannedCollection.map((card) => (
-                    <article key={card.id}>
-                      <div className="scanned-collection-image"><CardImage image={card.image} fallbackImage={card.fallbackImage} name={card.name} quality="low"/></div>
-                      <div>
-                        <span className="source-badge">Carte scannée</span>
-                        <h3>{card.name}</h3>
-                        <p>{card.setName ?? 'Extension inconnue'} · n° {card.localId ?? '—'}</p>
-                        <LivePrice live={card}/>
-                        <button onClick={() => toggleScannedCollection(card)}><X size={16}/> Retirer de ma collection</button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
-            {filtered.length===0 && (view !== 'collection' || scannedCollection.length === 0) && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
+            {filtered.length===0 && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
           </>}
 
           {view==='scanner' && <CardScanner
@@ -213,7 +213,7 @@ function App() {
         favorite={favorites.includes(selected.id)}
         collected={collection.includes(selected.id)}
         onFavorite={()=>toggle(selected.id,favorites,setFavorites)}
-        onCollect={()=>toggle(selected.id,collection,setCollection)}
+        onCollect={()=>togglePortfolioCard(selected)}
       />}
     </div>
   )
