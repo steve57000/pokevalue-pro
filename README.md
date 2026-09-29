@@ -21,6 +21,47 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 - historique des scans et collection conservés dans le navigateur ;
 - application installable sur l’écran d’accueil ;
 - modes clair et sombre.
+- classeur par impression avec progression, filtres possédées/manquantes et quantités ;
+- sauvegarde chiffrée en transit vers un dépôt GitHub privé, avec vérification du compte et du SHA ;
+- export/import JSON pour récupération hors ligne.
+
+## Classeur et modèle de données
+
+La page **Ma collection** est le classeur. Le bouton « Je possède » ajoute l'impression exacte ;
+la recherche et le scanner réutilisent le même identifiant TCGdex et demandent toujours une
+confirmation. Une impression est identifiée par `source`, `setId`, `cardId`, `language` et
+`variant` — jamais par son seul nom ou numéro. Le document local versionné est conservé dans
+`localStorage` et reste disponible hors ligne. Voir [`docs/data-sources.md`](docs/data-sources.md)
+pour les sources, limites de prix et vérifications de séries.
+
+### Créer la sauvegarde GitHub à accès minimal
+
+1. Sur GitHub, créer un **nouveau dépôt privé dédié**, par exemple `pokemon-collection-data`. Ne
+   pas utiliser le dépôt public du site.
+2. Ouvrir **Settings → Developer settings → Personal access tokens → Fine-grained tokens** puis
+   **Generate new token**.
+3. Choisir son compte comme resource owner, **Only select repositories**, puis sélectionner
+   uniquement le dépôt privé créé à l'étape 1.
+4. Dans **Repository permissions**, accorder seulement **Contents: Read and write**. Choisir une
+   expiration courte et créer le jeton.
+5. Dans l'interface **Ma collection**, saisir le propriétaire, le nom du dépôt et le jeton. Ne jamais
+   le coller dans une issue, un chat, une URL ou le dépôt de code. Le jeton reste en mémoire et est
+   oublié au rechargement.
+6. Cliquer **Vérifier et charger** : l'application affiche le compte GitHub réellement authentifié
+   et charge `collection/v1/portfolio.json` s'il existe. Cliquer ensuite **Sauvegarder**.
+
+La sauvegarde fournit le SHA courant lors d'une mise à jour, ce qui empêche un écrasement
+silencieux. En cas de changement concurrent, l'état **Conflit** demande de recharger et fusionner.
+Les états **Local**, **En attente** et **Synchronisé** indiquent clairement la situation. Un jeton
+révoqué/expiré ou une panne réseau n'efface pas la copie locale. **Export JSON** permet une copie
+de récupération ; **Import JSON** restaure un document versionné.
+
+### Retrouver la collection sur un autre navigateur
+
+1. Ouvrir le site sur le nouvel appareil et aller dans **Ma collection**.
+2. Saisir les trois informations GitHub dans l'interface (jamais dans la conversation).
+3. Cliquer **Vérifier et charger** avant toute modification locale.
+4. Vérifier le compte affiché et les cartes restaurées, effectuer les changements, puis sauvegarder.
 
 ## Fonctionnement du scanner
 
