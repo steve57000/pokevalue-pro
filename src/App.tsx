@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
-  Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine
+  Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine, Cloud, Menu
 } from 'lucide-react'
 import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
 import { CardScanner } from './components/CardScanner'
 import { Portfolio } from './components/Portfolio'
+import { CollectionSyncSettings } from './components/CollectionSyncSettings'
+import { ScrollToTop } from './components/ScrollToTop'
 import { LivePrice } from './components/LivePrice'
 import { selectCardmarketPrice } from './domain/pricing'
 import type { ScannerCandidate } from './domain/scanner'
@@ -17,8 +19,9 @@ import { money } from './utils/money'
 import { readStoredJson, readStoredStringArray } from './utils/storage'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
+import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
 
-type View = 'catalogue' | 'featured' | 'scanner' | 'favorites' | 'collection' | 'estimator' | 'guide'
+type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
 
@@ -38,7 +41,7 @@ function readRecentScans(): ScannerCandidate[] {
 
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
-  const [view, setView] = useState<View>('catalogue')
+  const [view, setView] = useState<View>('collection')
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -49,7 +52,9 @@ function App() {
     try { return parseCollection(readStoredJson<unknown>('pv-portfolio-v1', emptyCollection())) } catch { return emptyCollection() }
   })
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { entries: liveCards, retry } = useLiveCards(cards)
+  const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -98,11 +103,11 @@ function App() {
   }
 
   const nav = [
-    {id:'catalogue', label:'Toutes les extensions', icon:BookOpen},
+    {id:'collection', label:'Collection', icon:Library},
     {id:'featured', label:'Cartes à surveiller', icon:TrendingUp},
     {id:'scanner', label:'Scanner une carte', icon:ScanLine},
     {id:'favorites', label:'Favoris', icon:Heart},
-    {id:'collection', label:'Ma collection', icon:Library},
+    {id:'sync', label:'Sauvegarde', icon:Cloud},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},
     {id:'guide', label:'Guide achat', icon:BookOpen},
   ] as const
@@ -141,7 +146,7 @@ function App() {
         </header>
 
         <div className="content">
-          <div style={{display:view==='collection'||view==='catalogue'?'block':'none'}}><Portfolio document={portfolio} onChange={setPortfolio} mode={view==='catalogue'?'catalogue':'collection'}/></div>
+          <div style={{display:view==='collection'?'block':'none'}}><Portfolio document={portfolio} onChange={setPortfolio}/></div>
           {(view==='featured' || view==='favorites') && <>
             <section className="hero">
               <div>
@@ -194,12 +199,18 @@ function App() {
           />}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
+          {view==='sync' && <CollectionSyncSettings sync={githubSync} document={portfolio} onChange={setPortfolio}/>}
         </div>
       </main>
 
       <nav className="bottom-nav">
-        {nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
+        {nav.filter(item=>['collection','featured','scanner','favorites'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
+        <button className={['sync','estimator','guide'].includes(view)?'active':''} onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
+
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{setView(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+
+      <ScrollToTop hidden={Boolean(selected)||mobileMenuOpen}/>
 
       {selected && <Detail card={selected} liveEntry={liveCards[selected.id]} onClose={()=>setSelected(null)}
         favorite={favorites.includes(selected.id)}
