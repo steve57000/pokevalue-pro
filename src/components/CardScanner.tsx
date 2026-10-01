@@ -345,7 +345,7 @@ export function CardScanner({
             <option value="fr">Français</option>
             <option value="en">Anglais</option>
             <option value="ja">Japonais</option>
-            <option value="zh-cn">Chinois simplifié</option>
+            <option value="zh-tw">Chinois traditionnel</option>
           </select>
         </label>
       </div>

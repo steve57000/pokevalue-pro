@@ -13,3 +13,6 @@ describe('collection portfolio', () => {
     expect(mergeCollections(added, removed).entries[0].quantity).toBe(0)
   })
 })
+
+import {totalValuesByCurrency} from './collection'
+it('multiplie les quantités mais ne mélange jamais EUR et USD',()=>expect(totalValuesByCurrency([{value:10,quantity:3,currency:'EUR'},{value:5,quantity:2,currency:'USD'}])).toEqual({EUR:30,USD:10}))

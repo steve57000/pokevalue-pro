@@ -76,3 +76,7 @@ export function parseCollection(value: unknown): CollectionDocument {
   }
   return candidate as CollectionDocument
 }
+
+export function totalValuesByCurrency(values:{value:number;quantity:number;currency:string}[]):Record<string,number>{
+ return values.reduce<Record<string,number>>((totals,item)=>{totals[item.currency]=(totals[item.currency]??0)+item.value*item.quantity;return totals},{})
+}
