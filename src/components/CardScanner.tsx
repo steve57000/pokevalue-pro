@@ -47,6 +47,8 @@ type CardScannerProps = {
   onToggleCollection: (candidate: ScannerCandidate) => void
 }
 
+export const PHOTO_RECOGNITION_ENABLED = false
+
 const DEFAULT_QUALITY: FrameQuality = {
   brightness: 0,
   sharpness: 0,
@@ -332,9 +334,9 @@ export function CardScanner({
     <section className="scanner-page">
       <div className="scanner-heading">
         <div>
-          <span className="eyebrow"><ScanLine size={16}/> Scanner mobile</span>
-          <h1>Reconnaître une carte avec la caméra</h1>
-          <p>Cadre une seule carte, face avant, bien à plat. PokéValue lit localement son nom et son numéro, puis recherche les correspondances TCGdex.</p>
+          <span className="eyebrow"><ScanLine size={16}/> Identification fiable</span>
+          <h1>Identifier une carte</h1>
+          <p>Recherche par nom ou numéro dans TCGdex. La reconnaissance photo expérimentale est masquée car sa fiabilité ne suffit pas encore pour éviter les faux positifs.</p>
         </div>
         <label className="language-select">
           Langue de la carte
@@ -349,7 +351,7 @@ export function CardScanner({
       </div>
 
       <div className="scanner-layout">
-        <div className="scanner-camera-card">
+        <div className={`scanner-camera-card ${PHOTO_RECOGNITION_ENABLED?'':'photo-disabled'}`} aria-hidden={!PHOTO_RECOGNITION_ENABLED}>
           <div className={`camera-viewport ${cameraState}`}>
             <video ref={videoRef} autoPlay muted playsInline aria-label="Aperçu de la caméra"/>
             {cameraState !== 'active' && (

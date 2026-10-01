@@ -1,33 +1,17 @@
 import { useEffect, useReducer } from 'react'
 import { tcgDexProvider } from '../api/tcgdex'
-import { selectCardmarketPrice, type PriceReference } from '../domain/pricing'
+import { recordPriceSnapshot, todayPriceDate } from '../domain/priceHistory'
+import { getPriceStats, selectCardmarketPrice, type CardMarketStats, type PriceReference, type TcgPlayerStats } from '../domain/pricing'
 
-type CachedPrice = { status: 'loading' | 'success' | 'error'; price?: PriceReference | null }
-const cache = new Map<string, CachedPrice>()
-const listeners = new Set<() => void>()
-const queue: string[] = []
-const queued = new Set<string>()
-let running = 0
-const CONCURRENCY = 7
-
-function notify() { listeners.forEach(listener => listener()) }
-function drain() {
-  while (running < CONCURRENCY && queue.length) {
-    const id = queue.shift()!; queued.delete(id); running += 1; cache.set(id, { status: 'loading' }); notify()
-    tcgDexProvider.getCard(id, 'fr').then(card => cache.set(id, { status: 'success', price: selectCardmarketPrice(card.pricing) ?? null }))
-      .catch(() => cache.set(id, { status: 'error' })).finally(() => { running -= 1; notify(); drain() })
-  }
+export type CardPriceState={status:'loading'|'success'|'error';price?:PriceReference|null;cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;language:string}
+const cache=new Map<string,CardPriceState>(),listeners=new Set<()=>void>(),queue:{id:string;language:string}[]=[],queued=new Set<string>();let running=0
+const CONCURRENCY=7, keyOf=(id:string,language:string)=>`price:${language}:${id}`
+function notify(){listeners.forEach(x=>x())}
+function drain(){while(running<CONCURRENCY&&queue.length){const task=queue.shift()!,key=keyOf(task.id,task.language);queued.delete(key);running++;cache.set(key,{status:'loading',language:task.language});notify();tcgDexProvider.getCard(task.id,task.language).then(card=>{const stats=getPriceStats(card.pricing),price=selectCardmarketPrice(card.pricing)??null;cache.set(key,{status:'success',price,language:task.language,...stats});if(price)recordPriceSnapshot({cardId:task.id,language:task.language,date:todayPriceDate(),value:price.value,source:price.provider})}).catch(()=>cache.set(key,{status:'error',language:task.language})).finally(()=>{running--;notify();drain()})}}
+function enqueue(ids:string[],language:string){for(const id of ids){const key=keyOf(id,language);if(!cache.has(key)&&!queued.has(key)){queued.add(key);queue.push({id,language})}}drain()}
+export function useCardPrices(cardIds:string[],language='fr'){
+ const [,render]=useReducer(x=>x+1,0),ids=[...new Set(cardIds)],key=`${language}|${ids.join('|')}`
+ useEffect(()=>{const listener=()=>render();listeners.add(listener);enqueue(ids,language);return()=>{listeners.delete(listener)}},[key])
+ const prices:Record<string,CardPriceState>={};for(const id of ids)prices[id]=cache.get(keyOf(id,language))??{status:'loading',language};return prices
 }
-function enqueue(ids: string[]) {
-  for (const id of ids) if (!cache.has(id) && !queued.has(id)) { queued.add(id); queue.push(id) }
-  drain()
-}
-
-export function useCardPrices(cardIds: string[]) {
-  const [, rerender] = useReducer(value => value + 1, 0)
-  const key = [...new Set(cardIds)].join('|')
-  useEffect(() => { const listener = () => rerender(); listeners.add(listener); enqueue(key ? key.split('|') : []); return () => { listeners.delete(listener) } }, [key])
-  const prices: Record<string, CachedPrice> = {}
-  for (const id of cardIds) prices[id] = cache.get(id) ?? { status: 'loading' }
-  return prices
-}
+export const cardPriceCacheKey=keyOf

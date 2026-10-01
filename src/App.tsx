@@ -105,7 +105,7 @@ function App() {
   const nav = [
     {id:'collection', label:'Collection', icon:Library},
     {id:'featured', label:'Cartes à surveiller', icon:TrendingUp},
-    {id:'scanner', label:'Scanner une carte', icon:ScanLine},
+    {id:'scanner', label:'Identifier une carte', icon:ScanLine},
     {id:'favorites', label:'Favoris', icon:Heart},
     {id:'sync', label:'Sauvegarde', icon:Cloud},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},

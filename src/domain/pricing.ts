@@ -42,3 +42,12 @@ export function getInternalTrend(pricing?: TcgDexPricing | null): 'up' | 'stable
   if (variation <= -5) return 'down'
   return 'stable'
 }
+
+export type CardMarketStats = {
+  currency:'EUR'; source:'cardmarket'; updatedAt?:string; current?:number; trend?:number; avg?:number; avg1?:number; avg7?:number; avg30?:number; low?:number; reverseHoloTrend?:number; reverseHoloAvg30?:number
+}
+export type TcgPlayerStats = {currency:'USD';source:'tcgplayer';updatedAt?:string;low?:number;mid?:number;high?:number;market?:number}
+export function getPriceStats(pricing?:TcgDexPricing|null):{cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats}{
+ const cm=pricing?.cardmarket, tp=pricing?.tcgplayer
+ return {cardmarket:cm?{currency:'EUR',source:'cardmarket',updatedAt:cm.updatedAt??undefined,current:selectCardmarketPrice(pricing)?.value,trend:cm.trend??undefined,avg:cm.avg??undefined,avg1:cm.avg1??undefined,avg7:cm.avg7??undefined,avg30:cm.avg30??undefined,low:cm.low??undefined,reverseHoloTrend:cm.reverseHoloTrend??undefined,reverseHoloAvg30:cm.reverseHoloAvg30??undefined}:undefined,tcgplayer:tp?{currency:'USD',source:'tcgplayer',updatedAt:tp.updatedAt??undefined,low:tp.lowPrice??undefined,mid:tp.midPrice??undefined,high:tp.highPrice??undefined,market:tp.marketPrice??undefined}:undefined}
+}

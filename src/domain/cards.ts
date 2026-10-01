@@ -28,6 +28,16 @@ export type TcgDexPricing = {
     avg7?: number | null
     avg?: number | null
     low?: number | null
+    avg1?: number | null
+    reverseHoloTrend?: number | null
+    reverseHoloAvg30?: number | null
+  } | null
+  tcgplayer?: {
+    updatedAt?: string | null
+    lowPrice?: number | null
+    midPrice?: number | null
+    highPrice?: number | null
+    marketPrice?: number | null
   } | null
 }
 
