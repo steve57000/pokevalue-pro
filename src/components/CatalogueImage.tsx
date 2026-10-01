@@ -1,33 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect,useMemo,useRef,useState } from 'react'
 import type { SetCard } from '../api/sets'
 import { tcgDexProvider } from '../api/tcgdex'
-
-type Props = { card: SetCard; quality?: 'low'|'high'; className?: string }
-export function CatalogueImage({card,quality='low',className=''}: Props) {
-  const [base,setBase] = useState(card.image)
-  const [language,setLanguage] = useState<'fr'|'en'>('fr')
-  const [attempt,setAttempt] = useState(0)
-  const [unavailable,setUnavailable] = useState(false)
-  const container = useRef<HTMLDivElement>(null)
-  const [visible,setVisible] = useState(false)
-  const sources = base ? [`${base}/${quality}.webp`,`${base}/${quality}.png`,`${base}/low.png`] : []
-  useEffect(()=>{
-    const observer = new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'})
-    if(container.current) observer.observe(container.current)
-    return ()=>observer.disconnect()
-  },[])
-  useEffect(()=>{
-    if (!visible || unavailable || (base && attempt < sources.length)) return
-    let active = true
-    if(language==='en'){setUnavailable(true);return}
-    tcgDexProvider.getCard(card.id,'en').then(data=>{
-      if(!active)return
-      if(data.image){setBase(data.image);setLanguage('en');setAttempt(0)}else setUnavailable(true)
-    }).catch(()=>{if(active)setUnavailable(true)})
-    return ()=>{active=false}
-  },[visible,base,attempt,language,card.id,unavailable,sources.length])
-  return <div ref={container} className={`catalogue-image ${className}`}>
-    {sources[attempt]&&!unavailable?<img src={sources[attempt]} alt={`${card.name} ${card.localId}${language==='en'?' — visuel anglais':''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} onError={()=>setAttempt(n=>n+1)}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{unavailable?'Visuel non fourni par la source':'Chargement du visuel…'}</small></div>}
-    {language==='en'&&!unavailable&&<small className="image-language">Visuel anglais</small>}
-  </div>
+import { resolveCardImage } from '../domain/image'
+import type { ExternalCard } from '../domain/cards'
+type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
+const fallbackOrder=(requested:string)=>[requested,'en','ja','zh-tw','zh-cn'].filter((x,i,a)=>a.indexOf(x)===i)
+export function CatalogueImage({card,quality='low',className='',requestedLanguage='fr'}:Props){
+ const [resolved,setResolved]=useState<ExternalCard>(()=>({id:card.id,name:card.name,localId:card.localId,image:card.image,language:requestedLanguage})),[failed,setFailed]=useState(false),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high')
+ useEffect(()=>{if(quality==='high')return;const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality])
+ useEffect(()=>{setResolved({id:card.id,name:card.name,localId:card.localId,image:card.image,language:requestedLanguage});setFailed(false)},[card.id,card.image,card.localId,card.name,requestedLanguage])
+ useEffect(()=>{if(!visible||(!failed&&resolved.image))return;let active=true;(async()=>{for(const language of fallbackOrder(requestedLanguage)){if(language===resolved.language)continue;try{const candidate=await tcgDexProvider.getCard(card.id,language);if(candidate.id===card.id&&candidate.image){if(active){setResolved(candidate);setFailed(false)}return}}catch{/* try the next exact-language printing */}}if(active)setFailed(true)})();return()=>{active=false}},[visible,failed,resolved.image,resolved.language,requestedLanguage,card.id])
+ const image=useMemo(()=>resolveCardImage({card:resolved,requestedLanguage,quality}),[resolved,requestedLanguage,quality])
+ return <div ref={container} className={`catalogue-image ${className}`}>{visible&&image.url&&!failed?<img src={image.url} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} onError={()=>setFailed(true)}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible?'Visuel non fourni par les sources':'Chargement du visuel…'}</small></div>}{image.isFallback&&image.url&&!failed&&<small className="image-language">Visuel {image.language.toUpperCase()}</small>}</div>
 }

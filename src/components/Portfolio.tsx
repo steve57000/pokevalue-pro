@@ -1,112 +1,45 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { listSets, getSet, listSeries, getSeries, type SeriesSummary, type SetDetail, type SetSummary, type SetCard } from '../api/sets'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BarChart3, ChevronDown, Plus } from 'lucide-react'
+import { listSets,getSet,listSeries,getSeries,type SeriesSummary,type SetDetail,type SetSummary,type SetCard } from '../api/sets'
 import { CatalogueImage } from './CatalogueImage'
-import type { CollectionDocument, CollectionEntry } from '../domain/collection'
-import { printingKey, upsertEntry } from '../domain/collection'
-import { CardShowcase } from './CardShowcase'
+import type { CollectionDocument,CollectionEntry } from '../domain/collection'
+import { printingKey,upsertEntry } from '../domain/collection'
 import { CardEditor } from './CardEditor'
+import { CardDetailsModal } from './CardDetailsModal'
+import { SeriesComparison } from './SeriesComparison'
 import { useCardPrices } from '../hooks/useCardPrices'
 import { money } from '../utils/money'
+import { normalizeSearch,sortCatalogueCards,type CardSort } from '../domain/catalogue'
 
-const favorites = ['30th', '30th-c', 'me04', 'me05']
-const isOwned = (entry: CollectionEntry) => entry.quantity > 0
-const cardKey = (card: SetCard) => printingKey({ source: 'tcgdex', setId: card.id.slice(0, card.id.lastIndexOf('-')), cardId: card.id, language: 'fr', variant: 'normal' })
-const cardmarketSearch = (card: SetCard, setName: string) => `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${card.name} ${setName} ${card.localId}`)}`
-
-type Props = { document: CollectionDocument; onChange: (document: CollectionDocument) => void }
-export function Portfolio({ document, onChange }: Props) {
-  const [filter, setFilter] = useState<'all'|'owned'|'missing'>('all')
-  const [series, setSeries] = useState<SeriesSummary[]>([])
-  const [expandedFamily, setExpandedFamily] = useState<string|null>(null)
-  const [familySets, setFamilySets] = useState<Record<string, SetSummary[]>>({})
-  const [familyError, setFamilyError] = useState('')
-  const [sets, setSets] = useState<SetSummary[]>([])
-  const [selectedSet, setSelectedSet] = useState('30th')
-  const [detail, setDetail] = useState<SetDetail>()
-  const [catalogueError, setCatalogueError] = useState('')
-  const [search, setSearch] = useState('')
-  const [seriesQuery, setSeriesQuery] = useState('')
-  const [setPickerOpen, setSetPickerOpen] = useState(false)
-  const [spotlight, setSpotlight] = useState<SetCard | null>(null)
-  const [editing, setEditing] = useState<SetCard | null>(null)
-  const documentRef = useRef(document)
-  documentRef.current = document
-
-  useEffect(() => {
-    let active = true
-    listSeries().then(data => { if (active) setSeries(data.reverse()) }).catch(error => { if (active) setFamilyError((error as Error).message) })
-    listSets().then(data => { if (active) setSets(data) }).catch(error => { if (active) setCatalogueError((error as Error).message) })
-    return () => { active = false }
-  }, [])
-  useEffect(() => {
-    let active = true
-    setDetail(undefined)
-    getSet(selectedSet).then(data => { if (active) { setDetail(data); setCatalogueError('') } }).catch(error => { if (active) setCatalogueError((error as Error).message) })
-    return () => { active = false }
-  }, [selectedSet])
-
-  useEffect(() => {
-    if (!expandedFamily || familySets[expandedFamily]) return
-    let active = true
-    setFamilyError('')
-    getSeries(expandedFamily).then(data => { if (active) setFamilySets(current => ({ ...current, [data.id]: data.sets })) }).catch(error => { if (active) setFamilyError((error as Error).message) })
-    return () => { active = false }
-  }, [expandedFamily, familySets])
-
-  const owned = useMemo(() => new Set(document.entries.filter(isOwned).map(e => e.key)), [document])
-  const shown = (detail?.cards ?? []).filter(card => (filter === 'all' || (filter === 'owned' ? owned.has(cardKey(card)) : !owned.has(cardKey(card)))) && `${card.name} ${card.localId}`.toLowerCase().includes(search.toLowerCase()))
-  const setEntries = document.entries.filter(e => isOwned(e) && e.setId === selectedSet)
-  const ownedEntries = document.entries.filter(isOwned)
-  const priceIds = [...new Set([...ownedEntries.map(e=>e.cardId), ...(detail?.cards.map(c=>c.id) ?? [])])]
-  const prices = useCardPrices(priceIds)
-  const summarize = (entries: CollectionEntry[]) => entries.reduce((result,entry)=>{
-    const unit = entry.manualPrice ?? prices[entry.cardId]?.price?.value
-    if (unit === undefined || prices[entry.cardId]?.status === 'error' && entry.manualPrice === undefined) result.missing += 1
-    else { result.value += unit * entry.quantity; result.valued += 1 }
-    return result
-  },{value:0,valued:0,missing:0})
-  const globalSummary = summarize(ownedEntries)
-  const setSummary = summarize(setEntries)
-  const setEntry = (card: SetCard, change: Partial<CollectionEntry> = {}) => {
-    const previous = documentRef.current.entries.find(e => e.key === cardKey(card))
-    const next = upsertEntry(documentRef.current, {
-      source: 'tcgdex', setId: selectedSet, cardId: card.id, language: 'fr', variant: 'normal',
-      name: card.name, setName: detail?.name ?? selectedSet, number: card.localId, image: card.image,
-      rarity: previous?.rarity, quantity: previous?.quantity ?? 1, condition: previous?.condition ?? 'near-mint',
-      notes: previous?.notes ?? '', manualPrice: previous?.manualPrice, ...change,
-    })
-    documentRef.current = next; onChange(next)
-  }
-  const chooseSet = (id: string) => { setSelectedSet(id); setSearch(''); setSetPickerOpen(false); setSeriesQuery('') }
-  const editCard = (card: SetCard) => { setSpotlight(null); setEditing(card) }
-  return <section className="portfolio-page">
-    <div className="portfolio-heading"><div><span className="eyebrow">Catalogue et classeur numérique</span><h1>Collection</h1><p>Parcours toutes les extensions, ajoute tes cartes et suis leur valeur.</p></div></div>
-    <div className="collection-summary"><div><small>Ma collection</small><strong>{ownedEntries.length} cartes différentes</strong><span>{ownedEntries.reduce((sum,e)=>sum+e.quantity,0)} exemplaires</span></div><div><small>Valeur estimée</small><strong>{globalSummary.missing?'≈ ':''}{money(globalSummary.value)}</strong><span>{globalSummary.valued}/{ownedEntries.length} cartes valorisées{globalSummary.missing?` · ${globalSummary.missing} sans prix`:''}</span></div><div><small>Extension actuelle</small><strong>{detail?.name ?? 'Chargement…'}</strong><span>{setSummary.missing?'≈ ':''}{money(setSummary.value)} · {setSummary.valued}/{setEntries.length} valorisées</span></div></div>
-    <div className="series-layout"><div className="series-selector"><div><span className="eyebrow">Explorer les extensions</span><h2>{detail?.name ?? 'Choisir une série'}</h2><p>{detail?.serie?.name ?? 'Catalogue français'} · {setEntries.length}/{detail?.cardCount.total ?? '…'} cartes possédées · {detail?.cards.length ?? '…'} cartes au catalogue</p></div>
-      <button className="series-picker-trigger" aria-expanded={setPickerOpen} aria-controls="series-picker-list" onClick={()=>setSetPickerOpen(open=>!open)}>Changer de série <ChevronDown size={18} aria-hidden="true"/></button>
-      <div className="series-shortcuts">{favorites.map(id=>sets.find(s=>s.id===id)).filter((s):s is SetSummary=>Boolean(s)).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>chooseSet(set.id)}>{set.name}</button>)}</div>
-      {setPickerOpen&&<div className="series-picker" id="series-picker-list">
-        <input className="series-search" placeholder="Rechercher une extension…" value={seriesQuery} onChange={e=>setSeriesQuery(e.target.value)}/>
-        {seriesQuery&&<div className="series-picker-list global-set-results">{sets.filter(set=>set.name.toLocaleLowerCase('fr').includes(seriesQuery.toLocaleLowerCase('fr'))).slice(0,30).map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>chooseSet(set.id)}>{set.name}</button>)}</div>}
-        {!seriesQuery&&<><p className="series-picker-help">Choisir une famille puis une extension</p>
-        <div className="family-buttons">{series.map(family=><button key={family.id} aria-expanded={expandedFamily===family.id} className={expandedFamily===family.id?'active':''} onClick={()=>{setExpandedFamily(current=>current===family.id?null:family.id);setSeriesQuery('')}}>{family.name}<ChevronDown size={16}/></button>)}</div>
-        {familyError&&<p role="alert">{familyError}</p>}
-        {expandedFamily&&<div className="family-extensions"><div className="series-picker-list series-picker-group">{!familySets[expandedFamily]?<p>Chargement des extensions…</p>:familySets[expandedFamily].map(set=><button key={set.id} className={selectedSet===set.id?'active':''} onClick={()=>chooseSet(set.id)}>{set.name}<small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div></div>}</>}
-      </div>}
-    </div>
-      <div className="series-content">
-        <div className="series-controls"><input placeholder="Nom ou numéro dans cette série" value={search} onChange={e=>setSearch(e.target.value)}/>{(['all','owned','missing'] as const).map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f==='all'?'Toutes':f==='owned'?'Possédées':'Manquantes'}</button>)}</div>
-        {catalogueError&&<p role="alert">{catalogueError} <button onClick={()=>void getSet(selectedSet).then(setDetail).catch(e=>setCatalogueError((e as Error).message))}>Réessayer</button></p>}
-        {!detail&&!catalogueError&&<p>Chargement des cartes…</p>}
-        <div className="binder-grid">{shown.map(card=>{const entry=document.entries.find(e=>e.key===cardKey(card));const has=!!entry&&isOwned(entry);return <article key={card.id} className={has?'owned':''}>
-          <button className="binder-preview" onClick={()=>setSpotlight(card)} aria-label={`Voir ${card.name} en grand`}><CatalogueImage key={card.id} card={card} className="binder-image"/><span>Voir en grand ↗</span></button>
-          <strong>{card.name}</strong><span>{card.localId}/{detail?.cardCount.official ?? detail?.cardCount.total} · {detail?.name}</span><div className="binder-price"><small>Prix marché</small>{prices[card.id]?.status==='loading'?<i className="price-skeleton"/>:prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div><div className="owned-line"><span>{has?'✓ Possédée':'Non possédée'}</span>{has&&entry!.quantity>1&&<b>×{entry!.quantity}</b>}</div><button aria-pressed={has} onClick={()=>editCard(card)}>{has?'Modifier ma carte':'Ajouter à ma collection'}</button>
-          <a href={cardmarketSearch(card,detail?.name??'')} target="_blank" rel="noopener noreferrer">Rechercher sur Cardmarket ↗</a>
-          {has&&entry&&<small className="binder-owned-summary">{entry.manualPrice!==undefined?`${entry.manualPrice.toFixed(2)} € manuel`:entry.condition.replace('-', ' ')}</small>}
-        </article>})}</div>
-      </div></div>
-    {spotlight&&<CardShowcase card={spotlight} setName={detail?.name??selectedSet} owned={owned.has(cardKey(spotlight))} onToggle={()=>editCard(spotlight)} onClose={()=>setSpotlight(null)} cardmarketUrl={cardmarketSearch(spotlight,detail?.name??'')}/>}
-    {editing&&<CardEditor key={editing.id} card={editing} setName={detail?.name??selectedSet} entry={document.entries.find(e=>e.key===cardKey(editing)&&e.quantity>0)} automaticPrice={prices[editing.id]?.price} onSave={draft=>{setEntry(editing,draft);setEditing(null)}} onRemove={()=>{setEntry(editing,{quantity:0});setEditing(null)}} onClose={()=>setEditing(null)}/>}
-  </section>
+const VIEW_KEY='pv-collection-view-v1',RECENT_KEY='pv-recent-sets-v1'
+const languages=[['fr','FR'],['en','EN'],['ja','JP'],['zh-tw','ZH']] as const
+const isOwned=(entry:CollectionEntry)=>entry.quantity>0
+const read=<T,>(key:string,fallback:T):T=>{try{return JSON.parse(sessionStorage.getItem(key)??'') as T}catch{return fallback}}
+type ViewState={selectedSet:string;filter:'all'|'owned'|'missing';search:string;sort:CardSort;expandedFamily:string|null;language:string;scrollY:number}
+const initial:ViewState={selectedSet:'30th',filter:'all',search:'',sort:'number',expandedFamily:null,language:'fr',scrollY:0}
+const cardmarketSearch=(card:SetCard,setName:string)=>`https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${card.name} ${setName} ${card.localId}`)}`
+type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void}
+export function Portfolio({document,onChange}:Props){
+ const saved=useRef(read(VIEW_KEY,initial)).current
+ const [filter,setFilter]=useState(saved.filter),[series,setSeries]=useState<SeriesSummary[]>([]),[expandedFamily,setExpandedFamily]=useState<string|null>(saved.expandedFamily),[familySets,setFamilySets]=useState<Record<string,SetSummary[]>>({}),[familyError,setFamilyError]=useState(''),[sets,setSets]=useState<SetSummary[]>([]),[selectedSet,setSelectedSet]=useState(saved.selectedSet),[detail,setDetail]=useState<SetDetail>(),[catalogueError,setCatalogueError]=useState(''),[search,setSearch]=useState(saved.search),[seriesQuery,setSeriesQuery]=useState(''),[setPickerOpen,setSetPickerOpen]=useState(false),[editing,setEditing]=useState<SetCard|null>(null),[details,setDetails]=useState<SetCard|null>(null),[sort,setSort]=useState<CardSort>(saved.sort),[language,setLanguage]=useState(saved.language),[recents,setRecents]=useState<string[]>(()=>read(RECENT_KEY,[])),[comparing,setComparing]=useState(false)
+ const documentRef=useRef(document);documentRef.current=document
+ const keyFor=useCallback((card:SetCard)=>printingKey({source:'tcgdex',setId:card.id.slice(0,card.id.lastIndexOf('-')),cardId:card.id,language,variant:'normal'}),[language])
+ useEffect(()=>{let active=true;listSeries().then(x=>active&&setSeries(x.reverse())).catch(e=>active&&setFamilyError((e as Error).message));listSets(language).then(x=>active&&setSets(x)).catch(e=>active&&setCatalogueError((e as Error).message));return()=>{active=false}},[language])
+ useEffect(()=>{let active=true;setDetail(undefined);getSet(selectedSet,language).then(x=>{if(active){setDetail(x);setCatalogueError('')}}).catch(e=>active&&setCatalogueError((e as Error).message));return()=>{active=false}},[selectedSet,language])
+ useEffect(()=>{if(!expandedFamily||familySets[expandedFamily])return;let active=true;getSeries(expandedFamily).then(x=>active&&setFamilySets(c=>({...c,[x.id]:x.sets}))).catch(e=>active&&setFamilyError((e as Error).message));return()=>{active=false}},[expandedFamily,familySets])
+ useEffect(()=>{const persist=()=>sessionStorage.setItem(VIEW_KEY,JSON.stringify({selectedSet,filter,search,sort,expandedFamily,language,scrollY:window.scrollY}));persist();addEventListener('scroll',persist,{passive:true});return()=>removeEventListener('scroll',persist)},[selectedSet,filter,search,sort,expandedFamily,language])
+ useEffect(()=>{if(saved.scrollY)requestAnimationFrame(()=>scrollTo(0,saved.scrollY))},[])
+ const entriesById=useMemo(()=>new Map(document.entries.filter(e=>e.language===language&&e.quantity>0).map(e=>[e.cardId,e])),[document,language]),ownedEntries=document.entries.filter(isOwned),setEntries=ownedEntries.filter(e=>e.setId===selectedSet&&e.language===language),priceIds=[...new Set([...ownedEntries.filter(e=>e.language===language).map(e=>e.cardId),...(detail?.cards.map(c=>c.id)??[])])],prices=useCardPrices(priceIds,language)
+ const shown=useMemo(()=>sortCatalogueCards((detail?.cards??[]).filter(card=>(filter==='all'||(filter==='owned'?entriesById.has(card.id):!entriesById.has(card.id)))&&normalizeSearch(`${card.name} ${card.localId}`).includes(normalizeSearch(search))),sort,prices,entriesById),[detail,filter,entriesById,search,sort,prices])
+ const summarize=(entries:CollectionEntry[])=>entries.reduce((r,e)=>{const unit=e.manualPrice??(e.language===language?prices[e.cardId]?.price?.value:undefined);if(unit===undefined)r.missing++;else{r.value+=unit*e.quantity;r.valued++}return r},{value:0,valued:0,missing:0}),globalSummary=summarize(ownedEntries.filter(e=>e.language===language)),setSummary=summarize(setEntries)
+ const setEntry=(card:SetCard,change:Partial<CollectionEntry>={})=>{const previous=documentRef.current.entries.find(e=>e.key===keyFor(card));const next=upsertEntry(documentRef.current,{source:'tcgdex',setId:selectedSet,cardId:card.id,language,variant:'normal',name:card.name,setName:detail?.name??selectedSet,number:card.localId,image:card.image,rarity:card.rarity??previous?.rarity,quantity:previous?.quantity??1,condition:previous?.condition??'near-mint',notes:previous?.notes??'',manualPrice:previous?.manualPrice,...change});documentRef.current=next;onChange(next)}
+ const chooseSet=(id:string)=>{setSelectedSet(id);setSetPickerOpen(false);setSeriesQuery('');const next=[id,...recents.filter(x=>x!==id)].slice(0,5);setRecents(next);localStorage.setItem(RECENT_KEY,JSON.stringify(next))}
+ const query=normalizeSearch(seriesQuery),results=query?sets.filter(s=>normalizeSearch(`${s.name} ${s.id} ${series.find(f=>familySets[f.id]?.some(x=>x.id===s.id))?.name??''}`).includes(query)).slice(0,30):[]
+ return <section className="portfolio-page"><div className="portfolio-heading"><div><span className="eyebrow">Catalogue et classeur numérique</span><h1>Collection</h1><p>Moins de clics, sans perdre ta position.</p></div><div className="language-tabs" aria-label="Langue">{languages.map(([id,label])=><button className={language===id?'active':''} onClick={()=>setLanguage(id)} key={id}>{label}</button>)}</div></div>
+ <div className="collection-summary"><div><small>Ma collection · {language.toUpperCase()}</small><strong>{ownedEntries.filter(e=>e.language===language).length} cartes différentes</strong><span>{ownedEntries.filter(e=>e.language===language).reduce((s,e)=>s+e.quantity,0)} exemplaires</span></div><div><small>Valeur estimée</small><strong>{globalSummary.missing?'≈ ':''}{money(globalSummary.value)}</strong><span>{globalSummary.valued} valorisées · {globalSummary.missing} sans prix</span></div><div><small>Extension actuelle</small><strong>{detail?.name??'Chargement…'}</strong><span>{money(setSummary.value)} · {setEntries.length}/{detail?.cardCount.total??'…'} possédées</span></div></div>
+ <div className="series-selector"><div><span className="eyebrow">Explorer les extensions</span><h2>{detail?.name??'Choisir une série'}</h2><p>{detail?.serie?.name??`Catalogue ${language.toUpperCase()}`}</p></div><button className="series-picker-trigger" aria-expanded={setPickerOpen} aria-controls="series-picker-list" onClick={()=>setSetPickerOpen(x=>!x)}>Changer de série <ChevronDown size={18}/></button>
+ {setPickerOpen&&<div className="series-picker" id="series-picker-list"><input className="series-search" placeholder="Rechercher une série ou extension…" value={seriesQuery} onChange={e=>setSeriesQuery(e.target.value)}/>{!query&&recents.length>0&&<div className="recent-sets"><small>Récemment consultées</small>{recents.map(id=>sets.find(s=>s.id===id)).filter((x):x is SetSummary=>!!x).map(s=><button key={s.id} onClick={()=>chooseSet(s.id)}>{s.name}</button>)}</div>}{query?<div className="series-picker-list global-set-results">{results.map(set=><button key={set.id} onClick={()=>chooseSet(set.id)}><span>{set.name}<small>{series.find(f=>familySets[f.id]?.some(x=>x.id===set.id))?.name??set.id}</small></span></button>)}</div>:<div className="series-families">{series.map(family=><div className="series-family" key={family.id}><button className="series-family-trigger" aria-expanded={expandedFamily===family.id} aria-controls={`family-${family.id}`} onClick={()=>setExpandedFamily(x=>x===family.id?null:family.id)}>{family.name}<ChevronDown size={16}/></button>{expandedFamily===family.id&&<div className="series-family-content" id={`family-${family.id}`}>{!familySets[family.id]?<p>Chargement…</p>:familySets[family.id].map(set=><button key={set.id} onClick={()=>chooseSet(set.id)}>{set.name}<small>{document.entries.filter(e=>isOwned(e)&&e.setId===set.id).length}/{set.cardCount.total}</small></button>)}</div>}</div>)}</div>}{familyError&&<p role="alert">{familyError}</p>}</div>}</div>
+ <div className="series-controls"><button onClick={()=>setComparing(true)}>Comparer les séries</button><input placeholder="Nom ou numéro dans cette série" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="Trier les cartes" value={sort} onChange={e=>setSort(e.target.value as CardSort)}><option value="number">Numéro de carte</option><option value="name-asc">Nom A → Z</option><option value="name-desc">Nom Z → A</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option><option value="owned">Possédées en premier</option><option value="quantity">Quantité décroissante</option></select>{(['all','owned','missing'] as const).map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f==='all'?'Toutes':f==='owned'?'Possédées':'Manquantes'}</button>)}</div>
+ {catalogueError&&<p role="alert">{catalogueError}</p>}<div className="binder-grid">{shown.map(card=>{const entry=entriesById.get(card.id),has=!!entry;return <article key={card.id} className={has?'owned':''}><button className="binder-preview" onClick={()=>setDetails(card)} aria-label={`Détails et statistiques de ${card.name}`}><CatalogueImage card={card} requestedLanguage={language}/></button><strong>{card.name}</strong><span>{card.localId}/{detail?.cardCount.official??detail?.cardCount.total} · {detail?.name}</span><div className="binder-price"><small>Prix marché · {language.toUpperCase()}</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div><div className="card-quick-actions"><span>{has?`✓ ×${entry.quantity}`:'Non possédée'}</span>{has?<button onClick={()=>setEntry(card,{quantity:entry.quantity+1})} aria-label={`Ajouter un exemplaire de ${card.name}`}><Plus size={15}/>1</button>:<button onClick={()=>setEditing(card)}>Ajouter</button>}<button onClick={()=>setDetails(card)} aria-label={`Détails et statistiques de ${card.name}`}><BarChart3 size={17}/></button></div></article>})}</div>
+ {comparing&&<SeriesComparison sets={sets} currentSet={selectedSet} entries={ownedEntries} prices={prices} language={language} onClose={()=>setComparing(false)}/>} {details&&<CardDetailsModal card={details} setName={detail?.name??selectedSet} language={language} entry={entriesById.get(details.id)} price={prices[details.id]} onQuantity={quantity=>setEntry(details,{quantity})} onEdit={()=>{setDetails(null);setEditing(details)}} onClose={()=>setDetails(null)}/>} {editing&&<CardEditor key={editing.id} card={editing} setName={detail?.name??selectedSet} entry={entriesById.get(editing.id)} automaticPrice={prices[editing.id]?.price} onSave={draft=>{setEntry(editing,draft);setEditing(null)}} onRemove={()=>{setEntry(editing,{quantity:0});setEditing(null)}} onClose={()=>setEditing(null)}/>}</section>
 }
