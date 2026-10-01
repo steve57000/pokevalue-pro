@@ -7,3 +7,6 @@ export function recordPriceSnapshot(snapshot:PriceSnapshot,storage:Pick<Storage,
  storage.setItem(KEY,JSON.stringify(history));return history
 }
 export function todayPriceDate(){return new Date().toISOString().slice(0,10)}
+export function getPriceHistory(cardId:string,language:string,storage:Pick<Storage,'getItem'>=localStorage):PriceSnapshot[]{
+ try{const parsed=JSON.parse(storage.getItem(KEY)??'[]');if(!Array.isArray(parsed))return [];return parsed.filter((x):x is PriceSnapshot=>x&&x.cardId===cardId&&x.language===language&&typeof x.value==='number').sort((a,b)=>a.date.localeCompare(b.date))}catch{return []}
+}

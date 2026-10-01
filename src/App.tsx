@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
@@ -7,12 +7,13 @@ import {
 import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
-import { CardScanner } from './components/CardScanner'
+import { CardIdentifier } from './components/CardIdentifier'
+import {CardDetailsModal} from './components/CardDetailsModal'
 import { Portfolio } from './components/Portfolio'
 import { CollectionSyncSettings } from './components/CollectionSyncSettings'
 import { ScrollToTop } from './components/ScrollToTop'
 import { LivePrice } from './components/LivePrice'
-import { selectCardmarketPrice } from './domain/pricing'
+import { getPriceStats,selectCardmarketPrice } from './domain/pricing'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
@@ -42,6 +43,7 @@ function readRecentScans(): ScannerCandidate[] {
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
   const [view, setView] = useState<View>('collection')
+  const viewRef=useRef<View>('collection'), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,estimator:0,guide:0,sync:0})
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -102,6 +104,8 @@ function App() {
     }))
   }
 
+  const navigate=useCallback((next:View)=>{if(next===viewRef.current)return;scrollByView.current[viewRef.current]=window.scrollY;viewRef.current=next;setView(next);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))},[])
+
   const nav = [
     {id:'collection', label:'Collection', icon:Library},
     {id:'featured', label:'Cartes à surveiller', icon:TrendingUp},
@@ -122,7 +126,7 @@ function App() {
         <nav>
           {nav.map(item => {
             const Icon = item.icon
-            return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}>
+            return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
               <Icon size={19}/><span>{item.label}</span>
               {item.id==='favorites' && favorites.length>0 && <b>{favorites.length}</b>}
               {item.id==='collection' && portfolio.entries.some(e=>e.quantity>0) && <b>{portfolio.entries.filter(e=>e.quantity>0).length}</b>}
@@ -133,7 +137,7 @@ function App() {
           <Sparkles size={20}/>
           <strong>Mode chineur</strong>
           <p>Repère plus vite les cartes intéressantes dans les lots.</p>
-          <button onClick={()=>setView('guide')}>Voir la méthode <ChevronRight size={15}/></button>
+          <button onClick={()=>navigate('guide')}>Voir la méthode <ChevronRight size={15}/></button>
         </div>
         <p className="disclaimer">Prix Cardmarket via TCGdex lorsqu’ils sont disponibles. Toujours vérifier les ventes récentes avant achat.</p>
       </aside>
@@ -146,7 +150,7 @@ function App() {
         </header>
 
         <div className="content">
-          <div style={{display:view==='collection'?'block':'none'}}><Portfolio document={portfolio} onChange={setPortfolio}/></div>
+          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio}/>}
           {(view==='featured' || view==='favorites') && <>
             <section className="hero">
               <div>
@@ -191,12 +195,7 @@ function App() {
             {filtered.length===0 && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
           </>}
 
-          {view==='scanner' && <CardScanner
-            recentCards={recentScans}
-            isCollected={isScannedCardCollected}
-            onRemember={rememberScannedCard}
-            onToggleCollection={toggleScannedCollection}
-          />}
+          {view==='scanner' && <CardIdentifier document={portfolio} onChange={setPortfolio}/>}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
           {view==='sync' && <CollectionSyncSettings sync={githubSync} document={portfolio} onChange={setPortfolio}/>}
@@ -204,20 +203,15 @@ function App() {
       </main>
 
       <nav className="bottom-nav">
-        {nav.filter(item=>['collection','featured','scanner','favorites'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
+        {nav.filter(item=>['collection','featured','scanner','favorites'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
         <button className={['sync','estimator','guide'].includes(view)?'active':''} onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{setView(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||mobileMenuOpen}/>
 
-      {selected && <Detail card={selected} liveEntry={liveCards[selected.id]} onClose={()=>setSelected(null)}
-        favorite={favorites.includes(selected.id)}
-        collected={portfolio.entries.some(e=>e.cardId===(selected.tcgdexId??selected.id)&&e.quantity>0)}
-        onFavorite={()=>toggle(selected.id,favorites,setFavorites)}
-        onCollect={()=>togglePortfolioCard(selected)}
-      />}
+      {selected && (()=>{const cardId=selected.tcgdexId??selected.id,live=liveCards[selected.id]?.data,entry=portfolio.entries.find(e=>e.cardId===cardId&&e.language===selected.language.toLowerCase()&&e.quantity>0),stats=getPriceStats(live?.pricing),market=selectCardmarketPrice(live?.pricing);const change=(quantity:number)=>setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(cardId),cardId,language:selected.language.toLowerCase(),variant:'normal',name:selected.name,setName:selected.set,number:selected.number,rarity:selected.rarity,quantity,condition:entry?.condition??'near-mint',notes:entry?.notes??'',manualPrice:entry?.manualPrice}));return <CardDetailsModal card={{id:cardId,name:selected.name,localId:selected.number,image:live?.image,rarity:selected.rarity}} setName={selected.set} language={selected.language.toLowerCase()} entry={entry} price={{status:liveCards[selected.id]?.status==='error'?'error':'success',language:selected.language.toLowerCase(),price:market,...stats}} favorite={favorites.includes(selected.id)} onFavorite={()=>toggle(selected.id,favorites,setFavorites)} onQuantity={change} onEdit={()=>{}} onClose={()=>setSelected(null)}/>})()}
     </div>
   )
 }
@@ -247,34 +241,6 @@ function CardTile({card,liveEntry,favorite,collected,onOpen,onRetry,onFavorite,o
       <div className="card-actions"><button onClick={onOpen}>Voir la fiche <ArrowUpRight size={15}/></button><button className={collected?'collected':''} onClick={onCollect}>{collected?<CheckCircle2 size={16}/>:<Library size={16}/>}</button></div>
     </div>
   </article>
-}
-
-function Detail({card,liveEntry,onClose,favorite,collected,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},onClose:()=>void,favorite:boolean,collected:boolean,onFavorite:()=>void,onCollect:()=>void}) {
-  const livePrice = selectCardmarketPrice(liveEntry?.data?.pricing)
-  const hasLive = liveEntry?.status === 'success' && !!livePrice
-  return <div className="modal-backdrop" onMouseDown={onClose}>
-    <div className="modal" onMouseDown={e=>e.stopPropagation()}>
-      <button className="modal-close" onClick={onClose}><X/></button>
-      <div className={`detail-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}66, transparent 35%), linear-gradient(145deg, ${card.color}, #111827)`}}>
-        {card.tcgdexId && liveEntry?.status === 'success' ? <CardImage image={liveEntry.data?.image} fallbackImage={liveEntry.data?.fallbackImage} name={liveEntry.data?.name ?? card.name} quality="high" className="real-card-image detail-image"/> : <><div className="fake-orb big"></div><div className="pokemon-name big-name">{card.pokemon}</div></>}<span>{liveEntry?.data?.localId ?? card.number}</span>
-      </div>
-      <div className="detail-content">
-        <span className="eyebrow">{card.rarity}</span>
-        <h2>{card.name}</h2>
-        <p className="set-line">{card.set} · {card.year} · {card.language}</p>
-        <p>{card.note}</p>
-        <div className="source-badge detail-badge">{hasLive ? 'Prix marché actualisé' : 'Estimation indicative'}</div>
-        {hasLive ? <LivePrice live={liveEntry?.data} /> : <div className="detail-prices">
-          <div><small>Brute min. indicative</small><strong>{money(card.rawMin)}</strong></div>
-          <div><small>Brute max. indicative</small><strong>{money(card.rawMax)}</strong></div>
-          <div><small>Grade 10 indicatif</small><strong>{money(card.graded10)}</strong></div>
-        </div>}
-        {hasLive && <p className="graded-unavailable">Prix gradé non disponible via TCGdex.</p>}
-        <div className="watch-box"><AlertTriangle size={20}/><p><strong>Avant achat :</strong> contrôle le dos, les coins, les rayures, le centrage, la texture et compare plusieurs ventes réellement terminées.</p></div>
-        <div className="detail-buttons"><button onClick={onFavorite}><Heart size={18} fill={favorite?'currentColor':'none'}/>{favorite?'Retirer des favoris':'Ajouter aux favoris'}</button><button className="primary" onClick={onCollect}><Library size={18}/>{collected?'Retirer de ma collection':'Ajouter à ma collection'}</button></div>
-      </div>
-    </div>
-  </div>
 }
 
 function Estimator() {

@@ -138,11 +138,11 @@ export function buildTcgDexSearchUrls(clues: CardScanClues, language: CardLangua
 }
 
 export function getTcgDexSearchLanguages(language: ScanLanguage): CardLanguage[] {
-  if (language === 'fr') return ['fr', 'en', 'ja', 'zh-cn']
-  if (language === 'en') return ['en', 'fr', 'ja', 'zh-cn']
-  if (language === 'ja') return ['ja', 'en', 'fr', 'zh-cn']
-  if (language === 'zh-cn') return ['zh-cn', 'ja', 'en', 'fr']
-  return ['fr', 'en', 'ja', 'zh-cn']
+  if (language === 'fr') return ['fr', 'en', 'ja', 'zh-tw']
+  if (language === 'en') return ['en', 'fr', 'ja', 'zh-tw']
+  if (language === 'ja') return ['ja', 'en', 'fr', 'zh-tw']
+  if (language === 'zh-tw') return ['zh-tw', 'ja', 'en', 'fr']
+  return ['fr', 'en', 'ja', 'zh-tw']
 }
 
 export function buildTcgDexSearchRequests(

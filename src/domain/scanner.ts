@@ -1,6 +1,6 @@
 import type { ExternalCard } from './cards'
 
-export type CardLanguage = 'fr' | 'en' | 'ja' | 'zh-cn'
+export type CardLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'
 export type ScanLanguage = 'auto' | CardLanguage
 
 export type CardScanClues = {
@@ -162,7 +162,7 @@ export function levenshteinSimilarity(left: string, right: string): number {
 
 export function detectLikelyLanguage(clues: CardScanClues): CardLanguage | undefined {
   if (/[぀-ヿ]/u.test(clues.rawText)) return 'ja'
-  if (/[一-鿿]/u.test(clues.rawText)) return 'zh-cn'
+  if (/[一-鿿]/u.test(clues.rawText)) return 'zh-tw'
   const normalized = normalizeScannerText(clues.rawText)
   if (/\b(pv|faiblesse|retraite|dresseur|evolue)\b/.test(normalized)) return 'fr'
   if (/\b(hp|weakness|retreat|trainer|basic)\b/.test(normalized)) return 'en'

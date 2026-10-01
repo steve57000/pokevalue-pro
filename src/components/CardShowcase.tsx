@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { X, RotateCcw, ExternalLink } from 'lucide-react'
 import { CatalogueImage } from './CatalogueImage'
 import type { SetCard } from '../api/sets'
+import {useModalDialog} from '../hooks/useModalDialog'
 
 const POKEMON_CARD_BACK = `${import.meta.env.BASE_URL}images/pokemon-card-back.jpg`
 
@@ -19,13 +20,7 @@ export function CardShowcase({ card, setName, owned, onToggle, onClose, cardmark
   const [dragging, setDragging] = useState(false)
   const origin = useRef({ x: 0, y: 0, rx: 0, ry: 0 })
   const activePointer = useRef<number | null>(null)
-  useEffect(() => {
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const keydown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
-    window.addEventListener('keydown', keydown)
-    return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', keydown) }
-  }, [onClose])
+  const dialogRef=useModalDialog(onClose)
   const down = (event: PointerEvent<HTMLDivElement>) => {
     activePointer.current = event.pointerId
     origin.current = { x: event.clientX, y: event.clientY, rx: rotation.x, ry: rotation.y }
@@ -49,7 +44,7 @@ export function CardShowcase({ card, setName, owned, onToggle, onClose, cardmark
     '--shadow-x': `${Math.round(rotation.y * .25)}px`, '--shadow-y': `${Math.round(32 - rotation.x * .1)}px`,
   } as React.CSSProperties
   return createPortal(<div className="showcase-backdrop" role="presentation" onPointerDown={event => { if (event.target === event.currentTarget) onClose() }}>
-    <div className="showcase" role="dialog" aria-modal="true" aria-label={`${card.name}, ${setName}`}>
+    <div ref={dialogRef as React.RefObject<HTMLDivElement>} className="showcase" role="dialog" aria-modal="true" aria-label={`${card.name}, ${setName}`}>
       <button className="showcase-close" onClick={onClose} aria-label="Fermer la carte"><X/></button>
       <div className="showcase-spotlight" aria-hidden="true" />
       <div className="showcase-stage">

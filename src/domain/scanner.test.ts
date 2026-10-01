@@ -98,7 +98,7 @@ describe('scanner clues', () => {
 
   it('detects Japanese and Chinese text as language clues', () => {
     expect(scoreScannerCandidate({ name: 'ピカチュウ', localId: '25', language: 'ja' }, parseCardScanText('ピカチュウ\n025/165')).reasons).toContain('langue ja')
-    expect(scoreScannerCandidate({ name: '皮卡丘', localId: '25', language: 'zh-cn' }, parseCardScanText('皮卡丘\n025/165')).reasons).toContain('langue zh-cn')
+    expect(scoreScannerCandidate({ name: '皮卡丘', localId: '25', language: 'zh-tw' }, parseCardScanText('皮卡丘\n025/165')).reasons).toContain('langue zh-tw')
   })
 
   it('penalizes a candidate with the right name but wrong printed number', () => {
