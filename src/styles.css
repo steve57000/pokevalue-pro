@@ -110,10 +110,11 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
   .card-quick-actions.is-owned>button{grid-column:auto!important;width:100%;min-width:0;min-height:46px;height:46px;display:flex;justify-content:center;align-items:center;gap:3px;padding:0 4px!important;border-radius:12px;font-size:13px;font-weight:700}
   .card-quick-actions.is-owned .favorite-button{grid-column:auto!important;min-width:0;min-height:46px}
   .card-quick-actions.is-owned>button[title="Retirer un exemplaire"]{color:#ff7777;border-color:color-mix(in srgb,#ff7777 48%,var(--line));background:color-mix(in srgb,#ff7777 9%,var(--panel))}
-  .showcase-backdrop{display:block;overflow-y:auto;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top,0px) + 54px) 0 calc(env(safe-area-inset-bottom,0px) + 24px);}
+  .showcase-backdrop{display:block;overflow-y:auto;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top,0px) + 24px) 0 calc(env(safe-area-inset-bottom,0px) + 24px);}
   .showcase{width:100%;min-height:0;margin:0 auto;padding:14px 16px 18px;gap:0;}
   .showcase-close{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;width:46px;height:46px;z-index:5;box-shadow:0 4px 18px #0005;}
-  .showcase-stage{min-height:0;padding:0 0 8px;}
+  .showcase-stage{min-height:0;padding:0;}
+  .showcase-info{padding-top:14px;}
   .showcase-card{width:min(56vw,220px);max-height:42svh;}
   .showcase-info{text-align:left;}
   .showcase-info h2{font-size:23px;margin:6px 0;}
