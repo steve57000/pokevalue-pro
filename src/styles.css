@@ -90,7 +90,8 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .binder-grid{display:grid;grid-template-columns:repeat(var(--collection-columns,5),minmax(0,1fr));gap:16px}
 
 /* Keep cards readable on wide screens even with a low column preference. */
-.binder-grid{grid-template-columns:repeat(var(--collection-columns,5),minmax(0,min(100%,260px)));justify-content:center}
+.binder-grid{grid-template-columns:repeat(var(--collection-columns,5),minmax(0,1fr))}
+.binder-grid article{width:min(100%,260px);justify-self:center}
 .card-editor-actions .remove{margin-right:auto;color:#d54848;border-color:color-mix(in srgb,#d54848 40%,var(--line));font-weight:700}
 @media(max-width:620px){.card-editor-actions{display:grid;grid-template-columns:1fr 1fr}.card-editor-actions .primary{width:100%;grid-column:1/-1;grid-row:1;order:0}.card-editor-actions .remove{margin:0;grid-column:1/-1;grid-row:2;min-height:48px;background:color-mix(in srgb,#d54848 10%,var(--panel));font-size:15px}.card-editor-actions>button:not(.primary):not(.remove){min-height:46px}}
 .binder-grid article{container-type:inline-size;grid-template-rows:auto auto minmax(2.6em,auto) auto auto 1fr auto;align-content:stretch;overflow-wrap:normal;word-break:normal}
