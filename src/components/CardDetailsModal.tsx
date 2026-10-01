@@ -9,6 +9,7 @@ import type {CardPriceState} from '../hooks/useCardPrices'
 import {useModalDialog} from '../hooks/useModalDialog'
 import {CatalogueImage} from './CatalogueImage'
 import {money} from '../utils/money'
+import {buildCardmarketUrl} from '../domain/cardmarket'
 
 type Tab='overview'|'price'|'collection'|'grading'
 type Props={card:SetCard;setName:string;language:string;entry?:CollectionEntry;price?:CardPriceState;favorite?:boolean;onFavorite?:()=>void;onQuantity:(quantity:number)=>void;onEdit:()=>void;onShowcase?:()=>void;onClose:()=>void}
@@ -19,7 +20,7 @@ export function CardDetailsModal({card,setName,language,entry,price,favorite,onF
  const [tab,setTab]=useState<Tab>('overview'),dialogRef=useModalDialog(onClose)
  const history=useMemo(()=>getPriceHistory(card.id,language),[card.id,language]),cm=price?.cardmarket
  const grading=getGradingInterest({rawPrice:price?.price?.value,rarity:card.rarity,trend:cm?.trend,avg30:cm?.avg30,avg7:cm?.avg7,low:cm?.low})
- const value=collectionValue(entry,price?.price?.value),marketUrl=`https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${card.name} ${setName} ${card.localId}`)}`
+ const value=collectionValue(entry,price?.price?.value),marketUrl=buildCardmarketUrl({...card,setName})
  const stat=(label:string,n?:number)=><div><span>{label}</span><strong>{n===undefined?'Indisponible':money(n)}</strong></div>
  return createPortal(<div className="details-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section ref={dialogRef} className="card-details" role="dialog" aria-modal="true" aria-labelledby="details-title" aria-describedby="details-description"><button className="details-close" onClick={onClose} aria-label="Fermer les détails"><X/></button>
   <div className="details-hero"><button className="details-image-button" onClick={onShowcase} disabled={!onShowcase} aria-label={`Voir ${card.name} en grand`}><CatalogueImage card={card} quality="high" requestedLanguage={language}/></button><div><span className="eyebrow">Fiche carte</span><h2 id="details-title">{card.name}</h2><p id="details-description">Nº {card.localId} · {setName}</p><p>Carte affichée : {languageName[language]??language} · rareté {card.rarity||'non renseignée'}</p>{grading.level!=='low'&&<span className="grading-badge" title="Potentiel à étudier — estimation basée sur prix, rareté et tendance">★ Potentiel gradation</span>}</div></div>
