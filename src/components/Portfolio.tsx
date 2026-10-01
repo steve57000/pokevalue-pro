@@ -25,6 +25,15 @@ export const maxCollectionColumns=(width:number)=>width>=1200?5:width>=900?4:wid
 export const effectiveCollectionColumns=(preferred:number,width:number)=>Math.min(Math.max(1,Math.min(5,preferred)),maxCollectionColumns(width))
 const displaySetName=(name?:string)=>name?.replace(/Collection Classique\s*30[ᵉe]?\s*Anniversaire/i,'Collection Classique · 30e Anniversaire')
 type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void;isFavorite?:(card:Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>)=>boolean;onFavorite?:(card:FavoriteInput)=>void}
+type CollectionQuantityStepperProps={entry?:CollectionEntry;cardName:string;flash:boolean;onDecrement:()=>void;onIncrement:()=>void}
+export function CollectionQuantityStepper({entry,cardName,flash,onDecrement,onIncrement}:CollectionQuantityStepperProps){
+ if(!entry)return null
+ return <div className="collection-quantity" aria-label="Gérer la quantité">
+  <button onClick={onDecrement} aria-label={`Retirer un exemplaire de ${cardName}`} title="Retirer un exemplaire"><Minus size={16}/></button>
+  <span aria-live="polite" aria-label={`${entry.quantity} exemplaire${entry.quantity===1?'':'s'}`}>×{entry.quantity}</span>
+  <button className={flash?'quantity-flash':''} onClick={onIncrement} aria-label={`Ajouter un exemplaire de ${cardName}`} title="Ajouter un exemplaire"><Plus size={16}/></button>
+ </div>
+}
 export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Props){
  const saved=useRef(read(VIEW_KEY,initial)).current
  const gridRef=useRef<HTMLDivElement>(null)
@@ -59,11 +68,6 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
   {shown.map(card=>{
    const entry=entriesById.get(card.id),has=!!entry,favorite=isFavorite(favoriteFor(card))
    const changeQuantity=(quantity:number)=>setEntry(card,{quantity})
-   const quantityControls=<div className="collection-quantity" aria-label="Gérer la quantité">
-    <button onClick={()=>changeQuantity(Math.max(0,entry!.quantity-1))} aria-label={`Retirer un exemplaire de ${card.name}`} title="Retirer un exemplaire"><Minus size={16}/></button>
-    <span aria-live="polite" aria-label={`${entry!.quantity} exemplaire${entry!.quantity===1?'':'s'}`}>×{entry!.quantity}</span>
-    <button className={quantityFlash===card.id?'quantity-flash':''} onClick={()=>{changeQuantity(entry!.quantity+1);setQuantityFlash(card.id);setTimeout(()=>setQuantityFlash(null),450)}} aria-label={`Ajouter un exemplaire de ${card.name}`} title="Ajouter un exemplaire"><Plus size={16}/></button>
-   </div>
    const utilities=<div className="card-utility-actions">
     {onFavorite&&<FavoriteButton favorite={favorite} onToggle={()=>onFavorite(favoriteFor(card))}/>}
     <button onClick={()=>openSubView('card',card)} aria-label={`Détails et statistiques de ${card.name}`} title="Détails et statistiques"><BarChart3 size={17}/></button>
@@ -75,7 +79,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
     <span className="binder-meta">{card.localId}/{detail?.cardCount.official??detail?.cardCount.total} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</span>
     <div className="binder-price"><small>Prix marché · {language.toUpperCase()}</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div>
     <div className={`card-quick-actions ${has?'is-owned':'is-missing'}`}>
-     {has?quantityControls:<button className="add-card-action" onClick={()=>setEditing(card)}><Plus size={15}/> Ajouter à ma collection</button>}
+     {entry?<CollectionQuantityStepper entry={entry} cardName={card.name} flash={quantityFlash===card.id} onDecrement={()=>changeQuantity(Math.max(0,entry.quantity-1))} onIncrement={()=>{changeQuantity(entry.quantity+1);setQuantityFlash(card.id);setTimeout(()=>setQuantityFlash(null),450)}}/>:<button className="add-card-action" onClick={()=>setEditing(card)}><Plus size={15}/> Ajouter à ma collection</button>}
      {utilities}
     </div>
    </article>
