@@ -1,14 +1,20 @@
-import {createHash} from 'node:crypto'
-import {readFile,stat} from 'node:fs/promises'
-import {extname} from 'node:path'
-const manifest=await readFile(new URL('../src/data/cardImageOverrides.ts',import.meta.url),'utf8')
-const identities=[...manifest.matchAll(/cardId:'(30th-c-\d{3})'/g)].map(match=>match[1])
-const images=[...manifest.matchAll(/cardId:'(30th-c-\d{3})'[\s\S]*?image:\{localPath:`?\$?\{?[^}]*\}?([^'`,]+)[`']?,language:'([^']+)',source:'([^']+)',verified:true\}/g)]
-const errors=[];const hashes=new Map()
-if(identities.length!==30||new Set(identities).size!==30)errors.push(`Le manifeste doit contenir 30 identités uniques (reçu ${identities.length}).`)
-for(const match of images){const [,id,path]=match,extension=extname(path).toLowerCase();if(!['.png','.webp','.jpg','.jpeg'].includes(extension))errors.push(`${id}: format ${extension||'absent'} interdit (SVG et placeholders refusés).`)
- try{const url=new URL(`../public/${path.replace(/^.*card-images\//,'card-images/')}`,import.meta.url),info=await stat(url),bytes=await readFile(url);if(info.size<50_000)errors.push(`${id}: fichier trop petit (${info.size} octets).`);const hash=createHash('sha256').update(bytes).digest('hex');if(hashes.has(hash))errors.push(`${id}: image identique à ${hashes.get(hash)}.`);hashes.set(hash,id)}catch{errors.push(`${id}: fichier local absent.`)}}
-const unavailable=identities.length-images.length
-console.log(`30th-c : ${identities.length} cartes · ${images.length} visuels exacts vérifiés · ${unavailable} visuels temporairement indisponibles · 0 faux placeholder`)
-if(images.length!==30)console.warn(`Images exactes encore absentes: ${identities.filter(id=>!images.some(match=>match[1]===id)).join(', ')}`)
-if(errors.length){for(const error of errors)console.error(error);process.exitCode=1}
+import { readFile } from 'node:fs/promises'
+
+const source = await readFile(new URL('../src/data/cardImageOverrides.ts', import.meta.url), 'utf8')
+const identities = [...source.matchAll(/cardId:'(30th-c-\d{3})'/g)].map(match => match[1])
+const productMap = source.match(/const classicProductIds:Record<string,number>=\{([\s\S]*?)\}/)?.[1] ?? ''
+const productIds = [...productMap.matchAll(/'(30th-c-\d{3})':(\d+)/g)]
+const mappedCards = new Set(productIds.map(match => match[1]))
+const uniqueProducts = new Set(productIds.map(match => match[2]))
+const errors = []
+
+if (identities.length !== 30 || new Set(identities).size !== 30) errors.push(`Le manifeste doit contenir 30 identités uniques (reçu ${identities.length}).`)
+if (productIds.length !== 30 || mappedCards.size !== 30 || uniqueProducts.size !== 30) errors.push(`Les 30 identifiants d'images doivent être présents et uniques (reçu ${productIds.length}).`)
+for (const id of identities) if (!mappedCards.has(id)) errors.push(`${id}: référence d'image absente.`)
+if (!source.includes("source:'TCGplayer product image'")) errors.push('Attribution TCGplayer absente.')
+if (errors.length) {
+  errors.forEach(error => console.error(error))
+  process.exitCode = 1
+} else {
+  console.log('30th-c : 30 cartes · 30 références d’images produit uniques et attribuées · vérification réseau des images non incluse.')
+}

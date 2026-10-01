@@ -9,9 +9,9 @@ export type CardImageOverride={
  verified:boolean
 }
 
-// These identities describe the 30th-anniversary reprints. An image is deliberately absent
-// until the exact reprint (not its historical original) can be verified and redistributed.
-export const cardImageOverrides:readonly CardImageOverride[]=[
+// These identities describe the 30th-anniversary reprints. When TCGdex has no scan,
+// use the matching English TCGplayer product image and identify it as an English fallback.
+const baseCardImageOverrides:readonly CardImageOverride[]=[
   {cardId:'30th-c-001',setId:'30th-c',name:'Dracaufeu',englishName:'Charizard',printedNumber:'4/102',cardmarket:{searchName:'Charizard',searchCode:'30C'},verified:false},
   {cardId:'30th-c-002',setId:'30th-c',name:'Delcatty',englishName:'Delcatty',printedNumber:'5/109',cardmarket:{searchName:'Delcatty',searchCode:'30C'},verified:false},
   {cardId:'30th-c-003',setId:'30th-c',name:'Métalosse δ Espèces Delta',englishName:'Metagross δ Delta Species',printedNumber:'11/113',cardmarket:{searchName:'Metagross δ Delta Species',searchCode:'30C'},verified:false},
@@ -43,4 +43,21 @@ export const cardImageOverrides:readonly CardImageOverride[]=[
   {cardId:'30th-c-029',setId:'30th-c',name:'Lugia',englishName:'Lugia',printedNumber:'149/147',cardmarket:{searchName:'Lugia',searchCode:'30C'},verified:false},
   {cardId:'30th-c-030',setId:'30th-c',name:'Magicarpe',englishName:'Magikarp',printedNumber:'203/193',cardmarket:{searchName:'Magikarp',searchCode:'30C'},verified:false},
 ]
+
+// These exact anniversary reprints have no TCGdex scans yet. Product images
+// are matched by the card names and original numbers in TCGJoin's Classic
+// Collection gallery, which identifies TCGplayer as the image source.
+const classicProductIds:Record<string,number>={
+ '30th-c-001':714372,'30th-c-002':716156,'30th-c-003':716157,'30th-c-004':716158,'30th-c-005':716159,
+ '30th-c-006':716160,'30th-c-007':716161,'30th-c-008':714373,'30th-c-009':716162,'30th-c-010':716163,
+ '30th-c-011':716191,'30th-c-012':716192,'30th-c-013':716193,'30th-c-014':716194,'30th-c-015':716195,
+ '30th-c-016':716196,'30th-c-017':716197,'30th-c-018':716198,'30th-c-019':716199,'30th-c-020':716200,
+ '30th-c-021':716202,'30th-c-022':716203,'30th-c-023':716204,'30th-c-024':716205,'30th-c-025':716206,
+ '30th-c-026':716207,'30th-c-027':716208,'30th-c-028':716209,'30th-c-029':714386,'30th-c-030':716210,
+}
+export const cardImageOverrides:readonly CardImageOverride[]=baseCardImageOverrides.map(item=>{
+ const productId=classicProductIds[item.cardId]
+ if(!productId)return item
+ return {...item,verified:true,image:{localPath:`https://tcgplayer-cdn.tcgplayer.com/product/${productId}_400w.jpg`,language:'en',source:'TCGplayer product image',verified:true as const}}
+})
 export const cardImageOverrideById=new Map(cardImageOverrides.map(item=>[item.cardId,item]))

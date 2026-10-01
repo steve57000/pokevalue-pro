@@ -79,6 +79,13 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 @media(max-width:430px){:root{--page-gutter:8px}.bottom-nav{left:8px;right:8px}.series-picker{padding:9px}.showcase-card{width:min(76vw,290px)}}
 @media(max-width:340px){.binder-grid{}.showcase-card{width:min(82vw,270px)}}
 
+/* Give owned cards a dedicated, reachable removal action in the collection grid. */
+.card-quick-actions.is-owned{grid-template-columns:minmax(0,1fr) repeat(4,42px)}
+.card-quick-actions.is-owned button[title="Retirer de ma collection"]{color:#dc4b4b;border-color:color-mix(in srgb,#dc4b4b 35%,var(--line))}
+@media(max-width:600px){.card-quick-actions.is-owned{grid-template-columns:minmax(0,1fr) repeat(4,40px)}}
+.tilt-controls{width:max-content;max-width:100%;grid-template-columns:44px 44px 44px minmax(104px,1fr);gap:6px;align-items:stretch}.tilt-controls button:not(.tilt-reset){width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;display:grid;place-items:center;border-radius:11px}.tilt-controls .tilt-reset{width:auto!important;min-width:104px!important;min-height:94px!important;border-radius:11px}.showcase-info .tilt-controls{margin:10px 0}
+@media(max-width:600px){.tilt-controls{grid-template-columns:44px 44px 44px minmax(96px,1fr);margin-left:auto!important;margin-right:auto!important}.tilt-controls .tilt-reset{min-width:96px!important}.showcase-info .tilt-controls{margin-top:8px;margin-bottom:8px}}
+
 /* Collection density: the custom property is the single authority for column count. */
 .binder-grid{display:grid;grid-template-columns:repeat(var(--collection-columns,5),minmax(0,1fr));gap:16px}
 .binder-grid article{container-type:inline-size;grid-template-rows:auto auto minmax(2.6em,auto) auto auto 1fr auto;align-content:stretch;overflow-wrap:normal;word-break:normal}

@@ -4,7 +4,8 @@ _Vérification effectuée le 29 septembre 2026._
 
 ## TCGdex (source principale)
 
-L'application consomme l'API REST v2 en français (`https://api.tcgdex.net/v2/fr`). La couche
+L'application consomme l'API REST v2 (`https://api.tcgdex.net/v2/{fr,en,ja,zh-tw}`) pour parcourir les
+catalogues français, anglais, japonais et chinois traditionnel. La couche
 `CardDataProvider` isole le domaine de ce fournisseur. L'identité enregistrée n'est jamais le nom
 seul ou le numéro seul : `source + setId + cardId + langue + variante` sont nécessaires. Les noms,
 numéros, raretés, images et éventuels prix restent attribués à la réponse source.
@@ -55,9 +56,9 @@ ni journalisé ni placé dans une URL, et reste en mémoire. Le fichier cible es
 
 ## Images et dos de carte
 Le dos standard occidental est livré avec le site (`public/images/pokemon-card-back.jpg`), téléchargé depuis https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg. Illustration Pokémon, utilisée pour la visualisation des cartes.
-La galerie essaie WebP puis PNG. Si le visuel français échoue ou manque, elle demande le même identifiant au catalogue anglais et affiche « Visuel anglais ». Si les deux sources n'ont aucun visuel, elle le signale explicitement.
+La galerie essaie WebP puis PNG. Si le visuel français échoue ou manque, elle demande le même identifiant au catalogue anglais et affiche « Visuel anglais ». Pour les 30 cartes de la sous-série `30th-c`, TCGdex n'avait aucun scan au 1er octobre 2026 ; l'application utilise les images produit TCGplayer correspondant aux réimpressions Classic Collection, recoupées par nom et numéro dans la [galerie TCGJoin](https://tcgjoin.com/en/pokemon-30th-celebration-cards), qui attribue ces images à TCGplayer. Ces scans sont en anglais et portent un badge de source. Si aucune image correspondante n'est disponible, l'application le signale explicitement.
 `node scripts/audit-images.mjs` produit l'audit des métadonnées de toutes les extensions françaises ; ajouter `--check-urls` pour contrôler également chaque URL. Les requêtes échouées sont signalées comme non vérifiées dans `docs/image-audit.json`.
-Le 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` fournit 30 cartes sans image, en français comme en anglais. Les visuels ne sont pas inventés ni remplacés par une autre impression.
+Au 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` fournit 30 cartes sans image dans TCGdex, en français comme en anglais. Les remplacements `30th-c` utilisent les visuels anglais des réimpressions correspondantes, jamais ceux des anciennes cartes d'origine.
 
 ## Manifeste Collection Classique 30e
 
