@@ -165,3 +165,9 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
  .showcase-stage::after{bottom:2%}
 }
 @media(max-width:380px){.showcase{padding-left:10px;padding-right:10px}.showcase-info{max-height:46dvh}.showcase-card{width:min(90vw,39dvh,340px)}}
+
+
+/* Tilt-driven holographic foil and a visible soft-release cue near the card edge. */
+.showcase-front::before{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit;pointer-events:none;opacity:var(--holo-strength,.1);mix-blend-mode:color-dodge;background:linear-gradient(var(--holo-angle,135deg),transparent 16%,rgba(255,255,255,.05) 26%,rgba(255,255,255,.38) 31%,rgba(120,255,245,.2) 35%,transparent 46%),repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 1px,transparent 1px 4px),conic-gradient(from var(--holo-angle,135deg) at var(--light-x,50%) var(--light-y,50%),rgba(0,235,255,.2),rgba(246,85,210,.18),rgba(255,223,105,.16),rgba(86,255,205,.18),rgba(0,235,255,.2));transition:opacity 120ms ease}
+.showcase-front::after{z-index:2}
+.showcase-card::after{content:"";position:absolute;inset:0;z-index:3;border:1px solid rgba(160,230,255,.55);border-radius:20px;box-shadow:0 0 22px rgba(90,220,255,.4);opacity:var(--edge-progress,0);pointer-events:none;transform:translateZ(2px);transition:opacity 80ms linear}
