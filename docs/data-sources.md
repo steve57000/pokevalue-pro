@@ -58,3 +58,16 @@ Le dos standard occidental est livré avec le site (`public/images/pokemon-card-
 La galerie essaie WebP puis PNG. Si le visuel français échoue ou manque, elle demande le même identifiant au catalogue anglais et affiche « Visuel anglais ». Si les deux sources n'ont aucun visuel, elle le signale explicitement.
 `node scripts/audit-images.mjs` produit l'audit des métadonnées de toutes les extensions françaises ; ajouter `--check-urls` pour contrôler également chaque URL. Les requêtes échouées sont signalées comme non vérifiées dans `docs/image-audit.json`.
 Le 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` fournit 30 cartes sans image, en français comme en anglais. Les visuels ne sont pas inventés ni remplacés par une autre impression.
+
+## Manifeste Collection Classique 30e
+
+`30th-c` est un sous-ensemble dont TCGdex expose les 30 identités mais aucun asset, quelle que soit
+la langue testée. PokéValue utilise donc un manifeste explicite, indexé par les identifiants
+`30th-c-001` à `30th-c-030`, qui conserve pour chaque entrée le nom et le numéro historique
+imprimé vérifiés. Aucun rapprochement par nom ou numéro approchant n'est permis.
+
+Les fichiers applicatifs sont servis localement depuis `public/card-images/30th-c/`; le script
+`scripts/sync-special-card-images.mjs` documente les correspondances exactes avec les impressions
+historiques de Pokémon TCG API et permet une reconstruction manuelle. Il n'est jamais exécuté au
+chargement de l'application. `npm run audit:images` est bloquant et exige 30 entrées, 30 fichiers
+locaux et zéro placeholder.
