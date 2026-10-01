@@ -17,10 +17,14 @@ import { getPriceStats,selectCardmarketPrice } from './domain/pricing'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
-import { readStoredJson, readStoredStringArray } from './utils/storage'
+import { readStoredJson } from './utils/storage'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
+import { useFavorites } from './hooks/useFavorites'
+import { FavoriteButton } from './components/FavoriteButton'
+import { CardShowcase } from './components/CardShowcase'
+import type { FavoriteCard, FavoriteInput } from './domain/favorites'
 
 type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'estimator' | 'guide' | 'sync'
 
@@ -49,7 +53,9 @@ function App() {
   const [rarityFilter, setRarityFilter] = useState('Toutes')
   const [minValue, setMinValue] = useState(0)
   const [selected, setSelected] = useState<Card|null>(null)
-  const [favorites, setFavorites] = useState<string[]>(() => readStoredStringArray('pv-favorites'))
+  const {favorites,isFavorite,toggleFavorite} = useFavorites(cards)
+  const [showcase, setShowcase] = useState<Card|null>(null)
+  const [showcaseFavorite, setShowcaseFavorite] = useState<FavoriteInput|null>(null)
   const [portfolio, setPortfolio] = useState<CollectionDocument>(() => {
     try { return parseCollection(readStoredJson<unknown>('pv-portfolio-v1', emptyCollection())) } catch { return emptyCollection() }
   })
@@ -62,7 +68,6 @@ function App() {
     document.documentElement.dataset.theme = theme
     localStorage.setItem('pv-theme', theme)
   }, [theme])
-  useEffect(() => localStorage.setItem('pv-favorites', JSON.stringify(favorites)), [favorites])
   useEffect(() => localStorage.setItem('pv-portfolio-v1', JSON.stringify(portfolio)), [portfolio])
   useEffect(() => localStorage.setItem(SCANNED_CARDS_STORAGE_KEY, JSON.stringify(recentScans)), [recentScans])
 
@@ -71,12 +76,9 @@ function App() {
     const matchesSet = setFilter === 'Toutes' || card.set === setFilter
     const matchesRarity = rarityFilter === 'Toutes' || card.rarity === rarityFilter
     const matchesValue = card.rawMax >= minValue
-    const matchesView = view === 'favorites' ? favorites.includes(card.id) : true
-    return matchesText && matchesSet && matchesRarity && matchesValue && matchesView
-  }), [query, setFilter, rarityFilter, minValue, view, favorites])
-
-  const toggle = (id:string, list:string[], setter:(v:string[])=>void) =>
-    setter(list.includes(id) ? list.filter(x=>x!==id) : [...list,id])
+    return matchesText && matchesSet && matchesRarity && matchesValue
+  }), [query, setFilter, rarityFilter, minValue])
+  const editorialFavorite=(card:Card):FavoriteInput=>({source:'editorial',cardId:card.id,setId:card.tcgdexId?.slice(0,card.tcgdexId.lastIndexOf('-')),language:card.language.toLowerCase(),name:card.name,setName:card.set,localId:card.number,image:liveCards[card.id]?.data?.image})
 
   const rememberScannedCard = (candidate: ScannerCandidate) => {
     setRecentScans((current) => [candidate, ...current.filter((card) => card.id !== candidate.id)].slice(0, 50))
@@ -107,13 +109,13 @@ function App() {
   const navigate=useCallback((next:View)=>{if(next===viewRef.current)return;scrollByView.current[viewRef.current]=window.scrollY;viewRef.current=next;setView(next);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))},[])
 
   const nav = [
-    {id:'collection', label:'Collection', icon:Library},
-    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp},
-    {id:'scanner', label:'Identifier une carte', icon:ScanLine},
-    {id:'favorites', label:'Favoris', icon:Heart},
-    {id:'sync', label:'Sauvegarde', icon:Cloud},
+    {id:'collection', label:'Collection', icon:Library,group:'Collection'},
+    {id:'favorites', label:'Favoris', icon:Heart,group:'Collection'},
+    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp,group:'Découvrir'},
+    {id:'scanner', label:'Identifier une carte', icon:ScanLine,group:'Découvrir'},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},
     {id:'guide', label:'Guide achat', icon:BookOpen},
+    {id:'sync', label:'Sauvegarde', icon:Cloud},
   ] as const
 
   return (
@@ -124,13 +126,14 @@ function App() {
           <div><strong>PokéValue</strong><span>PRO</span></div>
         </div>
         <nav>
-          {nav.map(item => {
+          {nav.map((item,index) => {
             const Icon = item.icon
-            return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
+            const group=('group' in item?item.group:item.id==='sync'?'Données':'Outils'),previous=index?nav[index-1].id==='sync'?'Données':['estimator','guide'].includes(nav[index-1].id)?'Outils':nav[index-1].id==='collection'||nav[index-1].id==='favorites'?'Collection':'Découvrir':''
+            return <div className="nav-item" key={item.id}>{group!==previous&&<span className="nav-label">{group}</span>}<button className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
               <Icon size={19}/><span>{item.label}</span>
               {item.id==='favorites' && favorites.length>0 && <b>{favorites.length}</b>}
               {item.id==='collection' && portfolio.entries.some(e=>e.quantity>0) && <b>{portfolio.entries.filter(e=>e.quantity>0).length}</b>}
-            </button>
+            </button></div>
           })}
         </nav>
         <div className="side-card">
@@ -150,12 +153,12 @@ function App() {
         </header>
 
         <div className="content">
-          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio}/>}
-          {(view==='featured' || view==='favorites') && <>
+          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
+          {view==='featured' && <>
             <section className="hero">
               <div>
                 <span className="eyebrow"><TrendingUp size={15}/> Guide de valeur 2026</span>
-                <h1>{view==='featured'?'Les cartes Pokémon à surveiller':'Tes cartes favorites'}</h1>
+                <h1>Les cartes Pokémon à surveiller</h1>
                 <p>Recherche, compare et organise rapidement les cartes qui ont le plus d’intérêt sur le marché.</p>
               </div>
               <div className="hero-stat">
@@ -185,9 +188,9 @@ function App() {
             <div className="result-head"><strong>{filtered.length} carte{filtered.length!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
             <section className="card-grid">
               {[...filtered].sort((a,b)=>b.score-a.score).map(card =>
-                <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={favorites.includes(card.id)} collected={portfolio.entries.some(e=>e.cardId===(card.tcgdexId??card.id)&&e.quantity>0)}
-                  onOpen={()=>setSelected(card)} onRetry={()=>retry(card.id)}
-                  onFavorite={()=>toggle(card.id,favorites,setFavorites)}
+                <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={isFavorite(editorialFavorite(card))} collected={portfolio.entries.some(e=>e.cardId===(card.tcgdexId??card.id)&&e.quantity>0)}
+                  onShowcase={()=>{setShowcase(card);setShowcaseFavorite(editorialFavorite(card))}} onOpen={()=>setSelected(card)} onRetry={()=>retry(card.id)}
+                  onFavorite={()=>toggleFavorite(editorialFavorite(card))}
                   onCollect={()=>togglePortfolioCard(card)}
                 />
               )}
@@ -195,7 +198,9 @@ function App() {
             {filtered.length===0 && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
           </>}
 
-          {view==='scanner' && <CardIdentifier document={portfolio} onChange={setPortfolio}/>}
+          {view==='favorites'&&<FavoritesPage favorites={favorites} liveCards={liveCards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
+
+          {view==='scanner' && <CardIdentifier document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
           {view==='sync' && <CollectionSyncSettings sync={githubSync} document={portfolio} onChange={setPortfolio}/>}
@@ -209,9 +214,11 @@ function App() {
 
       {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
-      <ScrollToTop hidden={Boolean(selected)||mobileMenuOpen}/>
+      <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
-      {selected && (()=>{const cardId=selected.tcgdexId??selected.id,live=liveCards[selected.id]?.data,entry=portfolio.entries.find(e=>e.cardId===cardId&&e.language===selected.language.toLowerCase()&&e.quantity>0),stats=getPriceStats(live?.pricing),market=selectCardmarketPrice(live?.pricing);const change=(quantity:number)=>setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(cardId),cardId,language:selected.language.toLowerCase(),variant:'normal',name:selected.name,setName:selected.set,number:selected.number,rarity:selected.rarity,quantity,condition:entry?.condition??'near-mint',notes:entry?.notes??'',manualPrice:entry?.manualPrice}));return <CardDetailsModal card={{id:cardId,name:selected.name,localId:selected.number,image:live?.image,rarity:selected.rarity}} setName={selected.set} language={selected.language.toLowerCase()} entry={entry} price={{status:liveCards[selected.id]?.status==='error'?'error':'success',language:selected.language.toLowerCase(),price:market,...stats}} favorite={favorites.includes(selected.id)} onFavorite={()=>toggle(selected.id,favorites,setFavorites)} onQuantity={change} onEdit={()=>{}} onClose={()=>setSelected(null)}/>})()}
+      {showcase&&<CardShowcase card={{id:showcase.tcgdexId??showcase.id,name:showcase.name,localId:showcase.number,image:showcaseFavorite?.image??liveCards[showcase.id]?.data?.image}} setName={showcase.set} owned={portfolio.entries.some(e=>e.cardId===(showcase.tcgdexId??showcase.id)&&e.quantity>0)} quantity={portfolio.entries.find(e=>e.cardId===(showcase.tcgdexId??showcase.id)&&e.quantity>0)?.quantity} onToggle={()=>togglePortfolioCard(showcase)} onIncrement={()=>{const id=showcase.tcgdexId??showcase.id,entry=portfolio.entries.find(e=>e.cardId===id&&e.quantity>0);setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(id),cardId:id,language:showcase.language.toLowerCase(),variant:'normal',name:showcase.name,setName:showcase.set,number:showcase.number,rarity:showcase.rarity,quantity:(entry?.quantity??0)+1,condition:entry?.condition??'near-mint',notes:entry?.notes??''}))}} favorite={isFavorite(showcaseFavorite??editorialFavorite(showcase))} onFavorite={()=>toggleFavorite(showcaseFavorite??editorialFavorite(showcase))} onDetails={()=>{setShowcase(null);setSelected(showcase)}} onClose={()=>setShowcase(null)} cardmarketUrl={`https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${showcase.name} ${showcase.set} ${showcase.number}`)}`}/>}
+
+      {selected && (()=>{const cardId=selected.tcgdexId??selected.id,live=liveCards[selected.id]?.data,entry=portfolio.entries.find(e=>e.cardId===cardId&&e.language===selected.language.toLowerCase()&&e.quantity>0),stats=getPriceStats(live?.pricing),market=selectCardmarketPrice(live?.pricing),favorite=editorialFavorite(selected);const change=(quantity:number)=>setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(cardId),cardId,language:selected.language.toLowerCase(),variant:'normal',name:selected.name,setName:selected.set,number:selected.number,rarity:selected.rarity,quantity,condition:entry?.condition??'near-mint',notes:entry?.notes??'',manualPrice:entry?.manualPrice}));return <CardDetailsModal card={{id:cardId,name:selected.name,localId:selected.number,image:live?.image,rarity:selected.rarity}} setName={selected.set} language={selected.language.toLowerCase()} entry={entry} price={{status:liveCards[selected.id]?.status==='error'?'error':'success',language:selected.language.toLowerCase(),price:market,...stats}} favorite={isFavorite(favorite)} onFavorite={()=>toggleFavorite(favorite)} onQuantity={change} onEdit={()=>{}} onShowcase={()=>{setSelected(null);setShowcase(selected);setShowcaseFavorite(favorite)}} onClose={()=>setSelected(null)}/>})()}
     </div>
   )
 }
@@ -220,15 +227,15 @@ function Stat({icon,label,value}:{icon:React.ReactNode,label:string,value:string
   return <div className="stat-card"><div>{icon}</div><span>{label}</span><strong>{value}</strong></div>
 }
 
-function CardTile({card,liveEntry,favorite,collected,onOpen,onRetry,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},favorite:boolean,collected:boolean,onOpen:()=>void,onRetry:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
+function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},favorite:boolean,collected:boolean,onShowcase:()=>void,onOpen:()=>void,onRetry:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
   const livePrice = selectCardmarketPrice(liveEntry?.data?.pricing)
   const hasLive = liveEntry?.status === 'success' && !!livePrice
   return <article className="poke-card">
-    <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
+    <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} onClick={onShowcase} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onShowcase()}}} role="button" tabIndex={0} aria-label={`Voir ${card.name} en 3D`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
       <div className="card-number">{liveEntry?.data?.localId ?? card.number}</div>
       {card.tcgdexId && liveEntry?.status === 'loading' ? <div className="image-skeleton"/> : card.tcgdexId ? <CardImage image={liveEntry?.data?.image} fallbackImage={liveEntry?.data?.fallbackImage} name={liveEntry?.data?.name ?? card.name} quality="low" className="real-card-image"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
       <div className="rarity-pill">{liveEntry?.data?.rarity ?? card.rarity}</div>
-      <button className={`heart ${favorite?'filled':''}`} onClick={(e)=>{e.stopPropagation();onFavorite()}}><Heart size={18} fill={favorite?'currentColor':'none'}/></button>
+      <FavoriteButton className="heart" favorite={favorite} onToggle={onFavorite}/>
     </div>
     <div className="card-body">
       <div className="card-meta"><span>{card.year}</span><span>{card.language}</span><span className={`trend ${card.trend}`}>{card.trend==='up'?'↗':card.trend==='down'?'↘':'→'}</span></div>
@@ -241,6 +248,12 @@ function CardTile({card,liveEntry,favorite,collected,onOpen,onRetry,onFavorite,o
       <div className="card-actions"><button onClick={onOpen}>Voir la fiche <ArrowUpRight size={15}/></button><button className={collected?'collected':''} onClick={onCollect}>{collected?<CheckCircle2 size={16}/>:<Library size={16}/>}</button></div>
     </div>
   </article>
+}
+
+function FavoritesPage({favorites,liveCards,onShowcase,onToggle}:{favorites:FavoriteCard[];liveCards:Record<string,{data?:import('./domain/cards').ExternalCard}>;onShowcase:(favorite:FavoriteCard)=>void;onToggle:(favorite:FavoriteInput)=>void}){
+  const [sort,setSort]=useState('recent'),[language,setLanguage]=useState('all')
+  const shown=[...favorites].filter(card=>language==='all'||card.language===language).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='set'?a.setName.localeCompare(b.setName):sort==='price-asc'||sort==='price-desc'?0:b.addedAt.localeCompare(a.addedAt))
+  return <section className="favorites-page"><div className="page-heading"><span className="eyebrow"><Heart size={15}/> Collection personnelle</span><h1>Mes favoris</h1><p>Retrouve rapidement les cartes que tu souhaites suivre.</p><strong>{favorites.length} favori{favorites.length===1?'':'s'}</strong></div>{favorites.length===0?<div className="empty favorites-empty"><Heart size={42}/><h2>Aucun favori pour le moment</h2><p>Utilise le cœur sur une carte pour la retrouver ici.</p></div>:<><div className="favorites-controls"><label>Trier<select value={sort} onChange={event=>setSort(event.target.value)}><option value="recent">Ajout récent</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option><option value="name">Nom</option><option value="set">Extension</option></select></label><label>Langue<select value={language} onChange={event=>setLanguage(event.target.value)}><option value="all">Toutes</option><option value="fr">FR</option><option value="en">EN</option><option value="ja">JP</option><option value="zh-tw">ZH</option></select></label></div><div className="favorites-grid">{shown.map(card=>{const live=liveCards[card.cardId]?.data;return <article key={card.key}><button className="favorite-preview" onClick={()=>onShowcase(card)} aria-label={`Voir ${card.name} en 3D`}><CardImage image={live?.image??card.image} fallbackImage={live?.fallbackImage} name={card.name} quality="low"/></button><div><strong>{card.name}</strong><span>{card.localId&&`Nº ${card.localId} · `}{card.setName}</span><small>{card.language.toUpperCase()}</small></div><FavoriteButton favorite onToggle={()=>onToggle(card)}/></article>})}</div></>}</section>
 }
 
 function Estimator() {
