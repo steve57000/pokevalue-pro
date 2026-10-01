@@ -5089,7 +5089,8 @@
       "id": "30th-c",
       "name": "Collection Classique30ᵉ Anniversaire",
       "cards": 30,
-      "missingImageIds": [
+      "missingImageIds": [],
+      "localResolvedImageIds": [
         "30th-c-001",
         "30th-c-002",
         "30th-c-003",
@@ -5120,7 +5121,8 @@
         "30th-c-028",
         "30th-c-029",
         "30th-c-030"
-      ]
+      ],
+      "placeholderCount": 0
     }
   ]
 }
