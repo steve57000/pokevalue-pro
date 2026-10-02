@@ -21,7 +21,13 @@ export type CollectionEntry = PrintingIdentity & {
   condition: CardCondition
   notes: string
   manualPrice?: number
+  priceMode?: 'market' | 'manual'
   updatedAt: string
+}
+
+export function collectionUnitPrice(entry: Pick<CollectionEntry, 'manualPrice' | 'priceMode'>, marketPrice?: number): number | undefined {
+  const mode = entry.priceMode ?? (entry.manualPrice !== undefined ? 'manual' : 'market')
+  return mode === 'manual' ? entry.manualPrice : marketPrice
 }
 
 export type CollectionDocument = {
