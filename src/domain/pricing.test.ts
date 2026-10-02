@@ -7,14 +7,14 @@ describe('selectCardmarketPrice', () => {
   })
 
   it('respecte l’ordre de fallback jusqu’au prix le plus bas observé', () => {
-    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg30: 8, avg7: 7, avg: 6, low: 5 } })?.label).toBe('Moyenne 30 jours')
-    expect(selectCardmarketPrice({ cardmarket: { avg30: null, avg7: 7, avg: 6, low: 5 } })?.label).toBe('Moyenne 7 jours')
-    expect(selectCardmarketPrice({ cardmarket: { avg: 6, low: 5 } })?.label).toBe('Prix moyen')
-    expect(selectCardmarketPrice({ cardmarket: { low: 5 } })?.label).toBe('Prix le plus bas observé')
+    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg30: 8, avg7: 7, avg: 6, low: 5 } })?.label).toBe('Prix bas Cardmarket')
+    expect(selectCardmarketPrice({ cardmarket: { avg30: null, avg7: 7, avg: 6, low: 5 } })?.label).toBe('Prix bas Cardmarket')
+    expect(selectCardmarketPrice({ cardmarket: { avg: 6, low: 5 } })?.label).toBe('Prix bas Cardmarket')
+    expect(selectCardmarketPrice({ cardmarket: { low: 5 } })?.label).toBe('Prix bas Cardmarket')
   })
 
   it('ignore les champs null, zéro, négatifs et invalides', () => {
-    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg30: 0, avg7: -1, avg: Number.NaN, low: 3 } })).toMatchObject({ value: 3, label: 'Prix le plus bas observé' })
+    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg30: 0, avg7: -1, avg: Number.NaN, low: 3 } })).toMatchObject({ value: 3, label: 'Prix bas Cardmarket' })
   })
 
   it('retourne undefined en absence totale de prix exploitable', () => {
