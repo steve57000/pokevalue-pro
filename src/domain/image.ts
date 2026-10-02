@@ -23,8 +23,8 @@ export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:Ex
 // MEP promo scans are not consistently present in TCGdex. Bill's Archive
 // exposes its English scans using this stable filename convention.
 export function buildMepPromoImage(card:Pick<ExternalCard,'id'|'localId'|'name'>){
- if(!/^mep-\\d+$/i.test(card.id)||!card.localId||!/^\\d{1,3}$/.test(card.localId))return undefined
- const englishSlug=card.name.normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
+ if(!/^mep-\d+$/i.test(card.id)||!card.localId||!/^\d{1,3}$/.test(card.localId))return undefined
+ const englishSlug=card.name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
  if(!englishSlug)return undefined
  const number=card.localId.padStart(3,'0')
  return `https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-${number}_${englishSlug}.webp`
