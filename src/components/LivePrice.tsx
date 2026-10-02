@@ -5,11 +5,11 @@ import { money } from '../utils/money'
 
 export function LivePrice({ live, compact = false }: { live?: ExternalCard; compact?: boolean }) {
   const reference = selectCardmarketPrice(live?.pricing)
-  if (!reference) return <div className="live-price unavailable"><small>Prix marché actualisé</small><strong>Prix indisponible</strong><span>Cardmarket via TCGdex</span></div>
+  if (!reference) return <div className="live-price unavailable"><small>Référence Cardmarket</small><strong>Prix indisponible</strong><span>Cardmarket via TCGdex</span></div>
   return <div className={`live-price ${compact ? 'compact' : ''}`}>
-    <small>Prix marché actualisé</small>
+    <small>Référence Cardmarket · toutes langues</small>
     <strong>{money(reference.value, reference.currency)}</strong>
-    <span>{reference.label}</span>
+    <span>{reference.label} · langue non filtrée</span>
     <em>Cardmarket via TCGdex · Mis à jour le {formatDate(reference.updatedAt ?? live?.updatedAt)}{live?.fromStaleCache ? ' · Données en cache' : ''}</em>
   </div>
 }
