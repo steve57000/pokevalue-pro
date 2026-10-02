@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { tcgDexProvider } from '../api/tcgdex'
 import type { ExternalCard } from '../domain/cards'
 import type { Card } from '../types'
+import { recordPriceSnapshot, todayPriceDate } from '../domain/priceHistory'
+import { selectCardmarketPrice } from '../domain/pricing'
 
 export type LiveEntry = { status: 'idle' | 'loading' | 'success' | 'error'; data?: ExternalCard; error?: string }
 
@@ -34,7 +36,7 @@ export function useLiveCards(cards: Card[]) {
     Promise.allSettled(mappedCards.map((card) =>
       tcgDexProvider
         .getCard(card.tcgdexId!, tcgDexLanguageForCard(card))
-        .then((data) => ({ id: card.id, data })),
+        .then((data) => {const price=selectCardmarketPrice(data.pricing);if(price)recordPriceSnapshot({cardId:data.id,language:tcgDexLanguageForCard(card),date:todayPriceDate(),value:price.value,source:price.provider});return{id:card.id,data}}),
     )).then((results) => {
       if (!active) return
       setEntries((current) => {
