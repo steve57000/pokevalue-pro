@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck,
+  Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck, History,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
   Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine, Cloud, Menu
 } from 'lucide-react'
@@ -25,9 +25,10 @@ import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
 import { useFavorites } from './hooks/useFavorites'
 import { FavoriteButton } from './components/FavoriteButton'
 import { CardShowcase } from './components/CardShowcase'
+import { PriceHistoryPage } from './components/PriceHistoryPage'
 import type { FavoriteCard, FavoriteInput } from './domain/favorites'
 
-type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'estimator' | 'guide' | 'sync'
+type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
 
@@ -48,7 +49,7 @@ function readRecentScans(): ScannerCandidate[] {
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
   const [view, setView] = useState<View>('collection')
-  const viewRef=useRef<View>('collection'), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,estimator:0,guide:0,sync:0})
+  const viewRef=useRef<View>('collection'), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,estimator:0,guide:0,sync:0})
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -113,6 +114,7 @@ function App() {
     {id:'collection', label:'Collection', icon:Library,group:'Collection'},
     {id:'favorites', label:'Favoris', icon:Heart,group:'Collection'},
     {id:'featured', label:'Cartes à surveiller', icon:TrendingUp,group:'Découvrir'},
+    {id:'history', label:'Suivi des prix', icon:History,group:'Découvrir'},
     {id:'scanner', label:'Identifier une carte', icon:ScanLine,group:'Découvrir'},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},
     {id:'guide', label:'Guide achat', icon:BookOpen},
@@ -200,6 +202,8 @@ function App() {
           </>}
 
           {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
+          {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
+
 
           {view==='scanner' && <CardIdentifier document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
           {view==='estimator' && <Estimator />}
@@ -209,11 +213,11 @@ function App() {
       </main>
 
       <nav className="bottom-nav">
-        {nav.filter(item=>['collection','featured','scanner','favorites'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.label.split(' ')[0]}</span></button>})}
-        <button className={['sync','estimator','guide'].includes(view)?'active':''} onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
+        {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Prix':item.id==='featured'?'Cartes':item.label.split(' ')[0]}</span></button>})}
+        <button className={['sync','estimator','guide','scanner'].includes(view)?'active':''} onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','scanner'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
