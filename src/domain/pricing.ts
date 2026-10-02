@@ -3,17 +3,17 @@ import type { TcgDexPricing } from './cards'
 export type PriceReference = {
   value: number
   currency: 'EUR'
-  label: 'Tendance Cardmarket' | 'Moyenne 30 jours' | 'Moyenne 7 jours' | 'Prix moyen' | 'Prix le plus bas observé'
+  label: 'Prix bas Cardmarket' | 'Tendance Cardmarket' | 'Moyenne 30 jours' | 'Moyenne 7 jours' | 'Prix moyen'
   provider: 'cardmarket'
   updatedAt?: string
 }
 
 const priorities: Array<[keyof NonNullable<TcgDexPricing['cardmarket']>, PriceReference['label']]> = [
+  ['low', 'Prix bas Cardmarket'],
   ['trend', 'Tendance Cardmarket'],
   ['avg30', 'Moyenne 30 jours'],
   ['avg7', 'Moyenne 7 jours'],
   ['avg', 'Prix moyen'],
-  ['low', 'Prix le plus bas observé'],
 ]
 
 export function isValidMarketPrice(value: unknown): value is number {
