@@ -246,7 +246,7 @@ function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,o
       <div className="card-meta"><span>{card.year}</span><span>{card.language}</span><span className={`trend ${card.trend}`}>{card.trend==='up'?'↗':card.trend==='down'?'↘':'→'}</span></div>
       <h3>{card.name}</h3>
       <p>{card.set}</p>
-      <div className="source-badge">{hasLive ? 'Prix marché actualisé' : 'Estimation indicative'}</div>
+      <div className="source-badge">{hasLive ? 'Référence Cardmarket (langue non filtrée)' : 'Estimation indicative'}</div>
       {liveEntry?.status === 'loading' && <div className="price-skeleton"/>}
       {liveEntry?.status === 'error' && <div className="api-error"><span>Donnée API indisponible</span><button onClick={(e)=>{e.stopPropagation();onRetry()}}>Réessayer</button></div>}
       {hasLive ? <LivePrice live={liveEntry?.data} compact /> : <div className="price-row"><div><small>Brute estimée</small><strong>{money(card.rawMin)} – {money(card.rawMax)}</strong></div><div className="score">{card.score.toFixed(1)}</div></div>}
