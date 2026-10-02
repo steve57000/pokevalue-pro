@@ -2,7 +2,7 @@ import {useMemo,useState} from 'react'
 import {createPortal} from 'react-dom'
 import {ExternalLink,Heart,Minus,Plus,X} from 'lucide-react'
 import type {SetCard} from '../api/sets'
-import type {CollectionEntry} from '../domain/collection'
+import {collectionUnitPrice,type CollectionEntry} from '../domain/collection'
 import {getGradingInterest} from '../domain/grading'
 import {getPriceHistory} from '../domain/priceHistory'
 import type {CardPriceState} from '../hooks/useCardPrices'
@@ -14,8 +14,8 @@ import {buildCardmarketUrl} from '../domain/cardmarket'
 type Tab='overview'|'price'|'collection'|'grading'
 type Props={card:SetCard;setName:string;language:string;entry?:CollectionEntry;price?:CardPriceState;favorite?:boolean;onFavorite?:()=>void;onQuantity:(quantity:number)=>void;onEdit:()=>void;onShowcase?:()=>void;onClose:()=>void}
 const languageName:Record<string,string>={fr:'français',en:'anglais',ja:'japonais','zh-tw':'chinois traditionnel'}
-export const collectionValue=(entry?:Pick<CollectionEntry,'manualPrice'|'quantity'>,automaticPrice?:number)=>{const unit=entry?.manualPrice??automaticPrice;return entry&&unit!==undefined?unit*entry.quantity:undefined}
-function Sparkline({points}:{points:{date:string;value:number}[]}){if(points.length<2)return <p className="history-building">Historique en cours de constitution</p>;const values=points.map(x=>x.value),min=Math.min(...values),span=Math.max(...values)-min||1,path=points.map((x,i)=>`${i?'L':'M'} ${i/(points.length-1)*100} ${36-(x.value-min)/span*32}`).join(' ');return <svg className="price-sparkline" viewBox="0 0 100 40" role="img" aria-label={`Évolution de ${money(points[0].value)} à ${money(points[points.length-1].value)}`}><path d={path}/></svg>}
+export const collectionValue=(entry?:Pick<CollectionEntry,'manualPrice'|'priceMode'|'quantity'>,automaticPrice?:number)=>{if(!entry)return undefined;const unit=collectionUnitPrice(entry,automaticPrice);return unit===undefined?undefined:unit*entry.quantity}
+function Sparkline({points}:{points:{date:string;value:number}[]}){if(points.length<2)return <p className="history-building">L’historique se construit au fil des relevés quotidiens de l’application.</p>;const values=points.map(x=>x.value),min=Math.min(...values),max=Math.max(...values),span=max-min||1,coords=points.map((x,i)=>({x:18+i/(points.length-1)*284,y:116-(x.value-min)/span*94})),path=coords.map((p,i)=>`${i?'L':'M'} ${p.x} ${p.y}`).join(' ');return <><div className="history-chart-summary"><strong>{money(points[points.length-1].value)}</strong><span>{new Date(points[0].date).toLocaleDateString('fr-FR')} — {new Date(points[points.length-1].date).toLocaleDateString('fr-FR')}</span><small>Min. {money(min)} · Max. {money(max)}</small></div><svg className="price-sparkline" viewBox="0 0 320 142" role="img" aria-label={`Évolution du prix de ${money(points[0].value)} à ${money(points[points.length-1].value)}`}><path className="chart-grid" d="M18 22H302M18 69H302M18 116H302"/><path className="chart-area" d={`${path} L302 130 L18 130 Z`}/><path className="chart-line" d={path}/>{coords.map((p,i)=><circle key={`${points[i].date}-${i}`} cx={p.x} cy={p.y} r={i===coords.length-1?3.5:2}/>)}</svg></>}
 export function CardDetailsModal({card,setName,language,entry,price,favorite,onFavorite,onQuantity,onEdit,onShowcase,onClose}:Props){
  const [tab,setTab]=useState<Tab>('overview'),dialogRef=useModalDialog(onClose)
  const history=useMemo(()=>getPriceHistory(card.id,language),[card.id,language]),cm=price?.cardmarket
