@@ -77,7 +77,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
     {getGradingInterest({rawPrice:prices[card.id]?.price?.value,rarity:card.rarity,...prices[card.id]?.cardmarket}).level==='high'&&<span className="tile-grading-badge" title="Potentiel à étudier — estimation basée sur prix, rareté et tendance">★ Potentiel gradation</span>}
     <strong className="binder-title">{card.name}</strong>
     <span className="binder-meta">{card.localId}/{detail?.cardCount.official??detail?.cardCount.total} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</span>
-    <div className="binder-price"><small>Prix marché · {language.toUpperCase()}</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div>
+    <div className="binder-price"><small>Référence Cardmarket · langue non filtrée</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div>
     <div className={`card-quick-actions ${has?'is-owned':'is-missing'}`}>
      {entry?<CollectionQuantityStepper entry={entry} cardName={card.name} flash={quantityFlash===card.id} onDecrement={()=>changeQuantity(Math.max(0,entry.quantity-1))} onIncrement={()=>{changeQuantity(entry.quantity+1);setQuantityFlash(card.id);setTimeout(()=>setQuantityFlash(null),450)}}/>:<button className="add-card-action" onClick={()=>setEditing(card)}><Plus size={15}/> Ajouter à ma collection</button>}
      {utilities}
