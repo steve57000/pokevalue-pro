@@ -1,18 +1,20 @@
 import {useEffect,useRef,useState} from 'react'
 import type {SetCard} from '../api/sets'
 import {tcgDexProvider} from '../api/tcgdex'
-import {isPokemonCardBackUrl,resolveCardImage,type ResolvedCardImage} from '../domain/image'
+import {buildMepPromoImage,isPokemonCardBackUrl,resolveCardImage,type ResolvedCardImage} from '../domain/image'
 import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage}
 const imageCache=new Map<string,CacheEntry>()
 export const imageFallbackOrder=(requested:string)=>[requested,...(requested==='fr'?['en','ja','zh-tw']:requested==='en'?['fr','ja','zh-tw']:requested==='ja'?['en','fr','zh-tw']:['en','fr','ja'])].filter((x,i,a)=>a.indexOf(x)===i)
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider)){const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality});if(direct.url&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
- for(const language of imageFallbackOrder(requestedLanguage)){try{const candidate=await getCard(card.id,language);if(candidate.id!==card.id)continue;const image=resolveCardImage({card:candidate,requestedLanguage,quality});
+ let englishCandidate:ExternalCard|undefined
+ for(const language of imageFallbackOrder(requestedLanguage)){try{const candidate=await getCard(card.id,language);if(candidate.id!==card.id)continue;if(language==='en')englishCandidate=candidate;const image=resolveCardImage({card:candidate,requestedLanguage,quality});
  // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
  // to a generic card back for Japanese printings, so never use that source for
  // Asian-language catalogues. Native TCGdex fronts remain eligible above.
  if(image.url&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw')))return image}catch{/* Only exact identifiers are eligible; continue deterministically. */}}
+ if(requestedLanguage==='fr'&&englishCandidate){const promoImage=buildMepPromoImage(englishCandidate);if(promoImage)return{url:promoImage,language:'en',quality,source:'promo-archive',isFallback:true,verified:true} satisfies ResolvedCardImage}
  return{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage}
 function cachedResolve(card:SetCard,language:string,quality:'low'|'high'){const key=`image:${language}:${card.id}:${quality}`,existing=imageCache.get(key);if(existing?.image)return Promise.resolve(existing.image);if(existing?.status==='missing')return Promise.resolve({language,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage);if(existing?.promise)return existing.promise
  const promise=resolveCatalogueImage(card,language,quality).then(image=>{imageCache.set(key,image.url?{status:'resolved',image}:{status:'missing',image});return image});imageCache.set(key,{status:'pending',promise});return promise}
