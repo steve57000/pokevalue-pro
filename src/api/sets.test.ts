@@ -18,7 +18,6 @@ describe('localized set catalogue', () => {
       'https://api.tcgdex.net/v2/ja/series/sv',
     ])
   })
-})
 
   it('includes all three RGB Mew cards when the anniversary API omits them', async () => {
     const baseSet = {
