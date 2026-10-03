@@ -11,9 +11,9 @@ export type CardImageOverride={
 
 // RGB rares use their color letter rather than a numbered collector ID.
 export const rgbMewImageByNumber: Readonly<Record<string,{url:string;language:string}>>={
- 'R/RGB':{url:'https://billsarchive.com/assets/articles/rgb-mew-red.webp',language:'fr'},
- 'G/RGB':{url:'https://billsarchive.com/assets/articles/rgb-mew-green.webp',language:'en'},
- 'B/RGB':{url:'https://billsarchive.com/assets/articles/rgb-mew-blue.webp',language:'en'},
+ R:{url:'https://billsarchive.com/assets/articles/rgb-mew-red.webp',language:'fr'},
+ G:{url:'https://billsarchive.com/assets/articles/rgb-mew-green.webp',language:'en'},
+ B:{url:'https://billsarchive.com/assets/articles/rgb-mew-blue.webp',language:'en'},
 }
 
 // These identities describe the 30th-anniversary reprints. When TCGdex has no scan,
