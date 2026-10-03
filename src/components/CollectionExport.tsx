@@ -3,6 +3,7 @@ import { Download, FileText, X } from 'lucide-react'
 import { getSeries, getSet, listSeries, listSets, type SeriesSummary, type SetSummary } from '../api/sets'
 import type { CollectionEntry, CardCondition } from '../domain/collection'
 import { resolveCardImage } from '../domain/image'
+import { buildCollectionPdf } from '../domain/exportPdf'
 
 type Props = { entries: CollectionEntry[] }
 type Format = 'csv' | 'pdf'
@@ -52,49 +53,13 @@ function downloadCsv(cards:ExportCard[], title:string) {
 }
 
 const escapeHtml = (value:unknown) => String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string))
-function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize,returnUrl:string) {
-  const groups=new Map<string,ExportCard[]>()
-  cards.forEach(card=>{
-    const key=JSON.stringify([card.setName,card.language])
-    groups.set(key,[...(groups.get(key)??[]),card])
-  })
-  const config={
-    large:{columns:3,rows:4,height:56,gap:2},
-    medium:{columns:4,rows:5,height:46,gap:2},
-    small:{columns:5,rows:6,height:38,gap:1.5},
-    none:{columns:5,rows:9,height:25,gap:1.5},
-  }[imageSize]
-  const pageLimit=config.columns*config.rows
-  const pages:string[]=[]
-  for(const [key,items] of [...groups.entries()].sort(([a],[b])=>a.localeCompare(b,'fr'))){
-    const [setName,language]=JSON.parse(key) as [string,string]
-    items.sort((a,b)=>(a.number??'').localeCompare(b.number??'',undefined,{numeric:true})||a.name.localeCompare(b.name,'fr'))
-    const copies=items.reduce((sum,card)=>sum+card.quantity,0)
-    const pageCount=Math.ceil(items.length/pageLimit)
-    for(let offset=0;offset<items.length;offset+=pageLimit){
-      const pageItems=items.slice(offset,offset+pageLimit)
-      const list=pageItems.map(card=>{
-        const url=imageSize==='none'?'':cardImage(card)
-        const image=url?'<div class="visual"><img src="'+escapeHtml(url)+'" alt="" /></div>':''
-        const price=card.manualPrice!==undefined?'<span>Prix manuel : '+escapeHtml(card.manualPrice.toLocaleString('fr-FR',{style:'currency',currency:'EUR'}))+'</span>':''
-        const condition=card.condition?'<span>État : '+conditionName[card.condition]+'</span>':''
-        const status=card.owned?'Possédée ×'+card.quantity:'Manquante'
-        const rarity=card.rarity?'<span>'+escapeHtml(card.rarity)+'</span>':''
-        return '<article class="card">'+image+'<div class="details"><h3>'+escapeHtml(card.name)+'</h3><p>Nº '+escapeHtml(card.number||'—')+' · '+escapeHtml(status)+'</p><div class="facts">'+rarity+condition+price+'</div></div></article>'
-      }).join('')
-      const pageNumber=Math.floor(offset/pageLimit)+1
-      pages.push('<section class="print-page cards-page"><header class="set-heading"><div><p class="eyebrow">'+escapeHtml(languageName[language]??language)+'</p><h2>'+escapeHtml(setName)+'</h2></div><b>'+items.length+' cartes · '+copies+' exemplaires · page '+pageNumber+'/'+pageCount+'</b></header><div class="cards cards-'+imageSize+'" style="--columns:'+config.columns+';--card-height:'+config.height+'mm;--card-gap:'+config.gap+'mm">'+list+'</div></section>')
-    }
-  }
-  const totalCopies=cards.reduce((sum,card)=>sum+card.quantity,0)
-  const ownedCount=cards.filter(card=>card.owned).length
-  const missingCount=cards.length-ownedCount
-  const generated=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})
-  const setNames=[...new Set(cards.map(card=>card.setName))]
-  const languagesUsed=[...new Set(cards.map(card=>languageName[card.language]??card.language))]
-  const cover='<section class="print-page cover-page"><div class="cover-band"></div><div class="cover-content"><p class="brand">PokéValue · Classeur Pokémon TCG</p><h1>'+escapeHtml(title)+'</h1><p class="subtitle">Inventaire personnel classé par extension et langue</p><p class="cover-date">Édité le '+escapeHtml(generated)+' · '+escapeHtml(imageSize==='large'?'Grandes images':imageSize==='medium'?'Images moyennes':imageSize==='small'?'Petites images':'Sans image')+'</p><div class="cover-stats"><div><b>'+cards.length+'</b><span>cartes listées</span></div><div><b>'+totalCopies+'</b><span>exemplaires possédés</span></div><div><b>'+ownedCount+'</b><span>possédées</span></div><div><b>'+missingCount+'</b><span>manquantes</span></div></div><div class="cover-info"><strong>Extensions</strong><p>'+escapeHtml(setNames.join(' · '))+'</p><strong>Langues</strong><p>'+escapeHtml(languagesUsed.join(' · '))+'</p></div><p class="cover-note">Document créé avec PokéValue. Les prix indiqués sont uniquement ceux saisis manuellement.</p></div></section>'
-  const css='@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font:8pt Arial,Helvetica,sans-serif;color:#172033;background:#fff}.pdf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:0 auto 12px;max-width:900px;background:#172033;border-radius:12px;color:#fff}.pdf-toolbar a,.pdf-toolbar button{font:600 14px Arial,sans-serif;color:#fff;text-decoration:none;background:#29364c;border:1px solid #526078;border-radius:9px;padding:10px 12px;cursor:pointer}.pdf-toolbar button{background:#ed514b;border-color:#ed514b}.print-page{position:relative;width:100%;height:281mm;margin:0 0 8mm;padding:0;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;background:#fff;overflow:hidden}.print-page:last-of-type{break-after:auto;page-break-after:auto}.cover-page{height:281mm;min-height:0;padding:0 3mm 4mm;overflow:hidden}.cover-band{height:7mm;margin:0 -3mm 9mm;background:#ef514b;border-bottom:1.5mm solid #172033}.cover-content{position:relative;z-index:1;max-width:180mm}.brand{margin:0 0 4mm;color:#d94340;font-size:8pt;font-weight:800;letter-spacing:.17em;text-transform:uppercase}.cover-page h1{max-width:175mm;margin:0 0 3mm;font-size:22pt;line-height:1.08;overflow-wrap:anywhere;color:#172033}.subtitle{margin:0;color:#566276;font-size:10pt}.cover-date{margin:3mm 0 0;color:#778195;font-size:8pt}.cover-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin:9mm 0 0;max-width:180mm}.cover-stats div{min-height:21mm;padding:3mm;border:1px solid #d8deea;border-top:1.5mm solid #ef514b;border-radius:2mm;background:#f7f8fb}.cover-stats b{display:block;font-size:18pt;line-height:1.05;color:#172033}.cover-stats span{display:block;margin-top:1mm;color:#657086;font-size:7pt}.cover-info{margin-top:7mm;max-width:180mm}.cover-info strong{display:block;margin:0 0 1mm;color:#d94340;font-size:7pt;letter-spacing:.1em;text-transform:uppercase}.cover-info p{margin:0 0 4mm;color:#29364c;font-size:8pt;line-height:1.45;overflow-wrap:anywhere}.cover-note{margin:6mm 0 0;padding-top:3mm;border-top:1px solid #d8deea;color:#778195;font-size:7pt}.set-heading{height:13mm;display:flex;justify-content:space-between;align-items:center;margin:0 0 3mm;border-bottom:1px solid #cbd2dc}.set-heading h2{margin:0;font-size:11pt}.set-heading>b{color:#687386;font-size:7pt;text-align:right}.eyebrow{margin:0 0 .5mm;color:#e4504b;font-size:6pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.cards{display:grid!important;grid-template-columns:repeat(var(--columns),minmax(0,1fr))!important;grid-auto-rows:var(--card-height);gap:var(--card-gap);align-content:start;break-inside:avoid;page-break-inside:avoid}.card{height:var(--card-height);min-height:0;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:1mm;padding:1.5mm;border:1px solid #dce1e9;border-radius:1.5mm;background:#fff;break-inside:avoid;page-break-inside:avoid}.details{width:100%;min-width:0;flex:0 0 auto;overflow:hidden}.details h3{margin:0 0 1mm;font-size:7pt;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;overflow-wrap:anywhere}.details p{margin:0 0 .8mm;color:#687386;font-size:6pt;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.facts{display:flex;flex-wrap:wrap;gap:.8mm 1.2mm;max-height:7mm;overflow:hidden;color:#5a6576;font-size:5.5pt;line-height:1.1}.visual{width:15mm;flex:0 0 auto;height:auto;aspect-ratio:63/88;overflow:hidden;display:grid;place-items:center;background:#f1f3f7;border-radius:.7mm;align-self:center}.visual img{display:block;width:100%;height:100%;object-fit:contain}.cards-large .card{gap:1mm;padding:1mm}.cards-large .visual{width:27mm;height:37.7mm;aspect-ratio:63/88}.cards-large .details{width:100%;flex:0 0 auto}.cards-medium .visual{width:19mm}.cards-small .visual{width:9.5mm}.cards-none .visual{display:none!important}.cards-none .card{padding:1mm}.pdf-toolbar button:disabled{opacity:.7;cursor:wait}@media screen{body{background:#e8ebf1;padding:10px 0 24px}.pdf-toolbar{position:sticky;top:8px;z-index:3}.print-page{width:194mm;min-height:0;margin:12px auto;padding:8mm;box-shadow:0 4px 20px rgba(24,35,55,.16)}.cover-page{width:194mm;padding:0 8mm 8mm}.cover-band{margin:0 -8mm 13mm}}@media screen and (max-width:600px){.pdf-toolbar{margin:0 10px 10px;align-items:stretch;flex-direction:column}.pdf-toolbar a,.pdf-toolbar button{text-align:center}.print-page{width:100%;padding:6mm;overflow:hidden}.cover-page{padding:0 6mm 6mm}.cover-band{margin:0 -6mm 10mm}.cover-art{width:32mm;height:32mm;right:5mm;top:15mm}.cover-page h1{font-size:21pt;max-width:110mm}.cover-stats{grid-template-columns:repeat(2,1fr);gap:2mm;margin-top:8mm}.cover-info{margin-top:6mm}.cover-note{margin-top:5mm}}@media print{.pdf-toolbar{display:none!important}.print-page{width:100%;height:281mm;margin:0;padding:0;box-shadow:none;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}.cover-page{height:281mm;padding:0 3mm 4mm;min-height:0}.cover-band{margin-left:-3mm;margin-right:-3mm}.cards{display:grid!important;grid-template-columns:repeat(var(--columns),minmax(0,1fr))!important;grid-auto-rows:var(--card-height)!important;gap:var(--card-gap)!important}.card{display:flex!important;flex-direction:column!important;break-inside:avoid!important;page-break-inside:avoid!important}.hint{display:none!important}.print-page:last-of-type{break-after:auto;page-break-after:auto}}'
-  const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escapeHtml(title)+' · PokéValue</title><style>'+css+'</style></head><body><nav class="pdf-toolbar"><a href="'+escapeHtml(returnUrl)+'">← Retour à PokéValue</a><button type="button" id="print-pdf">Imprimer / Enregistrer en PDF</button></nav>'+cover+pages.join('')+'<script>document.getElementById("print-pdf").addEventListener("click",async event=>{const button=event.currentTarget;button.disabled=true;button.textContent="Préparation de l’impression…";try{await Promise.all([...document.images].map(img=>img.decode().catch(()=>undefined)));await document.fonts.ready;window.print()}finally{button.disabled=false;button.textContent="Imprimer / Enregistrer en PDF"}});</script></body></html>'
+async function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize,returnUrl:string) {
+  const pdf=await buildCollectionPdf(cards.map(card=>({...card,image:cardImage(card)})),title,imageSize)
+  if(win.closed)throw new Error('La fenêtre du PDF a été fermée avant la fin de la génération.')
+  const pdfUrl=URL.createObjectURL(pdf)
+  const filename='pokevalue-'+fileSlug(title)+'-'+today()+'.pdf'
+  const pageCount=pdf.size>0?'Le document est prêt, au format A4.':'Le PDF est vide.'
+  const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escapeHtml(title)+' · PokéValue</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font:16px system-ui,-apple-system,sans-serif;color:#172033;background:#eef1f6}.toolbar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;background:#172033}.toolbar a{flex:1 1 140px;min-height:46px;display:flex;justify-content:center;align-items:center;padding:10px 14px;border:1px solid #526078;border-radius:12px;background:#29364c;color:#fff;text-decoration:none;font-weight:650;text-align:center}.toolbar a.primary{background:#ef514b;border-color:#ef514b}.status{margin:0;padding:9px 14px;background:#fff;color:#566276;font-size:13px}iframe{display:block;width:100%;height:calc(100dvh - 126px);min-height:420px;border:0;background:white}@media(max-width:600px){.toolbar{display:grid;grid-template-columns:1fr 1fr;padding:9px;gap:8px}.toolbar a{font-size:14px;padding:8px}.status{font-size:12px}iframe{height:calc(100dvh - 142px);min-height:320px}}@media print{.toolbar,.status{display:none}iframe{height:100dvh}}</style></head><body><nav class="toolbar"><a href="'+escapeHtml(returnUrl)+'">← Retour à PokéValue</a><a class="primary" href="'+escapeHtml(pdfUrl)+'" target="_blank" rel="noopener">Ouvrir / partager le PDF</a><a href="'+escapeHtml(pdfUrl)+'" download="'+escapeHtml(filename)+'">Télécharger le PDF</a></nav><p class="status">'+pageCount+' · Les pages et les cartes sont déjà mises en page dans le fichier.</p><iframe title="Aperçu du PDF" src="'+escapeHtml(pdfUrl)+'"></iframe></body></html>'
   win.document.open()
   win.document.write(html)
   win.document.close()
@@ -193,7 +158,7 @@ export function CollectionExport({entries}:Props) {
       }
       if(!cards.length)throw new Error('Aucune carte ne correspond à cette sélection.')
       if(format==='csv')downloadCsv(cards,title)
-      else if(printWindow)printPdf(printWindow,cards,title,imageSize,window.location.href)
+      else if(printWindow)await printPdf(printWindow,cards,title,imageSize,window.location.href)
       setOpen(false)
     }catch(reason){
       if(printWindow)printWindow.close()
