@@ -13,7 +13,8 @@ type Props = {
   onPriceHistory: () => void
 }
 const languages = ['fr', 'en', 'ja', 'zh-tw'] as const
-type Filter = 'all' | 'priority' | 'review' | 'skip'
+type Filter = 'all' | 'priority' | 'review'
+const MIN_GRADING_VALUE = 50
 
 export function GradingPage({ entries, onPriceHistory }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -29,7 +30,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   const zh = useCardPrices(idsByLanguage['zh-tw'], 'zh-tw')
   const priceMaps = { fr, en, ja, 'zh-tw': zh }
 
-  const analyzed = owned.map(entry => {
+  const candidates = owned.map(entry => {
     const priceState = priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]
     const marketPrice = priceState?.price?.value
     const unitPrice = collectionUnitPrice(entry, marketPrice)
@@ -47,25 +48,24 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       ? ['État enregistré trop marqué pour une gradation orientée revente.']
       : interest.reasons
     return { entry, priceState, unitPrice, interest, recommendation, reasons }
-  }).filter(item => {
+  }).filter(item =>
+    item.unitPrice !== undefined
+    && item.unitPrice >= MIN_GRADING_VALUE
+    && item.recommendation !== 'skip'
+  )
+
+  const analyzed = candidates.filter(item => {
     const matchesFilter = filter === 'all'
       || (filter === 'priority' && item.recommendation === 'priority')
       || (filter === 'review' && item.recommendation === 'review')
-      || (filter === 'skip' && item.recommendation === 'skip')
     const needle = query.trim().toLocaleLowerCase()
     const matchesQuery = !needle || `${item.entry.name} ${item.entry.setName} ${item.entry.number ?? ''}`.toLocaleLowerCase().includes(needle)
     return matchesFilter && matchesQuery
   }).sort((a, b) => b.interest.score - a.interest.score || (b.unitPrice ?? 0) - (a.unitPrice ?? 0))
 
   const counts = {
-    priority: owned.filter(entry => {
-      const item = analyze(entry, priceMaps)
-      return entry.condition !== 'played' && entry.condition !== 'poor' && item.level === 'high'
-    }).length,
-    review: owned.filter(entry => {
-      const item = analyze(entry, priceMaps)
-      return entry.condition !== 'played' && entry.condition !== 'poor' && item.level === 'medium'
-    }).length,
+    priority: candidates.filter(item => item.recommendation === 'priority').length,
+    review: candidates.filter(item => item.recommendation === 'review').length,
     missingPrice: owned.filter(entry => !priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]?.price && (entry.priceMode !== 'manual' || entry.manualPrice === undefined)).length,
   }
 
@@ -78,7 +78,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     </header>
 
     <div className="grading-summary">
-      <article><small>Cartes possédées</small><strong>{owned.length}</strong><span>Toutes langues et extensions</span></article>
+      <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Valeur ≥ {money(MIN_GRADING_VALUE)}</span></article>
       <article className="is-priority"><small>À examiner en priorité</small><strong>{counts.priority}</strong><span>Signaux de marché élevés</span></article>
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
@@ -86,11 +86,12 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>La sélection est indicative : les prix Cardmarket de l’application ne sont pas filtrés par langue, et aucune estimation de note PSA/CGC/BGS ni de valeur de revente après gradation n’est disponible. Vérifie la langue, l’état réel, les ventes comparables et le coût total avant d’envoyer une carte.</p></aside>
 
     <section className="grading-candidates">
-      <div className="grading-list-heading"><div><h2>Ma sélection</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
+      <div className="grading-list-heading"><div><h2>Cartes à valeur significative</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · prix ≥ {money(MIN_GRADING_VALUE)}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
       <div className="grading-filters" aria-label="Filtrer les cartes">
-        {([['all','Toutes'],['priority','Prioritaires'],['review','À examiner'],['skip','Faible intérêt']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}{value === 'priority' ? ` · ${counts.priority}` : value === 'review' ? ` · ${counts.review}` : ''}</button>)}
+        {([['all','Toutes'],['priority','Prioritaires'],['review','À examiner']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}{value === 'priority' ? ` · ${counts.priority}` : value === 'review' ? ` · ${counts.review}` : ''}</button>)}
       </div>
       {owned.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Ta collection est encore vide</h3><p>Ajoute des cartes dans l’onglet Collection : elles apparaîtront ici automatiquement.</p></div>
+        : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)}, en état acceptable et avec un intérêt de gradation suffisant. Une carte commune reste une exception si sa valeur franchit ces critères. Les cartes sans prix confirmé ne sont pas affichées.</p></div>
         : analyzed.length === 0 ? <div className="grading-empty"><Search size={24}/><h3>Aucun résultat</h3><p>Essaie un autre filtre ou une autre recherche.</p></div>
         : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons }) => {
           const label = recommendation === 'priority' ? 'À examiner en priorité' : recommendation === 'review' ? 'À examiner' : 'Faible intérêt économique'
