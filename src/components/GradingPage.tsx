@@ -133,7 +133,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 }
 
 function analyze(entry: CollectionEntry, prices: Record<string, Record<string, CardPriceState>>) {
-  const price = prices[entry.cardId]
+  const price = prices[entry.language]?.[entry.cardId]
   return getGradingInterest({ rawPrice: collectionUnitPrice(entry, price?.price?.value), rarity: entry.rarity, trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low })
 }
 
