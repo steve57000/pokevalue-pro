@@ -92,13 +92,18 @@ function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize
 }
 const ownedRecord=(entry:CollectionEntry):ExportCard=>({...entry,owned:true})
 function catalogRecords(setId:string,setName:string,language:string,cards:{id:string;name:string;localId:string;image?:string;rarity?:string}[],entries:CollectionEntry[],filter:CatalogFilter):ExportCard[] {
-  return cards.flatMap(card=>{
+  const result:ExportCard[]=[]
+  for(const card of cards){
     const matches=entries.filter(entry=>entry.quantity>0&&entry.cardId===card.id&&entry.language===language)
-    if(filter==='owned'&&!matches.length)return []
-    if(filter==='missing'&&matches.length)return []
-    if(matches.length)return matches.map(entry=>({...entry,setName,setId,number:card.localId,name:card.name,image:card.image??entry.image,rarity:card.rarity??entry.rarity,owned:true}))
-    return [{setId,setName,cardId:card.id,language,name:card.name,number:card.localId,image:card.image,rarity:card.rarity,variant:'normal',quantity:0,owned:false}]
-  })
+    if(filter==='owned'&&!matches.length)continue
+    if(filter==='missing'&&matches.length)continue
+    if(matches.length){
+      result.push(...matches.map(entry=>({...entry,setName,setId,number:card.localId,name:card.name,image:card.image??entry.image,rarity:card.rarity??entry.rarity,owned:true})))
+    }else{
+      result.push({setId,setName,cardId:card.id,language,name:card.name,number:card.localId,image:card.image,rarity:card.rarity,variant:'normal',quantity:0,owned:false})
+    }
+  }
+  return result
 }
 
 export function CollectionExport({entries}:Props) {
@@ -132,7 +137,7 @@ export function CollectionExport({entries}:Props) {
   useEffect(()=>{
     if(!open||scope!=='blocks'||selectedIds.length===0){setSetsByBlock({});return}
     let active=true
-    setLoading(true);setError('')
+    setSetsByBlock({});setLoading(true);setError('')
     Promise.all(selectedIds.map(id=>getSeries(id,language))).then(details=>{
       if(!active)return
       setSetsByBlock(Object.fromEntries(details.map(detail=>[detail.id,detail.sets])))
@@ -204,7 +209,7 @@ export function CollectionExport({entries}:Props) {
           <input className="export-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder={scope==='blocks'?'Rechercher un bloc':'Rechercher une extension'} aria-label="Rechercher dans les séries"/>
           {loading&&<p className="export-status">Chargement du catalogue…</p>}
           {!loading&&visibleItems.length>0&&<div className="export-options">
-            {visibleItems.map(item=><label key={item.id}><input type={scope==='missing'?'radio':'checkbox'} name="export-item" checked={selectedIds.includes(item.id)} onChange={event=>toggleSelected(item.id,event.target.checked,scope==='missing')}/><span>{item.name}</span>{'cardCount'in item&&<small>{item.cardCount.total} cartes</small>}</label>)}
+            {visibleItems.map(item=><label key={item.id}><input type={scope==='missing'?'radio':'checkbox'} name="export-item" checked={selectedIds.includes(item.id)} onChange={event=>toggleSelected(item.id,event.target.checked,scope==='missing')}/><span>{item.name}</span>{'cardCount'in item&&<small>{(item as SetSummary).cardCount.total} cartes</small>}</label>)}
           </div>}
           {!loading&&visibleItems.length===0&&!error&&<p className="export-status">Aucun élément trouvé.</p>}
           {scope==='blocks'&&selectedIds.length>0&&<p className="export-status">Extensions incluses : {selectedSets.length||'chargement…'}</p>}
