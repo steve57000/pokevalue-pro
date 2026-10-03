@@ -23,9 +23,9 @@ const CANVAS_W = Math.round(PAGE_W * PIXELS_PER_POINT)
 const CANVAS_H = Math.round(PAGE_H * PIXELS_PER_POINT)
 const languageNames: Record<string, string> = { fr: 'Français', en: 'Anglais', ja: 'Japonais', 'zh-tw': 'Chinois traditionnel' }
 const layouts: Record<PdfImageSize, { columns: number; rows: number; imageHeight: number }> = {
-  large: { columns: 3, rows: 3, imageHeight: 112 },
-  medium: { columns: 4, rows: 4, imageHeight: 76 },
-  small: { columns: 5, rows: 5, imageHeight: 53 },
+  large: { columns: 3, rows: 3, imageHeight: 155 },
+  medium: { columns: 4, rows: 4, imageHeight: 100 },
+  small: { columns: 5, rows: 5, imageHeight: 76 },
   none: { columns: 5, rows: 7, imageHeight: 0 },
 }
 const encoder = new TextEncoder()
@@ -178,7 +178,7 @@ function drawCard(ctx: CanvasRenderingContext2D, card: PdfCard, x: number, y: nu
   if (extra.length && textY < y + h - 5) drawWrapped(ctx, extra.join(' · '), x + pad, textY, textW, 9, 2)
 }
 async function canvasJpeg(canvas: HTMLCanvasElement) {
-  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88))
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
   if (!blob) throw new Error('Impossible de convertir les pages PDF sur cet appareil.')
   return new Uint8Array(await blob.arrayBuffer())
 }
