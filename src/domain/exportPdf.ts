@@ -242,8 +242,9 @@ export async function buildCollectionPdf(cards: PdfCard[], title: string, size: 
     const copies = group.reduce((sum, card) => sum + (card.owned ? card.quantity : 0), 0)
     for (let start = 0; start < group.length; start += layout.columns * layout.rows) {
       const pageIndex = Math.floor(start / (layout.columns * layout.rows)) + 1
-      const { canvas, ctx } = newPage()
       const pageCards = group.slice(start, start + layout.columns * layout.rows)
+      const pageImages = size === 'none' ? pageCards.map(() => null) : await Promise.all(pageCards.map(getImage))
+      const { canvas, ctx } = newPage()
       ctx.fillStyle = '#d94340'; setCanvasFont(ctx, 7.5, 700); ctx.fillText(languageName(language).toLocaleUpperCase('fr'), margin, 27)
       ctx.fillStyle = '#172033'; setCanvasFont(ctx, 14, 700); ctx.fillText(setName, margin, 47)
       ctx.fillStyle = '#687386'; setCanvasFont(ctx, 7)
@@ -254,7 +255,7 @@ export async function buildCollectionPdf(cards: PdfCard[], title: string, size: 
         const x = margin + col * (cellW + gapX)
         const y = headerBottom + row * (cellH + gapY)
         const card = pageCards[i]
-        const image = size === 'none' ? null : await getImage(card)
+        const image = pageImages[i]
         drawCard(ctx, card, x, y, cellW, cellH, layout.imageHeight, image)
       }
       ctx.fillStyle = '#a4adba'; setCanvasFont(ctx, 7); ctx.fillText('PokéValue · ' + languageName(language), margin, PAGE_H - 15)
