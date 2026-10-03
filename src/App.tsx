@@ -258,10 +258,50 @@ function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,o
   </article>
 }
 
-function FavoritesPage({favorites,editorialCards,onShowcase,onToggle}:{favorites:FavoriteCard[];editorialCards:Card[];onShowcase:(favorite:FavoriteCard)=>void;onToggle:(favorite:FavoriteInput)=>void}){
-  const [sort,setSort]=useState('recent'),[language,setLanguage]=useState('all'),[search,setSearch]=useState('')
-  const needle=search.trim().toLocaleLowerCase('fr'),shown=[...favorites].filter(card=>(language==='all'||card.language===language)&&(!needle||`${card.name} ${card.setName} ${card.localId??''}`.toLocaleLowerCase('fr').includes(needle))).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='set'?a.setName.localeCompare(b.setName):sort==='price-asc'||sort==='price-desc'?0:b.addedAt.localeCompare(a.addedAt))
-  return <section className="favorites-page"><div className="page-heading"><span className="eyebrow"><Heart size={15}/> Collection personnelle</span><h1>Mes favoris</h1><p>Retrouve rapidement les cartes que tu souhaites suivre.</p><strong>{favorites.length} favori{favorites.length===1?'':'s'}</strong></div>{favorites.length===0?<div className="empty favorites-empty"><Heart size={42}/><h2>Aucun favori pour le moment</h2><p>Utilise le cœur sur une carte pour la retrouver ici.</p></div>:<><div className="favorites-controls"><label>Trier<select value={sort} onChange={event=>setSort(event.target.value)}><option value="recent">Ajout récent</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option><option value="name">Nom</option><option value="set">Extension</option></select></label><label>Langue<select value={language} onChange={event=>setLanguage(event.target.value)}><option value="all">Toutes</option><option value="fr">FR</option><option value="en">EN</option><option value="ja">JP</option><option value="zh-tw">ZH</option></select></label><label className="favorites-search"><Search size={16}/><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Rechercher un favori" aria-label="Rechercher parmi mes favoris"/></label></div><p className="favorites-result-count">{shown.length} résultat{shown.length===1?'':'s'}</p>{shown.length===0?<div className="empty favorites-empty"><Search size={35}/><h2>Aucun favori trouvé</h2><p>Modifie ta recherche ou le filtre de langue.</p></div>:<div className="favorites-grid">{shown.map(card=>{const editorial=editorialCards.find(item=>item.id===card.cardId),imageCardId=card.source==='editorial'?(editorial?.tcgdexId??card.cardId):card.cardId;return <article key={card.key}><button className="favorite-preview" onClick={()=>onShowcase(card)} aria-label={`Voir ${card.name} en 3D`}>{editorial?.tcgdexId||card.source==='tcgdex'?<CatalogueImage card={{id:imageCardId,name:card.name,localId:card.localId??''}} requestedLanguage={card.language} quality="low"/>:<CardImage image={card.image} name={card.name} quality="low"/>}</button><div><strong>{card.name}</strong><span>{card.localId&&`Nº ${card.localId} · `}{card.setName}</span><small>{card.language.toUpperCase()}</small></div><FavoriteButton favorite onToggle={()=>onToggle(card)}/></article>})}</div></>}</section>
+function FavoritesPage({favorites,editorialCards,onShowcase,onToggle}:{favorites:FavoriteCard[];editorialCards:Card[];onShowcase:(favorite:FavoriteCard)=>void;onToggle:(favorite:FavoriteInput)=>void}) {
+  const [sort,setSort]=useState('recent')
+  const [language,setLanguage]=useState('all')
+  const [search,setSearch]=useState('')
+  const needle=search.trim().toLocaleLowerCase('fr')
+  const shown=[...favorites]
+    .filter(card => (language==='all' || card.language===language) && (!needle || `${card.name} ${card.setName} ${card.localId ?? ''}`.toLocaleLowerCase('fr').includes(needle)))
+    .sort((a,b) => sort==='name' ? a.name.localeCompare(b.name) : sort==='set' ? a.setName.localeCompare(b.setName) : sort==='price-asc' || sort==='price-desc' ? 0 : b.addedAt.localeCompare(a.addedAt))
+
+  return <section className="favorites-page">
+    <div className="page-heading">
+      <span className="eyebrow"><Heart size={15}/> Collection personnelle</span>
+      <h1>Mes favoris</h1>
+      <p>Retrouve rapidement les cartes que tu souhaites suivre.</p>
+      <strong>{favorites.length} favori{favorites.length===1 ? '' : 's'}</strong>
+    </div>
+    {favorites.length===0
+      ? <div className="empty favorites-empty"><Heart size={42}/><h2>Aucun favori pour le moment</h2><p>Utilise le cœur sur une carte pour la retrouver ici.</p></div>
+      : <>
+        <div className="favorites-controls">
+          <label>Trier<select value={sort} onChange={event=>setSort(event.target.value)}><option value="recent">Ajout récent</option><option value="price-asc">Prix croissant</option><option value="price-desc">Prix décroissant</option><option value="name">Nom</option><option value="set">Extension</option></select></label>
+          <label>Langue<select value={language} onChange={event=>setLanguage(event.target.value)}><option value="all">Toutes</option><option value="fr">FR</option><option value="en">EN</option><option value="ja">JP</option><option value="zh-tw">ZH</option></select></label>
+          <label className="favorites-search"><Search size={16}/><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Rechercher un favori" aria-label="Rechercher parmi mes favoris"/></label>
+        </div>
+        <p className="favorites-result-count">{shown.length} résultat{shown.length===1 ? '' : 's'}</p>
+        {shown.length===0
+          ? <div className="empty favorites-empty"><Search size={35}/><h2>Aucun favori trouvé</h2><p>Modifie ta recherche ou le filtre de langue.</p></div>
+          : <div className="favorites-grid">
+            {shown.map(card => {
+              const editorial=editorialCards.find(item=>item.id===card.cardId)
+              const imageCardId=card.source==='editorial' ? (editorial?.tcgdexId ?? card.cardId) : card.cardId
+              return <article key={card.key}>
+                <button className="favorite-preview" onClick={()=>onShowcase(card)} aria-label={`Voir ${card.name} en 3D`}>
+                  {editorial?.tcgdexId || card.source==='tcgdex'
+                    ? <CatalogueImage card={{id:imageCardId,name:card.name,localId:card.localId ?? ''}} requestedLanguage={card.language} quality="low"/>
+                    : <CardImage image={card.image} name={card.name} quality="low"/>}
+                </button>
+                <div><strong>{card.name}</strong><span>{card.localId && `Nº ${card.localId} · `}{card.setName}</span><small>{card.language.toUpperCase()}</small></div>
+                <FavoriteButton favorite onToggle={()=>onToggle(card)}/>
+              </article>
+            })}
+          </div>}
+      </>}
+  </section>
 }
 
 function Estimator() {
