@@ -1,11 +1,13 @@
 import { Download, FileText } from 'lucide-react'
 import type { CollectionEntry } from '../domain/collection'
+import { resolveCardImage } from '../domain/image'
 
 type Props = { entries: CollectionEntry[] }
 
 const languageName: Record<string, string> = { fr: 'Français', en: 'Anglais', ja: 'Japonais', 'zh-tw': 'Chinois traditionnel' }
 const conditionName: Record<CollectionEntry['condition'], string> = { mint: 'Mint', 'near-mint': 'Near Mint', excellent: 'Excellent', good: 'Bon', played: 'Joué', poor: 'Abîmé' }
 const safeImage = (value?: string) => value && (/^https:\/\//i.test(value) || value.startsWith('/')) ? value : ''
+const collectionImage = (entry: CollectionEntry) => safeImage(resolveCardImage({ card: { id: entry.cardId, name: entry.name, localId: entry.number, image: entry.image, language: entry.language }, requestedLanguage: entry.language, quality: 'low' }).url)
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!)
 const csvCell = (value: unknown) => {
   let text = String(value ?? '')
@@ -47,7 +49,7 @@ function printCollection(entries: CollectionEntry[]) {
       const [setName, language] = key.split('||')
       const count = cards.reduce((sum, card) => sum + card.quantity, 0)
       const list = cards.sort((a, b) => a.number?.localeCompare(b.number ?? '', undefined, { numeric: true }) ?? a.name.localeCompare(b.name, 'fr')).map(card => {
-        const image = safeImage(card.image)
+        const image = collectionImage(card)
         const price = card.manualPrice !== undefined ? `<span>Prix manuel : ${escapeHtml(card.manualPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }))}</span>` : ''
         return `<article class="card">
           <div class="visual">${image ? `<img src="${escapeHtml(image)}" alt="" />` : '<div class="placeholder">Visuel indisponible</div>'}</div>
