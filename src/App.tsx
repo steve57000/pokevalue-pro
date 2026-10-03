@@ -109,13 +109,13 @@ function App() {
     }))
   }
 
-  const navigate=useCallback((next:View)=>{if(next===viewRef.current)return;scrollByView.current[viewRef.current]=window.scrollY;viewRef.current=next;setView(next);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))},[])
+  const navigate=useCallback((next:View)=>{if(next===viewRef.current)return;if(next!=='featured')setQuery('');scrollByView.current[viewRef.current]=window.scrollY;viewRef.current=next;setView(next);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))},[])
 
   const nav = [
     {id:'collection', label:'Collection', icon:Library,group:'Collection'},
     {id:'favorites', label:'Favoris', icon:Heart,group:'Collection'},
-    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp,group:'Découvrir'},
     {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Collection'},
+    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp,group:'Découvrir'},
     {id:'history', label:'Suivi des prix', icon:History,group:'Découvrir'},
     {id:'scanner', label:'Identifier une carte', icon:ScanLine,group:'Découvrir'},
     {id:'estimator', label:'Estimer un lot', icon:Calculator},
@@ -133,7 +133,7 @@ function App() {
         <nav>
           {nav.map((item,index) => {
             const Icon = item.icon
-            const group=('group' in item?item.group:item.id==='sync'?'Données':'Outils'),previous=index?nav[index-1].id==='sync'?'Données':['estimator','guide'].includes(nav[index-1].id)?'Outils':nav[index-1].id==='collection'||nav[index-1].id==='favorites'?'Collection':'Découvrir':''
+            const navGroups:Record<View,string>={collection:'Collection',favorites:'Collection',grading:'Collection',featured:'Découvrir',history:'Découvrir',scanner:'Découvrir',estimator:'Outils',guide:'Outils',sync:'Données'},group=navGroups[item.id],previous=index?navGroups[nav[index-1].id]:''
             return <div className="nav-item" key={item.id}>{group!==previous&&<span className="nav-label">{group}</span>}<button className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
               <Icon size={19}/><span>{item.label}</span>
               {item.id==='favorites' && favorites.length>0 && <b>{favorites.length}</b>}
@@ -153,7 +153,7 @@ function App() {
       <main>
         <header className="topbar">
           <div className="mobile-brand"><div className="brand-mark">PV</div><strong>PokéValue</strong></div>
-          <div className="global-search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un Pokémon, une extension, un numéro…"/></div>
+          {view==='featured'&&<div className="global-search"><Search size={18}/><input aria-label="Rechercher parmi les cartes à surveiller" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher parmi les cartes à surveiller…"/></div>}
           <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
