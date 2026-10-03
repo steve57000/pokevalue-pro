@@ -52,7 +52,7 @@ function downloadCsv(cards:ExportCard[], title:string) {
 }
 
 const escapeHtml = (value:unknown) => String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string))
-function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize) {
+function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize,returnUrl:string) {
   const groups=new Map<string,ExportCard[]>()
   cards.forEach(card=>{
     const key=JSON.stringify([card.setName,card.language])
@@ -84,8 +84,8 @@ function printPdf(win:Window,cards:ExportCard[],title:string,imageSize:ImageSize
   '.cards-small{grid-template-columns:repeat(4,minmax(0,1fr))}.cards-large{grid-template-columns:repeat(3,minmax(0,1fr))}.cards-no-image{grid-template-columns:repeat(5,minmax(0,1fr))}.cards-large .card{min-height:32mm;padding:2mm;gap:2mm}.cards-large .visual{width:21mm;flex-basis:21mm}.cards-small .card{min-height:22mm}.cards-no-image .card{min-height:14mm}'+
   '@media screen{body{max-width:900px;margin:10px auto;padding:0 16px;font-size:14px}.cover{background:#f6f7fb;padding:16px;border-radius:14px;margin:0 0 10px}h1{font-size:26px;margin:4px 0}.subtitle{font-size:13px}.totals{gap:18px;margin-top:10px;font-size:12px}.totals b{font-size:17px}.hint{font-size:11px;margin:0 0 8px}.set{margin-bottom:14px}.set>header{padding-bottom:5px;margin-bottom:6px}.set>header h2{font-size:17px}.set>header>b{font-size:11px}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.card{gap:5px;padding:5px;min-height:54px}.details h3{font-size:12px}.details p{font-size:10px}.facts{font-size:9px}.visual{width:42px;flex-basis:42px}.cards-large .visual{width:54px;flex-basis:54px}.cards-no-image .card{min-height:44px}}'+
   '@media screen and (max-width:600px){body{padding:0 10px;margin:6px auto}.cover{padding:12px}.totals{gap:10px}.hint{font-size:10px}.cards{grid-template-columns:1fr 1fr}.card{padding:4px;gap:4px}.visual{width:36px;flex-basis:36px}.cards-large .visual{width:46px;flex-basis:46px}.cards-no-image .card{min-height:38px}}'+
-  '@media print{.hint{display:none!important}body{margin:0;padding:0}.cards-small{grid-template-columns:repeat(4,minmax(0,1fr))}.cards-large{grid-template-columns:repeat(3,minmax(0,1fr))}.cards-no-image{grid-template-columns:repeat(5,minmax(0,1fr))}}'+
-  '</style></head><body class="image-mode-'+imageSize+'"><div class="cover"><div class="brand">PokéValue · Classeur personnel</div><h1>'+escapeHtml(title)+'</h1><p class="subtitle">Classé par extension et langue · '+generated+'</p><div class="totals"><div><b>'+cards.length+'</b> cartes</div><div><b>'+totalCopies+'</b> exemplaires possédés</div><div><b>'+groups.size+'</b> groupes extension / langue</div></div></div><p class="hint">'+hint+'</p>'+sections+'<footer>Document personnel créé avec PokéValue. Seuls les prix saisis manuellement sont affichés.</footer><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),400));</script></body></html>'
+  '.pdf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:0 0 12px;background:#172033;border-radius:12px;color:white}.pdf-toolbar a,.pdf-toolbar button{font:600 14px Arial,sans-serif;color:white;text-decoration:none;background:#29364c;border:1px solid #526078;border-radius:9px;padding:10px 12px;cursor:pointer}.pdf-toolbar button{background:#ed514b;border-color:#ed514b}@media screen and (max-width:430px){.pdf-toolbar{align-items:stretch;flex-direction:column}.pdf-toolbar a,.pdf-toolbar button{text-align:center}}@media print{.pdf-toolbar{display:none!important}}'+\n  '@media print{.hint{display:none!important}body{margin:0;padding:0}.cards-small{grid-template-columns:repeat(4,minmax(0,1fr))}.cards-large{grid-template-columns:repeat(3,minmax(0,1fr))}.cards-no-image{grid-template-columns:repeat(5,minmax(0,1fr))}}'+
+  '</style></head><body class="image-mode-'+imageSize+'"><nav class="pdf-toolbar"><a href="'+escapeHtml(returnUrl)+'">← Retour à PokéValue</a><button type="button" id="print-pdf">Imprimer / Enregistrer en PDF</button></nav><div class="cover"><div class="brand">PokéValue · Classeur personnel</div><h1>'+escapeHtml(title)+'</h1><p class="subtitle">Classé par extension et langue · '+generated+'</p><div class="totals"><div><b>'+cards.length+'</b> cartes</div><div><b>'+totalCopies+'</b> exemplaires possédés</div><div><b>'+groups.size+'</b> groupes extension / langue</div></div></div><p class="hint">'+hint+'</p>'+sections+'<footer>Document personnel créé avec PokéValue. Seuls les prix saisis manuellement sont affichés.</footer><script>document.getElementById("print-pdf").addEventListener("click",()=>window.print());</script></body></html>'
   win.document.open()
   win.document.write(html)
   win.document.close()
@@ -184,7 +184,7 @@ export function CollectionExport({entries}:Props) {
       }
       if(!cards.length)throw new Error('Aucune carte ne correspond à cette sélection.')
       if(format==='csv')downloadCsv(cards,title)
-      else if(printWindow)printPdf(printWindow,cards,title,imageSize)
+      else if(printWindow)printPdf(printWindow,cards,title,imageSize,window.location.href)
       setOpen(false)
     }catch(reason){
       if(printWindow)printWindow.close()
