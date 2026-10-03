@@ -43,15 +43,16 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       low: priceState?.cardmarket?.low,
     })
     const poorCondition = entry.condition === 'played' || entry.condition === 'poor'
+    const majorRarity = /secret|illustration|ultra|shiny|hyper|gold|special art|alt art|rainbow/i.test(entry.rarity ?? '')
+    const needsPriceCheck = unitPrice === undefined
     const recommendation = poorCondition ? 'skip' : interest.level === 'high' ? 'priority' : 'review'
     const reasons = poorCondition
       ? ['État enregistré trop marqué pour une gradation orientée revente.']
       : interest.reasons
-    return { entry, priceState, unitPrice, interest, recommendation, reasons }
+    return { entry, priceState, unitPrice, interest, recommendation, reasons, majorRarity, needsPriceCheck }
   }).filter(item =>
-    item.unitPrice !== undefined
-    && item.unitPrice >= MIN_GRADING_VALUE
-    && item.recommendation !== 'skip'
+    item.recommendation !== 'skip'
+    && ((item.unitPrice !== undefined && item.unitPrice >= MIN_GRADING_VALUE) || (item.needsPriceCheck && item.majorRarity))
   )
 
   const analyzed = candidates.filter(item => {
@@ -78,7 +79,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     </header>
 
     <div className="grading-summary">
-      <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Valeur ≥ {money(MIN_GRADING_VALUE)}</span></article>
+      <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Prix ≥ {money(MIN_GRADING_VALUE)} ou rareté majeure à vérifier</span></article>
       <article className="is-priority"><small>À examiner en priorité</small><strong>{counts.priority}</strong><span>Signaux de marché élevés</span></article>
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
@@ -91,15 +92,15 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         {([['all','Toutes'],['priority','Prioritaires'],['review','À examiner']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}{value === 'priority' ? ` · ${counts.priority}` : value === 'review' ? ` · ${counts.review}` : ''}</button>)}
       </div>
       {owned.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Ta collection est encore vide</h3><p>Ajoute des cartes dans l’onglet Collection : elles apparaîtront ici automatiquement.</p></div>
-        : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)} et qui ne sont pas enregistrées en mauvais état. Les cartes communes restent exclues sauf si leur valeur franchit ce seuil. Le badge « à examiner » ne garantit pas la rentabilité : compare la langue, l’état et les frais avant tout envoi.</p></div>
+        : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)}, ainsi que les raretés majeures sans prix disponible, à vérifier avant toute décision. Les cartes communes restent exclues sauf si leur valeur franchit le seuil. Un prix absent ne signifie pas qu’une carte vaut ce montant, et « à examiner » ne garantit pas la rentabilité.</p></div>
         : analyzed.length === 0 ? <div className="grading-empty"><Search size={24}/><h3>Aucun résultat</h3><p>Essaie un autre filtre ou une autre recherche.</p></div>
-        : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons }) => {
-          const label = recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
+        : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons, needsPriceCheck }) => {
+          const label = needsPriceCheck ? 'Valeur à vérifier' : recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
           const card = { id: entry.cardId, name: entry.name, localId: entry.number ?? '', image: entry.image }
           return <article className={`grading-card ${recommendation}`} key={entry.key}>
             <div className="grading-card-image"><CatalogueImage card={card} requestedLanguage={entry.language} quality="low"/></div>
             <div className="grading-card-content">
-              <div className="grading-card-title"><div><span>{entry.setName} · Nº {entry.number ?? '—'}</span><h3>{entry.name}</h3></div><span className={`grading-tag ${recommendation}`}>{label}</span></div>
+              <div className="grading-card-title"><div><span>{entry.setName} · Nº {entry.number ?? '—'}</span><h3>{entry.name}</h3></div><span className={`grading-tag ${recommendation} ${needsPriceCheck ? 'price-check' : ''}`}>{label}</span></div>
               <div className="grading-price-line"><span>{entry.priceMode === 'manual' && entry.manualPrice !== undefined ? 'Ton prix manuel' : 'Référence Cardmarket'}</span><strong>{unitPrice === undefined ? (priceState?.status === 'loading' ? 'Chargement…' : 'Indisponible') : money(unitPrice)}</strong></div>
               <div className="grading-meta"><span>Quantité : ×{entry.quantity}</span><span>État enregistré : {conditionLabel(entry.condition)}</span><span>Score indicatif : {interest.score}/100</span></div>
               <ul>{reasons.slice(0, 3).map(reason => <li key={reason}>{reason}</li>)}</ul>
