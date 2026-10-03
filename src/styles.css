@@ -195,3 +195,36 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .collection-export>button:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
 .collection-export>button:disabled{opacity:.48;cursor:not-allowed}
 @media(max-width:540px){.collection-export{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:11px}.collection-export>div{grid-column:1/-1}.collection-export>button{font-size:.83rem;padding:8px 6px;min-height:40px}}
+
+/* Configurable collection export */
+.export-modal-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(4,8,18,.72);backdrop-filter:blur(7px)}
+.export-modal{width:min(620px,100%);max-height:min(90dvh,900px);overflow:auto;overscroll-behavior:contain;padding:20px;border:1px solid var(--line);border-radius:22px;background:var(--panel);color:var(--text);box-shadow:0 24px 90px #0008}
+.export-modal>header{position:sticky;top:-20px;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-20px -20px 16px;padding:18px 20px 13px;background:var(--panel);border-bottom:1px solid var(--line)}
+.export-modal>header h2{margin:3px 0 0;font-size:1.35rem}
+.export-close{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:var(--panel2);color:var(--text)}
+.export-field{display:grid;gap:6px;margin:12px 0;font-weight:650}
+.export-field>span,.export-picker-heading small{color:var(--muted);font-size:.84rem;font-weight:500}
+.export-field select,.export-search{width:100%;min-height:44px;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--text);font:inherit}
+.export-picker-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:16px 0 8px}
+.export-options{display:grid;gap:4px;max-height:210px;overflow:auto;margin-top:8px;padding:5px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.export-options label{display:flex;align-items:center;gap:10px;min-height:42px;padding:7px 9px;border-radius:8px;cursor:pointer}
+.export-options label:hover{background:color-mix(in srgb,var(--brand) 8%,var(--panel))}
+.export-options input,.export-images input{width:18px;height:18px;flex:none;accent-color:var(--brand)}
+.export-options label span{flex:1;min-width:0}
+.export-options label small{color:var(--muted);white-space:nowrap}
+.export-status{margin:10px 0;padding:10px 12px;border-radius:10px;background:var(--panel2);color:var(--muted);font-size:.9rem;line-height:1.4}
+.export-error{padding:10px 12px;border:1px solid #dc5962;border-radius:10px;color:#c73e49;background:color-mix(in srgb,#dc5962 10%,var(--panel))}
+.export-images{display:grid;gap:8px;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+.export-images legend{padding:0 5px;font-weight:700}
+.export-images label{display:flex;align-items:center;gap:9px;min-height:36px}
+.export-modal>footer{position:sticky;bottom:-20px;display:flex;justify-content:flex-end;gap:9px;margin:16px -20px -20px;padding:12px 20px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+.export-modal>footer button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:9px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--text);font:inherit;font-weight:650}
+.export-modal>footer .export-submit{border-color:var(--brand);background:var(--brand);color:#fff}
+.export-modal button:disabled{opacity:.55}
+@media(max-width:600px){
+ .export-modal-backdrop{align-items:flex-end;padding:0}
+ .export-modal{width:100%;max-height:94dvh;padding:16px 14px calc(14px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0}
+ .export-modal>header{top:-16px;margin:-16px -14px 12px;padding:14px 14px 10px}
+ .export-modal>footer{bottom:calc(-14px - env(safe-area-inset-bottom));margin:14px -14px calc(-14px - env(safe-area-inset-bottom));padding:10px 14px max(14px,env(safe-area-inset-bottom))}
+ .export-modal>footer button{flex:1;padding:8px}
+}
