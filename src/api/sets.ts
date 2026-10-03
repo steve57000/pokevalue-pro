@@ -9,6 +9,7 @@ async function fetchSet<T>(url: string): Promise<T> {
   return response.json() as Promise<T>
 }
 const rgbMewCards = (set: SetDetail, language: string): SetDetail => {
+  if (!set?.id || !Array.isArray(set.cards)) return set
   const setId = set.id.toLowerCase()
   if (setId !== '30th' && setId !== 'm6a') return set
   const localizedName = language === 'ja' ? 'ミュウ' : language === 'zh-tw' ? '夢幻' : 'Mew'
