@@ -86,7 +86,7 @@ function printCollection(entries: CollectionEntry[]) {
 export function CollectionExport({ entries }: Props) {
   const owned = entries.filter(entry => entry.quantity > 0).sort((a, b) => a.setName.localeCompare(b.setName, 'fr') || a.language.localeCompare(b.language) || (a.number ?? '').localeCompare(b.number ?? '', undefined, { numeric: true }))
   return <div className="collection-export">
-    <div><strong>Exporter mon classeur</strong><span>{owned.length} cartes · ${owned.reduce((sum, entry) => sum + entry.quantity, 0)} exemplaires</span></div>
+    <div><strong>Exporter mon classeur</strong><span>{owned.length} cartes · {owned.reduce((sum, entry) => sum + entry.quantity, 0)} exemplaires</span></div>
     <button type="button" onClick={() => downloadCsv(owned)} disabled={owned.length === 0} aria-label="Télécharger l’inventaire au format CSV"><Download size={17}/> Exporter CSV</button>
     <button type="button" onClick={() => printCollection(owned)} disabled={owned.length === 0} aria-label="Imprimer ou enregistrer ma collection en PDF"><FileText size={17}/> Créer le PDF</button>
   </div>
