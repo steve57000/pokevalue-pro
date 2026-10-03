@@ -141,6 +141,7 @@ export function CollectionExport({entries}:Props) {
     if(format==='pdf'){
       printWindow=window.open('','_blank')
       if(!printWindow){setError('Autorise les fenêtres surgissantes pour créer le PDF.');return}
+      printWindow.document.write('<!doctype html><html lang="fr"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Préparation du PDF · PokéValue</title><body style="font:16px system-ui;padding:24px;color:#172033">Préparation du PDF… Les cartes et leurs images sont intégrées au document.</body></html>')
     }
     setBusy(true);setError('')
     try{
