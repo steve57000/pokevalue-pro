@@ -4,7 +4,7 @@ import { CatalogueImage } from './CatalogueImage'
 import type { CollectionEntry } from '../domain/collection'
 import { collectionUnitPrice } from '../domain/collection'
 import { getGradingInterest } from '../domain/grading'
-import { useCardPrices } from '../hooks/useCardPrices'
+import { useCardPrices, type CardPriceState } from '../hooks/useCardPrices'
 import { money } from '../utils/money'
 import './grading.css'
 
@@ -132,7 +132,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   </section>
 }
 
-function analyze(entry: CollectionEntry, prices: Record<string, ReturnType<typeof useCardPrices>[string]>) {
+function analyze(entry: CollectionEntry, prices: Record<string, Record<string, CardPriceState>>) {
   const price = prices[entry.cardId]
   return getGradingInterest({ rawPrice: collectionUnitPrice(entry, price?.price?.value), rarity: entry.rarity, trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low })
 }
