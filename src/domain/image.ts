@@ -14,7 +14,10 @@ export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:Ex
  const override=cardImageOverrideById.get(card.id)
  if(override?.verified&&override.image)return frontImage({url:override.image.localPath,language:override.image.language,quality,source:'local-override',isFallback:override.image.language!==requestedLanguage,verified:true})
  const number=card.localId?.toUpperCase()
- const rgbMewImage=card.name.toLowerCase().startsWith('mew')&&number?rgbMewImageByNumber[number]:undefined
+ const cardSetId=setIdFromCardId(card.id).toLowerCase()
+ const rgbLetter=number?.[0]
+ const isRgbMewSet=cardSetId==='30th'||cardSetId==='m6a'
+ const rgbMewImage=isRgbMewSet&&rgbLetter&&['R','G','B'].includes(rgbLetter)?rgbMewImageByNumber[rgbLetter]:undefined
  if(rgbMewImage)return frontImage({url:rgbMewImage.url,language:rgbMewImage.language,quality,source:'local-override',isFallback:rgbMewImage.language!==requestedLanguage,verified:true})
  if(card.id&&card.image&&!isPokemonCardBackUrl(card.image))return frontImage({url:`${card.image}/${quality}.webp`,language:card.language||requestedLanguage,quality,source:'TCGdex',isFallback:(card.language||requestedLanguage)!==requestedLanguage,verified:true})
  const fallback=card.fallbackImage?.[quality]
