@@ -40,8 +40,8 @@ const fileSlug = (value:string) => value.normalize('NFKD').replace(/[\u0300-\u03
 const today = () => new Date().toISOString().slice(0,10)
 
 function downloadCsv(cards:ExportCard[], title:string) {
-  const header = ['Statut','Bloc','Extension','Langue','N° de carte','Pokémon','Rareté','Variante','Quantité','État','Prix manuel (€)','Mode de prix','Notes','URL image','ID carte']
-  const rows = cards.map(card => [card.owned?'Possédée':'Manquante','',card.setName,languageName[card.language]??card.language,card.number??'',card.name,card.rarity??'',card.variant,card.quantity,card.condition?conditionName[card.condition]:'',card.manualPrice??'',card.priceMode??(card.manualPrice!==undefined?'manual':'market'),card.notes??'',cardImage(card),card.cardId])
+  const header = ['Statut','Extension','Langue','N° de carte','Pokémon','Rareté','Variante','Quantité','État','Prix manuel (€)','Mode de prix','Notes','URL image','ID carte']
+  const rows = cards.map(card => [card.owned?'Possédée':'Manquante',card.setName,languageName[card.language]??card.language,card.number??'',card.name,card.rarity??'',card.variant,card.quantity,card.condition?conditionName[card.condition]:'',card.manualPrice??'',card.priceMode??(card.manualPrice!==undefined?'manual':'market'),card.notes??'',cardImage(card),card.cardId])
   const csv = '\uFEFF' + [header,...rows].map(row=>row.map(csvCell).join(';')).join('\r\n')
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
   const anchor=document.createElement('a')
@@ -190,7 +190,7 @@ export function CollectionExport({entries}:Props) {
   return <>
     <div className="collection-export">
       <div><strong>Exporter mes données</strong><span>{owned.length} cartes · {owned.reduce((sum,entry)=>sum+entry.quantity,0)} exemplaires</span></div>
-      <button type="button" onClick={()=>{setOpen(true);setError('')}} disabled={owned.length===0} aria-label="Préparer un export CSV ou PDF"><Download size={17}/> Exporter</button>
+      <button type="button" onClick={()=>{setOpen(true);setError('')}} aria-label="Préparer un export CSV ou PDF"><Download size={17}/> Exporter</button>
     </div>
     {open&&<div className="export-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget&&!busy)setOpen(false)}}>
       <section className="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
