@@ -14,7 +14,7 @@ type Props = {
 }
 const languages = ['fr', 'en', 'ja', 'zh-tw'] as const
 type Filter = 'all' | 'priority' | 'review'
-const MIN_GRADING_VALUE = 50
+const MIN_GRADING_VALUE = 20
 
 export function GradingPage({ entries, onPriceHistory }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -43,7 +43,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       low: priceState?.cardmarket?.low,
     })
     const poorCondition = entry.condition === 'played' || entry.condition === 'poor'
-    const recommendation = poorCondition ? 'skip' : interest.level === 'high' ? 'priority' : interest.level === 'medium' ? 'review' : 'skip'
+    const recommendation = poorCondition ? 'skip' : interest.level === 'high' ? 'priority' : 'review'
     const reasons = poorCondition
       ? ['État enregistré trop marqué pour une gradation orientée revente.']
       : interest.reasons
@@ -86,15 +86,15 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>La sélection est indicative : les prix Cardmarket de l’application ne sont pas filtrés par langue, et aucune estimation de note PSA/CGC/BGS ni de valeur de revente après gradation n’est disponible. Vérifie la langue, l’état réel, les ventes comparables et le coût total avant d’envoyer une carte.</p></aside>
 
     <section className="grading-candidates">
-      <div className="grading-list-heading"><div><h2>Cartes à valeur significative</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · prix ≥ {money(MIN_GRADING_VALUE)}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
+      <div className="grading-list-heading"><div><h2>Cartes à valeur significative</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · valeur ≥ {money(MIN_GRADING_VALUE)}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
       <div className="grading-filters" aria-label="Filtrer les cartes">
         {([['all','Toutes'],['priority','Prioritaires'],['review','À examiner']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}{value === 'priority' ? ` · ${counts.priority}` : value === 'review' ? ` · ${counts.review}` : ''}</button>)}
       </div>
       {owned.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Ta collection est encore vide</h3><p>Ajoute des cartes dans l’onglet Collection : elles apparaîtront ici automatiquement.</p></div>
-        : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)}, en état acceptable et avec un intérêt de gradation suffisant. Une carte commune reste une exception si sa valeur franchit ces critères. Les cartes sans prix confirmé ne sont pas affichées.</p></div>
+        : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)} et qui ne sont pas enregistrées en mauvais état. Les cartes communes restent exclues sauf si leur valeur franchit ce seuil. Le badge « à examiner » ne garantit pas la rentabilité : compare la langue, l’état et les frais avant tout envoi.</p></div>
         : analyzed.length === 0 ? <div className="grading-empty"><Search size={24}/><h3>Aucun résultat</h3><p>Essaie un autre filtre ou une autre recherche.</p></div>
         : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons }) => {
-          const label = recommendation === 'priority' ? 'À examiner en priorité' : recommendation === 'review' ? 'À examiner' : 'Faible intérêt économique'
+          const label = recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
           const card = { id: entry.cardId, name: entry.name, localId: entry.number ?? '', image: entry.image }
           return <article className={`grading-card ${recommendation}`} key={entry.key}>
             <div className="grading-card-image"><CatalogueImage card={card} requestedLanguage={entry.language} quality="low"/></div>
@@ -146,6 +146,6 @@ function Recommendation({ price }: { price?: number }) {
   if (price === undefined) return <p className="grading-company-recommendation">Prix insuffisant pour recommander un service ; vérifie d’abord le prix français de cette impression.</p>
   if (price >= 250) return <p className="grading-company-recommendation"><strong>À comparer : PSA ou BGS.</strong> PSA est un repère pour la liquidité ; BGS se discute si l’état est exceptionnel. CGC reste une option selon le coût et ton objectif.</p>
   if (price >= 100) return <p className="grading-company-recommendation"><strong>À comparer : PSA en priorité.</strong> Envisage CGC si le coût total correspond mieux à ton objectif ; soumets seulement après examen minutieux.</p>
-  if (price >= 50) return <p className="grading-company-recommendation"><strong>À étudier au cas par cas.</strong> Compare PSA et CGC, frais complets compris ; la marge de rentabilité peut être faible.</p>
+  if (price >= 20) return <p className="grading-company-recommendation"><strong>À étudier avec prudence.</strong> Compare PSA et CGC, frais complets compris ; la marge de rentabilité peut être faible à ce niveau.</p>
   return <p className="grading-company-recommendation"><strong>Conservation raw généralement préférable.</strong> À ce niveau de prix, les frais et l’envoi risquent de dépasser l’intérêt financier.</p>
 }
