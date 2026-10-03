@@ -6,14 +6,15 @@ import type { CardCondition, CollectionEntry } from '../domain/collection'
 import {useModalDialog} from '../hooks/useModalDialog'
 
 type Draft = { quantity: number; condition: CardCondition; manualPrice?: number; priceMode:'market'|'manual'; notes: string }
-type Props = { card: SetCard; setName: string; entry?: CollectionEntry; automaticPrice?: { value: number; label: string; updatedAt?: string } | null; onSave: (draft: Draft) => void; onRemove: () => void; onClose: () => void }
-export function CardEditor({card,setName,entry,automaticPrice,onSave,onRemove,onClose}: Props) {
+type Props = { card: SetCard; setName: string; language: string; entry?: CollectionEntry; automaticPrice?: { value: number; label: string; updatedAt?: string } | null; onSave: (draft: Draft) => void; onRemove: () => void; onClose: () => void }
+export function CardEditor({card,setName,language,entry,automaticPrice,onSave,onRemove,onClose}: Props) {
   const [draft,setDraft] = useState<Draft>(()=>({quantity:entry?.quantity??1,condition:entry?.condition??'near-mint',manualPrice:entry?.manualPrice,priceMode:entry?.priceMode??(entry?.manualPrice!==undefined?'manual':'market'),notes:entry?.notes??''}))
+  const languageLabel=({fr:'français',en:'anglais',ja:'japonais','zh-tw':'chinois traditionnel'} as Record<string,string>)[language]??language
   const dialogRef=useModalDialog(onClose)
   return createPortal(<div className="card-editor-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget) onClose()}}>
     <section ref={dialogRef} className="card-editor-modal" role="dialog" aria-modal="true" aria-labelledby="card-editor-title">
       <button className="card-editor-close" onClick={onClose} aria-label="Fermer"><X size={19}/></button>
-      <div className="card-editor-top"><span className="eyebrow">{entry?'Modifier ma carte':'Ajouter à ma collection'}</span><h2 id="card-editor-title">{card.name}</h2><p>{setName} · nº {card.localId} · français</p></div>
+      <div className="card-editor-top"><span className="eyebrow">{entry?'Modifier ma carte':'Ajouter à ma collection'}</span><h2 id="card-editor-title">{card.name}</h2><p>{setName} · nº {card.localId} · {languageLabel}</p></div>
       <form onSubmit={event=>{event.preventDefault();if(draft.quantity===0&&entry)onRemove();else onSave(draft)}}>
         <div className="card-editor-fields"><label>Quantité<div className="quantity-stepper"><button type="button" aria-label="Diminuer la quantité" disabled={draft.quantity<=(entry?0:1)} onClick={()=>setDraft({...draft,quantity:Math.max(entry?0:1,draft.quantity-1)})}><Minus size={17}/></button><input aria-label="Quantité" type="number" min={entry?0:1} step="1" value={draft.quantity} onChange={e=>setDraft({...draft,quantity:Math.max(entry?0:1,Number(e.target.value))})}/><button type="button" aria-label="Augmenter la quantité" onClick={()=>setDraft({...draft,quantity:draft.quantity+1})}><Plus size={17}/></button></div></label>
           <label>État<select value={draft.condition} onChange={e=>setDraft({...draft,condition:e.target.value as CardCondition})}><option value="mint">Mint</option><option value="near-mint">Near Mint</option><option value="excellent">Excellent</option><option value="good">Bon</option><option value="played">Jouée</option><option value="poor">Abîmée</option></select></label></div>
