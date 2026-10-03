@@ -176,12 +176,12 @@ export function CollectionExport({entries}:Props) {
       if(scope==='collection'){
         cards=owned.map(ownedRecord)
       }else{
-        const targetSets=scope==='blocks'?selectedSets:scope==='missing'?sets.filter(set=>selectedIds.includes(set.id)).slice(0,1):selectedSets
+        const targetSets=scope==='blocks'?selectedSets:scope==='missing'?sets.filter(set=>selectedIds.includes(set.id)):selectedSets
         if(!targetSets.length)throw new Error('Sélectionne une extension ou un bloc à exporter.')
-        if(scope==='blocks'&&targetSets.length>60)throw new Error('Sélection trop large : choisis au maximum 60 extensions par export pour garder un PDF maniable.')
+        if((scope==='blocks'||scope==='missing')&&targetSets.length>60)throw new Error('Sélection trop large : choisis au maximum 60 extensions par export pour garder un PDF maniable.')
         const details=await Promise.all(targetSets.map(set=>getSet(set.id,language)))
         cards=details.flatMap(detail=>catalogRecords(detail.id,detail.name,language,detail.cards,entries,scope==='missing'?'missing':filter))
-        title=scope==='missing'?'Cartes manquantes · '+(details[0]?.name??'Extension'):scope==='blocks'?'Collection · '+selectedIds.map(id=>series.find(item=>item.id===id)?.name??id).join(', '):'Collection · '+targetSets.map(item=>item.name).join(', ')
+        title=scope==='missing'?'Cartes manquantes · '+details.map(detail=>detail.name).join(', '):scope==='blocks'?'Collection · '+selectedIds.map(id=>series.find(item=>item.id===id)?.name??id).join(', '):'Collection · '+targetSets.map(item=>item.name).join(', ')
       }
       if(!cards.length)throw new Error('Aucune carte ne correspond à cette sélection.')
       if(format==='csv')downloadCsv(cards,title)
@@ -202,7 +202,7 @@ export function CollectionExport({entries}:Props) {
       <section className="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <header><div><span className="eyebrow">Classeur personnel</span><h2 id="export-title">Préparer un export</h2></div><button type="button" className="export-close" aria-label="Fermer" onClick={()=>setOpen(false)} disabled={busy}><X size={20}/></button></header>
         <label className="export-field"><span>Format</span><select value={format} onChange={event=>setFormat(event.target.value as Format)}><option value="csv">CSV · tableur</option><option value="pdf">PDF · impression / partage</option></select></label>
-        <label className="export-field"><span>Contenu</span><select value={scope} onChange={event=>changeScope(event.target.value as Scope)}><option value="collection">Toute ma collection possédée</option><option value="sets">Une ou plusieurs extensions</option><option value="blocks">Un ou plusieurs blocs</option><option value="missing">Cartes manquantes d’une extension</option></select></label>
+        <label className="export-field"><span>Contenu</span><select value={scope} onChange={event=>changeScope(event.target.value as Scope)}><option value="collection">Toute ma collection possédée</option><option value="sets">Une ou plusieurs extensions</option><option value="blocks">Un ou plusieurs blocs</option><option value="missing">Cartes manquantes d’une ou plusieurs extensions</option></select></label>
         {scope!=='collection'&&<>
           <label className="export-field"><span>Langue du catalogue</span><select value={language} onChange={event=>{setLanguage(event.target.value);setSelectedIds([])}}>{languages.map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></label>
           {scope!=='missing'&&<label className="export-field"><span>Cartes à inclure</span><select value={filter} onChange={event=>setFilter(event.target.value as CatalogFilter)}><option value="all">Toutes les cartes de la sélection</option><option value="owned">Seulement les cartes possédées</option><option value="missing">Seulement les cartes manquantes</option></select></label>}
@@ -210,7 +210,7 @@ export function CollectionExport({entries}:Props) {
           <input className="export-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder={scope==='blocks'?'Rechercher un bloc':'Rechercher une extension'} aria-label="Rechercher dans les séries"/>
           {loading&&<p className="export-status">Chargement du catalogue…</p>}
           {!loading&&visibleItems.length>0&&<div className="export-options">
-            {visibleItems.map(item=><label key={item.id}><input type={scope==='missing'?'radio':'checkbox'} name="export-item" checked={selectedIds.includes(item.id)} onChange={event=>toggleSelected(item.id,event.target.checked,scope==='missing')}/><span>{item.name}</span>{'cardCount'in item&&<small>{(item as SetSummary).cardCount.total} cartes</small>}</label>)}
+            {visibleItems.map(item=><label key={item.id}><input type="checkbox" name="export-item" checked={selectedIds.includes(item.id)} onChange={event=>toggleSelected(item.id,event.target.checked)}/><span>{item.name}</span>{'cardCount'in item&&<small>{(item as SetSummary).cardCount.total} cartes</small>}</label>)}
           </div>}
           {!loading&&visibleItems.length===0&&!error&&<p className="export-status">Aucun élément trouvé.</p>}
           {scope==='blocks'&&selectedIds.length>0&&<p className="export-status">Extensions incluses : {selectedSets.length||'chargement…'}</p>}
