@@ -52,12 +52,9 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
 ]
 
 // These anniversary reprints do not yet have dedicated TCGdex scans. Their artwork is
-// matched to the corresponding original print using the published Classic Collection checklist.
-// The verified scans below are used because the previous TCGplayer thumbnails were not
-// readable by the app's PDF canvas.
-// The TCGplayer thumbnail URLs previously used here did not expose usable images in
-// the app's PDF canvas. These Bill's Archive / TCGdex scans are stable WebP images
-// with browser-readable CORS headers; they keep the correct card artwork visible.
+// matched to the corresponding original English print using the published checklist.
+// Bill's Archive hosts the verified WebP scans used here; the previous TCGplayer
+// thumbnails were not readable by the app's PDF canvas.
 const classicOriginalScans:Record<string,string>={
  '30th-c-001':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/base1/base1-4_charizard.webp',
  '30th-c-002':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex1/ex1-5_delcatty.webp',
