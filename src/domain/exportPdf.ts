@@ -99,7 +99,7 @@ async function imageFor(src?: string, cardId?: string): Promise<HTMLImageElement
     window.clearTimeout(timeout)
     if (!response.ok) return null
     const card = await response.json() as { image?: string }
-    const base = card.image?.replace(/\\/$/, '')
+    const base = card.image?.replace(/\/$/, '')
     if (!base) return null
     for (const candidate of [base + '/low.webp', base + '/high.webp', base]) {
       const image = await loadImage(candidate)
