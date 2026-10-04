@@ -9,11 +9,11 @@ export type PriceReference = {
 }
 
 const priorities: Array<[keyof NonNullable<TcgDexPricing['cardmarket']>, PriceReference['label']]> = [
-  ['low', 'Prix bas Cardmarket'],
   ['trend', 'Tendance Cardmarket'],
-  ['avg30', 'Moyenne 30 jours'],
   ['avg7', 'Moyenne 7 jours'],
+  ['avg30', 'Moyenne 30 jours'],
   ['avg', 'Prix moyen'],
+  ['low', 'Prix bas Cardmarket'],
 ]
 
 export function isValidMarketPrice(value: unknown): value is number {

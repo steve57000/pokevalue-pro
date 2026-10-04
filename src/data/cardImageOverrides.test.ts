@@ -7,10 +7,10 @@ describe('30th Classic Collection scans', () => {
     expect(scans).toHaveLength(30)
     expect(scans.every(card => card.verified && card.image?.verified)).toBe(true)
     expect(cardImageOverrideById.get('30th-c-001')?.image?.localPath).toBe(
-      'https://tcgplayer-cdn.tcgplayer.com/product/714372_400w.jpg',
+      'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/base1/base1-4_charizard.webp',
     )
     expect(cardImageOverrideById.get('30th-c-022')?.image?.localPath).toBe(
-      'https://tcgplayer-cdn.tcgplayer.com/product/716203_400w.jpg',
+      'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/dp4/dp4-106_palkia.webp',
     )
   })
 })

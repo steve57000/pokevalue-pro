@@ -51,13 +51,10 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
   {cardId:'30th-c-030',setId:'30th-c',name:'Magicarpe',englishName:'Magikarp',printedNumber:'203/193',cardmarket:{searchName:'Magikarp',searchCode:'30C'},verified:false},
 ]
 
-// These exact anniversary reprints have no TCGdex scans yet. Product images
-// are matched by the card names and original numbers in TCGJoin's Classic
-// Collection gallery, which identifies TCGplayer as the image source.
-// Public, verified scans of the original printings for each Classic Collection card.
-// The TCGplayer thumbnail URLs previously used here did not expose usable images in
-// the app's PDF canvas. These Bill's Archive / TCGdex scans are stable WebP images
-// with browser-readable CORS headers; they keep the correct card artwork visible.
+// These anniversary reprints do not yet have dedicated TCGdex scans. Their artwork is
+// matched to the corresponding original English print using the published checklist.
+// Bill's Archive hosts the verified WebP scans used here; the previous TCGplayer
+// thumbnails were not readable by the app's PDF canvas.
 const classicOriginalScans:Record<string,string>={
  '30th-c-001':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/base1/base1-4_charizard.webp',
  '30th-c-002':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex1/ex1-5_delcatty.webp',
