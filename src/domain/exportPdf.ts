@@ -186,7 +186,7 @@ function drawCard(ctx: CanvasRenderingContext2D, card: PdfCard, x: number, y: nu
   const textCenter = x + w / 2
   ctx.textAlign = 'center'
   ctx.fillStyle = '#172033'; setCanvasFont(ctx, Math.max(7, Math.min(10, w * .075)), 700)
-  const nameLines = drawWrapped(ctx, card.name, textCenter - textW / 2, textY, textW, 11, 2)
+  const nameLines = drawWrapped(ctx, card.name, textCenter, textY, textW, 11, 2)
   textY += nameLines * 11 + 3
   ctx.fillStyle = '#687386'; setCanvasFont(ctx, 7.3)
   ctx.fillText('N° ' + (card.number || '—'), textCenter, textY)
@@ -196,7 +196,7 @@ function drawCard(ctx: CanvasRenderingContext2D, card: PdfCard, x: number, y: nu
   textY += 10
   ctx.fillStyle = '#687386'; setCanvasFont(ctx, 6.7)
   const extra = [card.rarity, card.condition ? 'État : ' + card.condition : '', card.manualPrice !== undefined ? card.manualPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : ''].filter(Boolean)
-  if (extra.length && textY < y + h - 5) drawWrapped(ctx, extra.join(' · '), textCenter - textW / 2, textY, textW, 9, 2)
+  if (extra.length && textY < y + h - 5) drawWrapped(ctx, extra.join(' · '), textCenter, textY, textW, 9, 2)
   ctx.textAlign = 'left'
 }
 async function canvasJpeg(canvas: HTMLCanvasElement) {
