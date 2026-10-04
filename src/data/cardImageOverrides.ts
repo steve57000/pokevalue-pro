@@ -49,6 +49,11 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
   {cardId:'30th-c-028',setId:'30th-c',name:'Zacian-V',englishName:'Zacian V',printedNumber:'138/202',cardmarket:{searchName:'Zacian V',searchCode:'30C'},verified:false},
   {cardId:'30th-c-029',setId:'30th-c',name:'Lugia',englishName:'Lugia',printedNumber:'149/147',cardmarket:{searchName:'Lugia',searchCode:'30C'},verified:false},
   {cardId:'30th-c-030',setId:'30th-c',name:'Magicarpe',englishName:'Magikarp',printedNumber:'203/193',cardmarket:{searchName:'Magikarp',searchCode:'30C'},verified:false},
+  {cardId:'mep-096',setId:'mep',name:'Sulfura',englishName:'Moltres',printedNumber:'096',verified:false},
+  {cardId:'mep-097',setId:'mep',name:'Artikodin',englishName:'Articuno',printedNumber:'097',verified:false},
+  {cardId:'mep-099',setId:'mep',name:'Amphinobi-ex',englishName:'Greninja ex',printedNumber:'099',verified:false},
+  {cardId:'mep-101',setId:'mep',name:'Nidorina',englishName:'Nidorina',printedNumber:'101',verified:false},
+
 ]
 
 // These anniversary reprints do not yet have dedicated TCGdex scans. Their artwork is
@@ -87,8 +92,14 @@ const classicOriginalScans:Record<string,string>={
  '30th-c-029':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ecard2/ecard2-149_lugia.webp',
  '30th-c-030':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/sv02/sv02-203_magikarp.webp',
 }
+const mepPromoScans:Record<string,string>={
+ 'mep-096':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-096_moltres.webp',
+ 'mep-097':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-097_articuno.webp',
+ 'mep-099':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-099_greninja-ex.webp',
+ 'mep-101':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-101_nidorina.webp',
+}
 export const cardImageOverrides:readonly CardImageOverride[]=baseCardImageOverrides.map(item=>{
- const url=classicOriginalScans[item.cardId]
+ const url=mepPromoScans[item.cardId]??classicOriginalScans[item.cardId]
  if(!url)return item
  return {...item,verified:true,image:{localPath:url,language:'en',source:'Bill’s Archive / TCGdex original scan',verified:true as const}}
 })
