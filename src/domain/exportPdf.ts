@@ -80,14 +80,28 @@ function newPage() {
 }
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   if (!src) return null
-  return new Promise(resolve => {
+  const attempt = (url: string) => new Promise<HTMLImageElement | null>(resolve => {
     const image = new Image()
     image.crossOrigin = 'anonymous'
-    const timeout = window.setTimeout(() => resolve(null), 6500)
+    const timeout = window.setTimeout(() => { image.src = ''; resolve(null) }, 6500)
     image.onload = () => { window.clearTimeout(timeout); resolve(image) }
     image.onerror = () => { window.clearTimeout(timeout); resolve(null) }
-    image.src = src
+    image.src = url
   })
+  const direct = await attempt(src)
+  if (direct) return direct
+
+  // Some catalog image hosts display images in <img> tags but omit CORS headers.
+  // Canvas export requires CORS approval; retry through wsrv.nl so the PDF can
+  // embed those scans instead of drawing the "PV" placeholder.
+  try {
+    const url = new URL(src)
+    if (url.protocol !== 'https:' || url.hostname === window.location.hostname) return null
+    const proxy = 'https://wsrv.nl/?url=' + encodeURIComponent(src) + '&output=jpg'
+    return await attempt(proxy)
+  } catch {
+    return null
+  }
 }
 async function imageFor(src?: string, cardId?: string): Promise<HTMLImageElement | null> {
   const primary = src ? await loadImage(src) : null
