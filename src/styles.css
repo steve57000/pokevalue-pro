@@ -228,3 +228,32 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
  .export-modal>footer{bottom:calc(-14px - env(safe-area-inset-bottom));margin:14px -14px calc(-14px - env(safe-area-inset-bottom));padding:10px 14px max(14px,env(safe-area-inset-bottom))}
  .export-modal>footer button{flex:1;padding:8px}
 }
+
+/* Compact price-history explorer and a clear selected-card preview */
+.price-explorer{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}
+.price-explorer-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.price-explorer-heading h2{margin:6px 0;font:700 clamp(18px,2.5vw,23px) Sora}
+.price-explorer-heading p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.price-explorer-heading>strong{flex:none;padding:7px 10px;border-radius:999px;background:var(--panel2);font-size:12px}
+.price-explorer-filters{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr;gap:10px;align-items:end}
+.price-explorer-filters>label:not(.price-owned-filter){display:grid;gap:5px;color:var(--muted);font-size:11px}
+.price-explorer-filters select,.price-explorer-filters input:not([type=checkbox]){width:100%;min-width:0;height:42px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text)}
+.price-owned-filter{height:42px;display:flex;align-items:center;gap:8px;color:var(--text);font-size:12px;font-weight:600}
+.price-owned-filter input{width:18px;height:18px;accent-color:var(--brand)}
+.price-explorer-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px;max-height:330px;overflow:auto}
+.price-explorer-row{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--text);text-align:left;cursor:pointer}
+.price-explorer-row:hover,.price-explorer-row:focus-visible{border-color:var(--brand);outline:none}
+.price-explorer-row>span:first-child{min-width:0;display:grid;gap:4px}
+.price-explorer-row strong,.price-explorer-row small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.price-explorer-row strong{font-size:13px}
+.price-explorer-row small{color:var(--muted);font-size:10px}
+.price-explorer-value{flex:none;display:grid;justify-items:end;gap:3px;font-weight:750}
+.price-explorer-value small{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:600}
+.price-explorer-value .positive{color:var(--success)}.price-explorer-value .negative{color:var(--brand)}
+.price-explorer-empty{grid-column:1/-1;margin:0;padding:18px;text-align:center;color:var(--muted);font-size:13px}
+.history-card-heading{display:grid;grid-template-columns:minmax(86px,150px) 1fr auto;align-items:center}
+.history-selected-preview{width:100%;max-width:135px;overflow:hidden;border-radius:9px;box-shadow:0 8px 20px #0004}
+.history-selected-preview .catalogue-image{aspect-ratio:63/88}
+.history-selected-preview img{display:block;width:100%;height:100%;object-fit:cover}
+.history-card-info{min-width:0}
+@media(max-width:700px){.price-explorer{padding:14px}.price-explorer-heading{align-items:flex-start}.price-explorer-heading>strong{font-size:10px}.price-explorer-filters{grid-template-columns:1fr 1fr;gap:8px}.price-owned-filter{grid-column:1/-1}.price-explorer-list{grid-template-columns:1fr;max-height:280px}.history-card-heading{grid-template-columns:76px minmax(0,1fr);align-items:start;gap:10px}.history-selected-preview{max-width:76px;grid-row:1/3}.history-card-info .eyebrow{font-size:9px;letter-spacing:.06em}.history-current-price{grid-column:2;text-align:left!important}.history-current-price span{justify-content:flex-start!important}}
