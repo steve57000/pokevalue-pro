@@ -23,6 +23,7 @@ import { readStoredJson } from './utils/storage'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
+import { useGitHubPriceHistorySync } from './hooks/useGitHubPriceHistorySync'
 import { useFavorites } from './hooks/useFavorites'
 import { FavoriteButton } from './components/FavoriteButton'
 import { CardShowcase } from './components/CardShowcase'
@@ -66,6 +67,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { entries: liveCards, retry } = useLiveCards(cards)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
+  const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -204,7 +206,7 @@ function App() {
           </>}
 
           {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
-          {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
+          {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
           {view==='grading'&&<GradingPage entries={portfolio.entries} onPriceHistory={()=>navigate('history')}/> }
 
 

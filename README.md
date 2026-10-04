@@ -20,6 +20,7 @@ Application web responsive pour identifier, comparer et organiser des cartes Pok
 - import d’une photo comme solution de repli ;
 - recherche assistée si l’OCR ne lit pas correctement une carte brillante ;
 - historique des scans et collection conservés dans le navigateur ;
+- historique des prix fusionné automatiquement avec le dépôt privé dans `price-history/v1/history.json` lorsque la synchronisation GitHub est active ;
 - application installable sur l’écran d’accueil ;
 - modes clair et sombre.
 - classeur par impression avec progression, filtres possédées/manquantes et quantités ;
@@ -51,8 +52,9 @@ pour les sources, limites de prix et vérifications de séries.
 6. Cliquer **Vérifier et charger** : l'application affiche le compte GitHub réellement authentifié
    et charge `collection/v1/portfolio.json` s'il existe. Cliquer ensuite **Sauvegarder**.
 
-La sauvegarde fournit le SHA courant lors d'une mise à jour, ce qui empêche un écrasement
-silencieux. En cas de changement concurrent, l'état **Conflit** demande de recharger et fusionner.
+La sauvegarde de la collection fournit le SHA courant lors d'une mise à jour, ce qui empêche un écrasement
+silencieux. L'historique des prix utilise un fichier séparé, fusionne les relevés par carte, langue et jour,
+et garde le relevé le plus récent lorsqu'une même journée est actualisée depuis plusieurs appareils. En cas de changement concurrent, l'état **Conflit** demande de recharger et fusionner.
 Les états **Local**, **En attente** et **Synchronisé** indiquent clairement la situation. Un jeton
 révoqué/expiré ou une panne réseau n'efface pas la copie locale. **Export JSON** permet une copie
 de récupération ; **Import JSON** restaure un document versionné.
