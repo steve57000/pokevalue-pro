@@ -13,7 +13,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
  // to a generic card back for Japanese printings, so never use that source for
  // Asian-language catalogues. Native TCGdex fronts remain eligible above.
- const isMepPromo=/^mep-\\d+$/i.test(card.id);if(image.url&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo)))return image}catch{/* Only exact identifiers are eligible; continue deterministically. */}}
+ const isMepPromo=/^mep-\d+$/i.test(card.id);if(image.url&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo)))return image}catch{/* Only exact identifiers are eligible; continue deterministically. */}}
  if(englishCandidate){const promoImage=buildMepPromoImage(englishCandidate);if(promoImage)return{url:promoImage,language:'en',quality,source:'promo-archive',isFallback:requestedLanguage!=='en',verified:true} satisfies ResolvedCardImage}
  return{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage}
 function cachedResolve(card:SetCard,language:string,quality:'low'|'high'){const key=`image:${language}:${card.id}:${quality}`,existing=imageCache.get(key);if(existing?.image)return Promise.resolve(existing.image);if(existing?.status==='missing')return Promise.resolve({language,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage);if(existing?.promise)return existing.promise
