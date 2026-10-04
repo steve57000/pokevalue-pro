@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest'
-import {cardImageOverrides} from '../data/cardImageOverrides'
+import {cardImageOverrides,cardImageOverrideById} from '../data/cardImageOverrides'
 import {buildMepPromoImage,isPokemonCardBackUrl,isSamePrinting,resolveCardImage} from './image'
 describe('image resolver',()=>{
  it('utilise les scans vérifiés des 30 réimpressions Classic Collection',()=>{expect(cardImageOverrides).toHaveLength(34);for(const override of cardImageOverrides){expect(override.verified).toBe(true);const result=resolveCardImage({card:{id:override.cardId,name:override.name,language:'fr'},requestedLanguage:'fr'});expect(result.source).toBe('local-override');expect(result.language).toBe('en');expect(result.isFallback).toBe(true);expect(result.url).toMatch(/^https:\/\/bills-archive\.nyc3\.cdn\.digitaloceanspaces\.com\/tcgdex_cards\/.+\.webp$/)}})
@@ -17,5 +17,4 @@ describe('image resolver',()=>{
   expect(override?.image?.verified).toBe(true)
   expect(override?.image?.localPath).toBe(`https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/${cardId}_${slug}.webp`)
  })
-
 })
