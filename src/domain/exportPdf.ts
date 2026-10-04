@@ -78,16 +78,35 @@ function newPage() {
   ctx.fillRect(0, 0, PAGE_W, PAGE_H)
   return { canvas, ctx }
 }
-async function imageFor(src?: string): Promise<HTMLImageElement | null> {
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
   if (!src) return null
   return new Promise(resolve => {
     const image = new Image()
     image.crossOrigin = 'anonymous'
-    const timeout = window.setTimeout(() => resolve(null), 9000)
+    const timeout = window.setTimeout(() => resolve(null), 6500)
     image.onload = () => { window.clearTimeout(timeout); resolve(image) }
     image.onerror = () => { window.clearTimeout(timeout); resolve(null) }
     image.src = src
   })
+}
+async function imageFor(src?: string, cardId?: string): Promise<HTMLImageElement | null> {
+  const primary = src ? await loadImage(src) : null
+  if (primary || !cardId) return primary
+  try {
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 5000)
+    const response = await fetch('https://api.tcgdex.net/v2/en/cards/' + encodeURIComponent(cardId), { signal: controller.signal })
+    window.clearTimeout(timeout)
+    if (!response.ok) return null
+    const card = await response.json() as { image?: string }
+    const base = card.image?.replace(/\\/$/, '')
+    if (!base) return null
+    for (const candidate of [base + '/low.webp', base + '/high.webp', base]) {
+      const image = await loadImage(candidate)
+      if (image) return image
+    }
+  } catch { /* Use the per-card placeholder when the catalogue has no usable scan. */ }
+  return null
 }
 function drawCover(ctx: CanvasRenderingContext2D, title: string, cards: PdfCard[], size: PdfImageSize, generated: string) {
   ctx.fillStyle = '#ef514b'; ctx.fillRect(0, 0, PAGE_W, 15)
@@ -164,18 +183,21 @@ function drawCard(ctx: CanvasRenderingContext2D, card: PdfCard, x: number, y: nu
     textY = areaY + targetH + 10
   }
   const textW = w - pad * 2
+  const textCenter = x + w / 2
+  ctx.textAlign = 'center'
   ctx.fillStyle = '#172033'; setCanvasFont(ctx, Math.max(7, Math.min(10, w * .075)), 700)
-  const nameLines = drawWrapped(ctx, card.name, x + pad, textY, textW, 11, 2)
+  const nameLines = drawWrapped(ctx, card.name, textCenter - textW / 2, textY, textW, 11, 2)
   textY += nameLines * 11 + 3
   ctx.fillStyle = '#687386'; setCanvasFont(ctx, 7.3)
-  ctx.fillText('N° ' + (card.number || '—'), x + pad, textY)
+  ctx.fillText('N° ' + (card.number || '—'), textCenter, textY)
   textY += 11
   ctx.fillStyle = card.owned ? '#258455' : '#687386'; setCanvasFont(ctx, 7.3, 600)
-  ctx.fillText(card.owned ? 'Possédée ×' + card.quantity : 'Manquante', x + pad, textY)
+  ctx.fillText(card.owned ? 'Possédée ×' + card.quantity : 'Manquante', textCenter, textY)
   textY += 10
   ctx.fillStyle = '#687386'; setCanvasFont(ctx, 6.7)
   const extra = [card.rarity, card.condition ? 'État : ' + card.condition : '', card.manualPrice !== undefined ? card.manualPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : ''].filter(Boolean)
-  if (extra.length && textY < y + h - 5) drawWrapped(ctx, extra.join(' · '), x + pad, textY, textW, 9, 2)
+  if (extra.length && textY < y + h - 5) drawWrapped(ctx, extra.join(' · '), textCenter - textW / 2, textY, textW, 9, 2)
+  ctx.textAlign = 'left'
 }
 async function canvasJpeg(canvas: HTMLCanvasElement) {
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
@@ -221,8 +243,9 @@ export async function buildCollectionPdf(cards: PdfCard[], title: string, size: 
   const images = new Map<string, Promise<HTMLImageElement | null>>()
   const getImage = (card: PdfCard) => {
     const source = card.image || ''
-    if (!images.has(source)) images.set(source, imageFor(source))
-    return images.get(source)!
+    const cacheKey = card.cardId + '|' + source
+    if (!images.has(cacheKey)) images.set(cacheKey, imageFor(source, card.cardId))
+    return images.get(cacheKey)!
   }
   const pages: Uint8Array[] = []
   {
