@@ -19,6 +19,24 @@ describe('localized set catalogue', () => {
     ])
   })
 
+  it('adds missing 30th-anniversary MEP promos with French names and exact IDs', async () => {
+    const baseSet = { id:'mep', name:'MEP Black Star Promos', cardCount:{total:80,official:0}, cards:[] }
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok:true, json:async()=>baseSet }) as Response))
+    const set=await getSet('mep','fr')
+    expect(set.cards.filter(card=>['096','097','099','101'].includes(card.localId)).map(card=>[card.id,card.name,card.rarity])).toEqual([
+      ['mep-096','Sulfura','Promo'],['mep-097','Artikodin','Promo'],['mep-099','Amphinobi-ex','Promo'],['mep-101','Nidorina','Promo'],
+    ])
+    expect(set.cardCount.total).toBe(84)
+  })
+
+  it('does not duplicate anniversary MEP promos already supplied by TCGdex', async () => {
+    const baseSet={id:'mep',name:'MEP Black Star Promos',cardCount:{total:84,official:0},cards:['096','097','099','101'].map((localId)=>({id:'mep-'+localId,name:'Existing',localId}))}
+    vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>baseSet}) as Response))
+    const set=await getSet('mep','fr')
+    expect(set.cards).toHaveLength(4)
+    expect(set.cardCount.total).toBe(84)
+  })
+
   it('includes all three RGB Mew cards when the anniversary API omits them', async () => {
     const baseSet = {
       id: '30th',
