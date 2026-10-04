@@ -1,7 +1,9 @@
 import { parseCollection, type CollectionDocument } from '../domain/collection'
+import { mergePriceHistory, parsePriceHistoryDocument, type PriceHistoryDocument, type PriceSnapshot } from '../domain/priceHistory'
 
 const API = 'https://api.github.com'
 export const PORTFOLIO_PATH = 'collection/v1/portfolio.json'
+export const PRICE_HISTORY_PATH = 'price-history/v1/history.json'
 
 export type GitHubConnection = { owner: string; repo: string; token: string }
 export type RemotePortfolio = { document?: CollectionDocument; sha?: string; login: string }
@@ -46,4 +48,34 @@ export async function writeRemotePortfolio(connection: GitHubConnection, documen
     connection,
     { method: 'PUT', body: JSON.stringify({ message: `Sauvegarde collection v1 (révision ${document.revision})`, content, ...(sha ? { sha } : {}) }) },
   )
+}
+
+export type RemotePriceHistory = { document?: PriceHistoryDocument; sha?: string }
+
+export async function readRemotePriceHistory(connection: GitHubConnection): Promise<RemotePriceHistory> {
+  const path = `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PRICE_HISTORY_PATH}`
+  try {
+    const file = await github<{ content: string; sha: string; encoding: string }>(path, connection)
+    const json = decodeURIComponent(escape(atob(file.content.replace(/\\n/g, ''))))
+    const document = parsePriceHistoryDocument(JSON.parse(json))
+    return { document, sha: file.sha }
+  } catch (error) {
+    if ((error as { status?: number }).status === 404) return {}
+    throw error
+  }
+}
+
+export async function writeRemotePriceHistory(connection: GitHubConnection, snapshots: PriceSnapshot[], sha?: string) {
+  const document: PriceHistoryDocument = {
+    schemaVersion: 1,
+    updatedAt: new Date().toISOString(),
+    snapshots: mergePriceHistory(snapshots),
+  }
+  const content = btoa(unescape(encodeURIComponent(`${JSON.stringify(document, null, 2)}\\n`)))
+  const result = await github<{ content: { sha: string } }>(
+    `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PRICE_HISTORY_PATH}`,
+    connection,
+    { method: 'PUT', body: JSON.stringify({ message: `Sauvegarde historique des prix (${document.snapshots.length} relevés)`, content, ...(sha ? { sha } : {}) }) },
+  )
+  return result.content.sha
 }
