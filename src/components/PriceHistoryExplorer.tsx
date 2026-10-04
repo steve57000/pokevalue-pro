@@ -1,4 +1,4 @@
-import {useMemo,useState} from 'react'
+import {useEffect,useMemo,useState} from 'react'
 import {TrendingDown,TrendingUp,SlidersHorizontal} from 'lucide-react'
 import type {Card} from '../types'
 import type {CollectionEntry} from '../domain/collection'
@@ -11,6 +11,8 @@ const keyOf=(id:string,language:string)=>language+':'+id
 type Row={key:string;id:string;language:string;name:string;setName:string;number?:string;owned:number;latest:PriceSnapshot;delta?:number}
 
 export function PriceHistoryExplorer({cards,entries,favorites,onSelect}:Props){
+ const [revision,setRevision]=useState(0)
+ useEffect(()=>{const update=()=>setRevision(value=>value+1);window.addEventListener('pv-price-history-updated',update);return()=>window.removeEventListener('pv-price-history-updated',update)},[])
  const [ownedOnly,setOwnedOnly]=useState(true),[movement,setMovement]=useState('all'),[min,setMin]=useState(''),[max,setMax]=useState('')
  const rows=useMemo(()=>{
   const metadata=new Map<string,{id:string;language:string;name:string;setName:string;number?:string;owned:number}>()
@@ -24,7 +26,7 @@ export function PriceHistoryExplorer({cards,entries,favorites,onSelect}:Props){
    .filter(row=>(!ownedOnly||row.owned>0)&&row.latest.value>=minValue&&row.latest.value<=maxValue)
    .filter(row=>movement==='all'||(movement==='changed'?row.delta!==undefined&&row.delta!==0:movement==='up'?row.delta!==undefined&&row.delta>0:row.delta!==undefined&&row.delta<0))
    .sort((a,b)=>b.latest.value-a.latest.value)
- },[cards,entries,favorites,ownedOnly,movement,min,max])
+ },[cards,entries,favorites,ownedOnly,movement,min,max,revision])
  return <section className="price-explorer" aria-labelledby="price-explorer-title">
   <header className="price-explorer-heading"><div><span className="eyebrow"><SlidersHorizontal size={14}/> Explorer</span><h2 id="price-explorer-title">Filtrer les prix de ta collection</h2><p>Variation entre les deux derniers relevés · plage basée sur le dernier prix enregistré.</p></div><strong>{rows.length} carte{rows.length===1?'':'s'}</strong></header>
   <div className="price-explorer-filters"><label className="price-owned-filter"><input type="checkbox" checked={ownedOnly} onChange={event=>setOwnedOnly(event.target.checked)}/>Mes cartes possédées</label><label>Évolution<select value={movement} onChange={event=>setMovement(event.target.value)}><option value="all">Toutes</option><option value="changed">Prix modifié</option><option value="up">En hausse</option><option value="down">En baisse</option></select></label><label>Prix minimum (€)<input type="number" min="0" step="0.01" inputMode="decimal" placeholder="Aucun" value={min} onChange={event=>setMin(event.target.value)}/></label><label>Prix maximum (€)<input type="number" min="0" step="0.01" inputMode="decimal" placeholder="Aucun" value={max} onChange={event=>setMax(event.target.value)}/></label></div>
