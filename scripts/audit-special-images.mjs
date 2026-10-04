@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 
 const source = await readFile(new URL('../src/data/cardImageOverrides.ts', import.meta.url), 'utf8')
-const identities = [...source.matchAll(/cardId:'(30th-c-\\d{3})'/g)].map(match => match[1])
-const scanMap = source.match(/const classicOriginalScans:Record<string,string>=\\{([\\s\\S]*?)\\}/)?.[1] ?? ''
-const scans = [...scanMap.matchAll(/'(30th-c-\\d{3})':'([^']+)'/g)]
+const identities = [...source.matchAll(/cardId:'(30th-c-\d{3})'/g)].map(match => match[1])
+const scanMap = source.match(/const classicOriginalScans:Record<string,string>=\{([\s\S]*?)\}/)?.[1] ?? ''
+const scans = [...scanMap.matchAll(/'(30th-c-\d{3})':'([^']+)'/g)]
 const mappedCards = new Set(scans.map(match => match[1]))
 const uniqueImages = new Set(scans.map(match => match[2]))
 const errors = []
