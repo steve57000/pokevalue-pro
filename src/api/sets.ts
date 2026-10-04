@@ -35,7 +35,7 @@ const anniversaryMepPromos=[
  {localId:'101',names:{fr:'Nidorina',en:'Nidorina',ja:'ニドリーナ','zh-tw':'尼多娜'}},
 ] as const
 const addMissingAnniversaryMepPromos=(set:SetDetail,language:string):SetDetail=>{
- if(set.id.toLowerCase()!=='mep'||!Array.isArray(set.cards))return set
+ if(!set?.id||set.id.toLowerCase()!=='mep'||!Array.isArray(set.cards))return set
  const missing=anniversaryMepPromos.filter(promo=>!set.cards.some(card=>card.id.toLowerCase()===`mep-${promo.localId}`))
  if(!missing.length)return set
  const cards:SetCard[]=missing.map(promo=>({id:`${set.id}-${promo.localId}`,name:promo.names[language as keyof typeof promo.names]??promo.names.en,localId:promo.localId,rarity:'Promo'}))
