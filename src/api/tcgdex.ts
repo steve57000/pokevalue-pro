@@ -168,10 +168,10 @@ export function buildTcgDexSearchRequests(
 }
 
 export class TcgDexProvider implements CardDataProvider {
-  async getCard(id: string, language = 'fr'): Promise<ExternalCard> {
+  async getCard(id: string, language = 'fr', forceRefresh = false): Promise<ExternalCard> {
     const key = `${language}:card:${id}`
     const cached = getCached<ExternalCard>(key)
-    if (cached?.isFresh) return cached.data
+    if (!forceRefresh && cached?.isFresh) return cached.data
 
     const requestKey = `${language}:${id}`
     const existing = pendingRequests.get(requestKey)
