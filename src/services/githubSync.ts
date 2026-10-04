@@ -56,7 +56,7 @@ export async function readRemotePriceHistory(connection: GitHubConnection): Prom
   const path = `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PRICE_HISTORY_PATH}`
   try {
     const file = await github<{ content: string; sha: string; encoding: string }>(path, connection)
-    const json = decodeURIComponent(escape(atob(file.content.replace(/\\n/g, ''))))
+    const json = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))))
     const document = parsePriceHistoryDocument(JSON.parse(json))
     return { document, sha: file.sha }
   } catch (error) {
@@ -71,7 +71,7 @@ export async function writeRemotePriceHistory(connection: GitHubConnection, snap
     updatedAt: new Date().toISOString(),
     snapshots: mergePriceHistory(snapshots),
   }
-  const content = btoa(unescape(encodeURIComponent(`${JSON.stringify(document, null, 2)}\\n`)))
+  const content = btoa(unescape(encodeURIComponent(`${JSON.stringify(document, null, 2)}\n`)))
   const result = await github<{ content: { sha: string } }>(
     `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PRICE_HISTORY_PATH}`,
     connection,
