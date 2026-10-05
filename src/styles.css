@@ -389,3 +389,29 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .set-overview-main{grid-template-columns:minmax(0,1fr) minmax(180px,.72fr);gap:18px}
 .set-overview-logo,.set-overview-monogram{display:none!important}
 @media(max-width:760px){.series-selector-heading{gap:9px}.series-selector-logo{max-height:min(44vw,190px)}.set-overview-main{grid-template-columns:minmax(0,1fr);gap:12px}.set-overview-progress{grid-column:1/-1}}
+
+
+/* Give landscape expansion marks room in the family and set rows. */
+.series-family-logo,.series-progress-logo{width:68px;height:48px;padding:3px;object-fit:contain}
+.series-family-trigger{min-height:64px}
+.series-family-monogram,.series-progress-monogram{width:44px;height:44px}
+.series-progress-heading{gap:10px}
+.series-progress-track{margin-left:78px}
+@media(max-width:600px){
+ .series-family-logo,.series-progress-logo{width:60px;height:44px;padding:2px}
+ .series-family-trigger{min-height:58px}
+ .series-family-monogram,.series-progress-monogram{width:40px;height:40px}
+ .series-progress-track{margin-left:68px}
+}
+
+/* Stack set information and progress on phone and narrow tablet widths. */
+@media(max-width:980px){
+ .set-overview{overflow:hidden}
+ .set-overview-main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;gap:14px;align-items:start}
+ .set-overview-info{grid-column:1;grid-row:1;min-width:0}
+ .set-overview-progress{grid-column:1;grid-row:2;display:grid;grid-template-columns:auto auto;justify-content:start;align-content:start;gap:7px 12px;min-width:0;width:100%;text-align:left}
+ .set-overview-progress>strong{grid-column:1;grid-row:1;font-size:20px}
+ .set-overview-progress>b{grid-column:2;grid-row:1;align-self:center}
+ .set-overview-progress>small{grid-column:1/-1;grid-row:2;margin-top:2px;font-size:11px}
+ .set-overview-track{grid-column:1/-1;grid-row:3;width:100%;margin-top:5px}
+}
