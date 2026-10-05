@@ -22,7 +22,7 @@ const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[
  'swsh12.5tg':{serie:'swsh',set:'swsh12.5'},
  'exu':{serie:'ex',set:'ex10',languages:['fr']},
 }
-function subsetImage(card:SetCard,language:string,quality:'low'|'high',rejected:Set<string>):ResolvedCardImage|undefined{
+function subsetImage(card:SetCard,language:string,requestedLanguage:string,quality:'low'|'high',rejected:Set<string>):ResolvedCardImage|undefined{
  const separator=card.id.lastIndexOf('-')
  if(separator<1)return undefined
  const setId=card.id.slice(0,separator).toLowerCase()
@@ -32,7 +32,7 @@ function subsetImage(card:SetCard,language:string,quality:'low'|'high',rejected:
  const base='https://assets.tcgdex.net/'+language+'/'+mapping.serie+'/'+mapping.set+'/'+localId+'/'
  const formats=quality==='high'?['high.png','high.webp']:['low.webp','low.png','high.png']
  const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejected))
- return url?{url,language,quality,source:'TCGdex',isFallback:language!=='fr',verified:true}:undefined
+ return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set()){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
@@ -45,7 +45,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    if(language==='en')englishCandidate=candidate
    const image=resolveCardImage({card:candidate,requestedLanguage,quality})
    if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return image
-   const subset=subsetImage(card,language,quality,rejectedUrls)
+   const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
@@ -89,7 +89,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
  useEffect(()=>{if(quality==='high'||typeof IntersectionObserver==='undefined'){setVisible(true);return}const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality])
  useEffect(()=>{let active=true;setImage(undefined);if(!visible)return
   const rejected=new Set(rejectedUrls)
-  cachedResolve(card,requestedLanguage,quality,rejected).then(value=>{if(active)setImage(value)})
+  cachedResolve(card,requestedLanguage,quality,rejected).then(value=>{if(active){setRetryAttempt(0);setImage(value)}})
   return()=>{active=false}
  },[card.id,card.image,card.localId,card.name,requestedLanguage,quality,visible,rejectedUrls,retryNonce])
  useEffect(()=>{if(!image||image.url)return
@@ -105,6 +105,6 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- return <div ref={container} className={`catalogue-image ${className}`}>{show?<img src={retryUrl(show,retryAttempt)} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} decoding="async" onError={failImage} onLoad={()=>{if(retryAttempt)setRetryAttempt(0)}}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible&&image?'Visuel indisponible — nouvelle tentative automatique':'Chargement du visuel…'}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
+ return <div ref={container} className={`catalogue-image ${className}`}>{show?<img src={retryUrl(show,retryAttempt)} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} decoding="async" onError={failImage}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible&&image?'Visuel indisponible — nouvelle tentative automatique':'Chargement du visuel…'}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()
