@@ -317,3 +317,30 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 @media(max-width:380px){.binder-grid.view-list article{grid-template-columns:32px minmax(0,1fr);column-gap:6px}.binder-grid.view-list .binder-preview{width:31px}.binder-grid.view-list .card-quick-actions{gap:4px}.binder-grid.view-list .collection-quantity button,.binder-grid.view-list .card-utility-actions>button,.binder-grid.view-list .card-utility-actions>.favorite-button{width:29px;min-width:29px}.binder-grid.view-list .collection-quantity{gap:2px}.binder-grid.view-list .add-card-action{font-size:9px}}
 @media(max-width:600px){.set-overview{overflow:hidden}.set-overview-main{grid-template-columns:minmax(0,1fr) minmax(112px,.82fr);grid-template-rows:auto auto;gap:7px 12px;align-items:center}.set-overview-logo{grid-column:1;grid-row:1;width:100%;height:88px;max-width:100%;object-fit:contain}.set-overview-monogram{grid-column:1;grid-row:1;justify-self:start}.set-overview-info{grid-column:1;grid-row:2}.set-overview-info h2{font-size:18px}.set-overview-progress{grid-column:2;grid-row:1/3;display:grid;grid-template-columns:1fr auto;align-content:center;gap:5px 6px;text-align:right}.set-overview-progress>strong{font-size:17px}.set-overview-progress>b{grid-column:2;grid-row:1}.set-overview-progress>small{grid-column:1/-1;grid-row:2;font-size:9px}.set-overview-track{grid-column:1/-1;grid-row:3;margin-top:3px}}
 @media(max-width:380px){.set-overview-main{grid-template-columns:minmax(0,1fr) minmax(100px,.82fr);gap:6px 8px}.set-overview-logo{height:72px}.set-overview-progress>strong{font-size:15px}.set-overview-progress>b{font-size:14px}}
+
+
+/* Series family logos and strict phone-width containment. */
+.series-family-trigger{display:flex;align-items:center;gap:10px;width:100%;min-width:0;text-align:left}
+.series-family-trigger>span:nth-child(2){min-width:0;flex:1;overflow-wrap:anywhere}
+.series-family-trigger>svg{flex:none}
+.series-family-logo,.series-family-monogram{flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+.series-family-logo{padding:4px;object-fit:contain}
+.series-family-monogram{display:grid;place-items:center;color:var(--brand);font:800 16px Sora;text-transform:uppercase}
+.series-progress-heading,.series-progress-row,.series-family-content,.series-families,.series-family,.series-picker{min-width:0;max-width:100%}
+@media(max-width:600px){
+ .portfolio-page{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+ .portfolio-page>*{min-width:0;max-width:100%}
+ .binder-grid,.binder-grid article,.binder-grid .card-quick-actions,.binder-grid .card-utility-actions{min-width:0;max-width:100%}
+ .binder-grid.view-list article{grid-template-columns:36px minmax(0,1fr);width:100%;overflow:hidden}
+ .binder-grid.view-list .card-quick-actions{grid-column:2;grid-row:4;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;width:100%;min-width:0}
+ .binder-grid.view-list .collection-quantity{display:flex;min-width:0;gap:3px}
+ .binder-grid.view-list .collection-quantity button,.binder-grid.view-list .card-utility-actions>button,.binder-grid.view-list .card-utility-actions>.favorite-button{width:30px;min-width:30px;height:32px;min-height:32px}
+ .binder-grid.view-list .card-utility-actions{display:flex;min-width:0;gap:3px}
+ .binder-grid.view-list .add-card-action{grid-column:1/-1;width:100%;min-width:0!important;white-space:normal;overflow-wrap:anywhere}
+ .binder-grid.view-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;min-width:0}
+ .binder-grid.view-grid article{min-width:0;overflow:hidden}
+ .binder-grid.view-grid .add-card-action{min-width:0;white-space:normal;overflow-wrap:anywhere}
+ .series-family-trigger{gap:8px}
+ .series-family-logo,.series-family-monogram{width:36px;height:36px}
+}
+@media(max-width:360px){.binder-grid.view-list article{grid-template-columns:30px minmax(0,1fr);column-gap:6px}.binder-grid.view-list .binder-preview{width:29px}.binder-grid.view-list .collection-quantity button,.binder-grid.view-list .card-utility-actions>button,.binder-grid.view-list .card-utility-actions>.favorite-button{width:28px;min-width:28px}}
