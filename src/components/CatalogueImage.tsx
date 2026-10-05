@@ -76,13 +76,14 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
   try{
    const candidate=await getCard(card.id,language)
    if(candidate.id!==card.id)continue
+   const isMcDonalds=Boolean(mcdEra(setIdFromCardId(card.id).toLowerCase()))
    if(language==='en')englishCandidate=candidate
    const image=resolveCardImage({card:candidate,requestedLanguage,quality})
    if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return image
    if(image.url&&isRejected(image.url,rejectedUrls)){
     const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
     const isMepPromo=/^mep-\d+$/i.test(card.id)
-    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo))return alternate
+    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))return alternate
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
