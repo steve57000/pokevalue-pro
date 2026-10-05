@@ -21,6 +21,8 @@ const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[
  'swsh12tg':{serie:'swsh',set:'swsh12.5'},
  'swsh12.5tg':{serie:'swsh',set:'swsh12.5'},
  'exu':{serie:'ex',set:'ex10',languages:['fr']},
+ 'svp':{serie:'sv',set:'svp'},
+ 'p-a':{serie:'tcgp',set:'P-A'},
 }
 function subsetImage(card:SetCard,language:string,requestedLanguage:string,quality:'low'|'high',rejected:Set<string>):ResolvedCardImage|undefined{
  const separator=card.id.lastIndexOf('-')
@@ -45,6 +47,11 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    if(language==='en')englishCandidate=candidate
    const image=resolveCardImage({card:candidate,requestedLanguage,quality})
    if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return image
+   if(image.url&&isRejected(image.url,rejectedUrls)){
+    const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
+    const isMepPromo=/^mep-\\d+$/i.test(card.id)
+    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo))return alternate
+   }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
