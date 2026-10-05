@@ -1,4 +1,4 @@
-export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string }
+export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string; symbol?: string }
 export type SetCard = { id: string; name: string; localId: string; image?: string; rarity?: string }
 export type SetDetail = SetSummary & { serie?: { id: string; name: string }; cards: SetCard[] }
 export type CatalogLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'

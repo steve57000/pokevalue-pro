@@ -372,3 +372,7 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
  .binder-grid.view-list .add-card-action{font-size:10px;padding:5px 6px!important}
 }
 .series-family-monogram,.series-progress-monogram,.set-overview-monogram{font-weight:800;letter-spacing:-.04em}
+
+
+/* Show official TCGdex expansion logos first; retain a compact symbol fallback. */
+.series-family-logo,.series-progress-logo,.set-overview-logo{object-fit:contain}
