@@ -47,4 +47,21 @@ describe('catalogue image providers',()=>{
   expect(image.isFallback).toBe(true)
  })
 
+it('uses a same-era front scan for McDonald’s cards when the set has no scan',async()=>{
+  const card={id:'2023sv-1',name:'Sprigatito',localId:'1'}
+  const image=await resolveCatalogueImage(card,'fr','low',async(id,language)=>({id,name:'Sprigatito',localId:'1',language:language??'fr'}),new Set(),async()=>[
+   {id:'swsh1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/swsh/swsh1/1'},
+   {id:'sv1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv1/1'},
+  ])
+  expect(image.url).toBe('https://assets.tcgdex.net/en/sv/sv1/1/low.webp')
+  expect(image.language).toBe('en')
+  expect(image.isFallback).toBe(true)
+ })
+ it('skips a related scan that already failed',()=>{
+  const image=selectRelatedArtwork([
+   {id:'sv1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv1/1'},
+   {id:'sv2-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv2/1'},
+  ],'2023sv',new Set(['https://assets.tcgdex.net/en/sv/sv1/1/low.webp']))
+  expect(image?.id).toBe('sv2-1')
+ })
 })
