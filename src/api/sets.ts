@@ -46,7 +46,7 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
-export type SeriesSummary = { id: string; name: string }
+export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
 export const listSeries = (language: string='fr') => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
 export const getSeries = (id: string, language: string='fr') => fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
