@@ -36,6 +36,37 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
  const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejected))
  return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
+type ArtworkCandidate={id:string;name:string;image?:string}
+const mcdArtworkCache=new Map<string,Promise<ArtworkCandidate[]>>()
+const mcdEra=(setId:string)=>{
+ const match=setId.match(/^(20\d{2})(bw|xy|sm|swsh|sv)(?:-fr)?$/i)
+ if(!match)return undefined
+ const year=Number(match[1])
+ if(year>=2011&&year<=2013)return 'bw'
+ if(year>=2014&&year<=2016)return 'xy'
+ if(year>=2017&&year<=2019)return 'sm'
+ if(year>=2021&&year<=2022)return 'swsh'
+ if(year>=2023&&year<=2024)return 'sv'
+ return undefined
+}
+export function selectRelatedArtwork(candidates:ArtworkCandidate[],mcdSetId:string,rejectedUrls:Set<string>=new Set()){
+ const era=mcdEra(mcdSetId)
+ const sameEra=candidates.filter(candidate=>candidate.image&&candidate.id!==mcdSetId&&(!era||setIdFromCardId(candidate.id).toLowerCase().startsWith(era)))
+ const otherEra=candidates.filter(candidate=>candidate.image&&candidate.id!==mcdSetId&&!sameEra.includes(candidate))
+ return [...sameEra,...otherEra].find(candidate=>candidate.image&&!isRejected(candidate.image,rejectedUrls))
+}
+async function searchRelatedArtwork(name:string){
+ const key=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
+ let pending=mcdArtworkCache.get(key)
+ if(!pending){
+  pending=fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`,{signal:AbortSignal.timeout(8000)})
+   .then(response=>response.ok?response.json() as Promise<ArtworkCandidate[]>:[])
+   .then(cards=>Array.isArray(cards)?cards.filter(card=>card&&typeof card.id==='string'&&typeof card.name==='string'&&typeof card.image==='string'):[])
+   .catch(()=>[])
+  mcdArtworkCache.set(key,pending)
+ }
+ return pending
+}
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set()){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
@@ -59,6 +90,13 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    const isMepPromo=/^mep-\d+$/i.test(card.id)
    if(image.url&&!isRejected(image.url,rejectedUrls)&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo)))return image
   }catch{/* Continue through the other exact-language image sources. */}
+ }
+ if(englishCandidate&&mcdEra(setIdFromCardId(card.id).toLowerCase())){
+  const related=selectRelatedArtwork(await searchRelatedArtwork(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
+  if(related?.image){
+   const url=quality==='high'?related.image+'/high.webp':related.image+'/low.webp'
+   if(!isRejected(url,rejectedUrls))return{url,language:'en',quality,source:'TCGdex',isFallback:true,verified:true} satisfies ResolvedCardImage
+  }
  }
  if(englishCandidate){
   const promoImage=buildMepPromoImage(englishCandidate)
