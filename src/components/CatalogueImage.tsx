@@ -38,6 +38,7 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
 }
 type ArtworkCandidate={id:string;name:string;image?:string}
 const mcdArtworkCache=new Map<string,Promise<ArtworkCandidate[]>>()
+const normalizeArtworkName=(name:string)=>name.normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').trim().toLocaleLowerCase('en')
 const mcdEra=(setId:string)=>{
  const match=setId.match(/^(20\d{2})(bw|xy|sm|swsh|sv)(?:-fr)?$/i)
  if(!match)return undefined
@@ -51,7 +52,7 @@ const mcdEra=(setId:string)=>{
 }
 export function selectRelatedArtwork(candidates:ArtworkCandidate[],mcdSetId:string,rejectedUrls:Set<string>=new Set()){
  const era=mcdEra(mcdSetId)
- const sameEra=candidates.filter(candidate=>candidate.image&&candidate.id!==mcdSetId&&(!era||setIdFromCardId(candidate.id).toLowerCase().startsWith(era)))
+ const sameEra=candidates.filter(candidate=>candidate.image&&setIdFromCardId(candidate.id).toLowerCase()!==mcdSetId&&(!era||setIdFromCardId(candidate.id).toLowerCase().startsWith(era)))
  const otherEra=candidates.filter(candidate=>candidate.image&&candidate.id!==mcdSetId&&!sameEra.includes(candidate))
  return [...sameEra,...otherEra].find(candidate=>candidate.image&&!isRejected(candidate.image,rejectedUrls))
 }
@@ -61,13 +62,13 @@ async function searchRelatedArtwork(name:string){
  if(!pending){
   pending=fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`,{signal:AbortSignal.timeout(8000)})
    .then(response=>response.ok?response.json() as Promise<ArtworkCandidate[]>:[])
-   .then(cards=>Array.isArray(cards)?cards.filter(card=>card&&typeof card.id==='string'&&typeof card.name==='string'&&typeof card.image==='string'):[])
+   .then(cards=>Array.isArray(cards)?cards.filter(card=>card&&typeof card.id==='string'&&typeof card.name==='string'&&typeof card.image==='string'&&normalizeArtworkName(card.name)===key):[])
    .catch(()=>[])
   mcdArtworkCache.set(key,pending)
  }
  return pending
 }
-export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set()){
+export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
  let englishCandidate:ExternalCard|undefined
@@ -92,7 +93,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
   }catch{/* Continue through the other exact-language image sources. */}
  }
  if(englishCandidate&&mcdEra(setIdFromCardId(card.id).toLowerCase())){
-  const related=selectRelatedArtwork(await searchRelatedArtwork(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
+  const related=selectRelatedArtwork(await relatedSearch(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
   if(related?.image){
    const url=quality==='high'?related.image+'/high.webp':related.image+'/low.webp'
    if(!isRejected(url,rejectedUrls))return{url,language:'en',quality,source:'TCGdex',isFallback:true,verified:true} satisfies ResolvedCardImage
