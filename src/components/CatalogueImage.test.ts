@@ -18,6 +18,8 @@ describe('catalogue image providers',()=>{
    ['swsh11.5tg-TG16','swsh/swsh11/TG16'],
    ['swsh12.5tg-TG16','swsh/swsh12.5/TG16'],
    ['exu-A','ex/ex10/A'],
+   ['svp-196','sv/svp/196'],
+   ['P-A-084','tcgp/P-A/084'],
   ] as const
   for(const [id,path] of cases){
    const localId=id.slice(id.lastIndexOf('-')+1)
@@ -36,6 +38,13 @@ describe('catalogue image providers',()=>{
   const image=await resolveCatalogueImage({id:'mep-027',name:'Spectrum',localId:'027'},'fr','low',async(id,language)=>({id,name:'Haunter',localId:'027',language:language??'fr'}),new Set([archive]))
   expect(image.url).toBe('https://assets.tcgdex.net/en/me/mep/027/low.webp')
   expect(image.language).toBe('en')
+ })
+
+ it('falls back to the English print when a TCGdex front URL is broken',async()=>{
+  const failed='https://assets.tcgdex.net/fr/swsh/swsh3/1/low.webp'
+  const image=await resolveCatalogueImage({id:'swsh3-1',name:'Carte',localId:'1'},'fr','low',async(id,language)=>({id,name:'Carte',language:language??'fr',image:'https://assets.tcgdex.net/fr/swsh/swsh3/1',fallbackImage:{low:'https://images.pokemontcg.io/swsh3/1.png',high:'https://images.pokemontcg.io/swsh3/1_hires.png',source:'Pokémon TCG API'}}),new Set([failed]))
+  expect(image.url).toBe('https://images.pokemontcg.io/swsh3/1.png')
+  expect(image.isFallback).toBe(true)
  })
 
 })
