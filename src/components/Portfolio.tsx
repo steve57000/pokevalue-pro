@@ -36,6 +36,7 @@ const curatedSetLogos:Record<string,string>={
  '30th anniversary':'https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png',
  'mega evolution':'https://www.pokepedia.fr/images/thumb/8/83/Logo_M%C3%A9ga-%C3%89volution_JCC.png/800px-Logo_M%C3%A9ga-%C3%89volution_JCC.png',
 }
+// Normalize accents and punctuation so localized family names like “Méga-Évolution” match curated logos.
 const normalizeSetName=(name:string)=>name.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
 const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,name='')=>{
  const english=(url?:string)=>url?.replace('/fr/','/en/').replace('/ja/','/en/').replace('/zh-tw/','/en/')
