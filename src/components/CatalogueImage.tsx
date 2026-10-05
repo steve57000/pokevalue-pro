@@ -49,7 +49,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return image
    if(image.url&&isRejected(image.url,rejectedUrls)){
     const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
-    const isMepPromo=/^mep-\\d+$/i.test(card.id)
+    const isMepPromo=/^mep-\d+$/i.test(card.id)
     if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo))return alternate
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
