@@ -423,3 +423,6 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .series-family-logo,.series-progress-logo{display:block;margin-inline:auto}
 
 .series-selector-logo{justify-self:center;margin-inline:auto}
+
+/* Center the full mobile wordmark block, including logos whose source image has transparent margins. */
+@media(max-width:760px){.series-selector-heading{width:100%;justify-items:center;text-align:center}.series-selector-logo{justify-self:center;margin-inline:auto;object-position:center}.series-selector-copy{text-align:center}.series-selector-monogram{justify-self:center}.set-overview-main .set-overview-logo{margin-inline:auto;object-position:center}}
