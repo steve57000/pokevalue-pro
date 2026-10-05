@@ -90,7 +90,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
    const isMepPromo=/^mep-\d+$/i.test(card.id)
-   if(image.url&&!isRejected(image.url,rejectedUrls)&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo)))return image
+   if(image.url&&!isRejected(image.url,rejectedUrls)&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds)))return image
   }catch{/* Continue through the other exact-language image sources. */}
  }
  if(englishCandidate&&mcdEra(setIdFromCardId(card.id).toLowerCase())){
