@@ -17,4 +17,11 @@ describe('image resolver',()=>{
   expect(override?.image?.verified).toBe(true)
   expect(override?.image?.localPath).toBe(`https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/${cardId}_${slug}.webp`)
  })
+ it.each(Array.from({length:16},(_,index)=>index+1))('résout le recto vérifié de l’énergie Méga-Évolution %s',number=>{
+  const result=resolveCardImage({card:{id:`mee-${number}`,localId:String(number),name:'Énergie de base',language:'fr',image:'https://assets.tcgdex.net/card-back'},requestedLanguage:'fr'})
+  expect(result.source).toBe('local-override')
+  expect(result.isFallback).toBe(false)
+  expect(result.url).toContain(`Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_${String(number).padStart(3,'0')}.png`)
+ })
+
 })
