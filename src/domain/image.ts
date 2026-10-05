@@ -19,9 +19,32 @@ export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:Ex
  const isRgbMewSet=cardSetId==='30th'||cardSetId==='m6a'
  const rgbMewImage=isRgbMewSet&&rgbLetter&&['R','G','B'].includes(rgbLetter)?rgbMewImageByNumber[rgbLetter]:undefined
  if(rgbMewImage)return frontImage({url:rgbMewImage.url,language:rgbMewImage.language,quality,source:'local-override',isFallback:rgbMewImage.language!==requestedLanguage,verified:true})
+ if(cardSetId==='mee'){
+  const energyNumber=Number.parseInt(card.localId??'',10)
+  const scan=megaEvolutionEnergyScans[energyNumber]
+  if(scan)return frontImage({url:scan,language:'fr',quality,source:'local-override',isFallback:requestedLanguage!=='fr',verified:true})
+ }
  if(card.id&&card.image&&!isPokemonCardBackUrl(card.image))return frontImage({url:`${card.image}/${quality}.webp`,language:card.language||requestedLanguage,quality,source:'TCGdex',isFallback:(card.language||requestedLanguage)!==requestedLanguage,verified:true})
  const fallback=card.fallbackImage?.[quality]
  return frontImage({url:fallback,language:'en',quality,source:fallback?'Pokémon TCG API':'none',isFallback:Boolean(fallback),verified:Boolean(fallback)})
+}
+const megaEvolutionEnergyScans:Readonly<Record<number,string>>={
+ 1:'https://www.pokepedia.fr/images/c/cf/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_001.png',
+ 2:'https://www.pokepedia.fr/images/b/bc/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_002.png',
+ 3:'https://www.pokepedia.fr/images/1/1e/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_003.png',
+ 4:'https://www.pokepedia.fr/images/f/f7/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_004.png',
+ 5:'https://www.pokepedia.fr/images/1/1e/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_005.png',
+ 6:'https://www.pokepedia.fr/images/5/5b/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_006.png',
+ 7:'https://www.pokepedia.fr/images/6/6e/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_007.png',
+ 8:'https://www.pokepedia.fr/images/7/76/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_008.png',
+ 9:'https://www.pokepedia.fr/images/4/45/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_009.png',
+ 10:'https://www.pokepedia.fr/images/8/80/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_010.png',
+ 11:'https://www.pokepedia.fr/images/f/fb/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_011.png',
+ 12:'https://www.pokepedia.fr/images/9/9e/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_012.png',
+ 13:'https://www.pokepedia.fr/images/6/69/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_013.png',
+ 14:'https://www.pokepedia.fr/images/3/30/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_014.png',
+ 15:'https://www.pokepedia.fr/images/0/06/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_015.png',
+ 16:'https://www.pokepedia.fr/images/1/1a/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_016.png',
 }
 // MEP promo scans are not consistently present in TCGdex. Bill's Archive
 // exposes its English scans using this stable filename convention.
