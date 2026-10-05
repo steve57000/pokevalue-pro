@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react'
 import type {SetCard} from '../api/sets'
 import {tcgDexProvider} from '../api/tcgdex'
-import {buildMepPromoImage,isPokemonCardBackUrl,resolveCardImage,type ResolvedCardImage} from '../domain/image'
+import {buildMepPromoImage,isPokemonCardBackUrl,resolveCardImage,setIdFromCardId,type ResolvedCardImage} from '../domain/image'
 import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
