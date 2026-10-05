@@ -380,3 +380,12 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 /* Make the real expansion wordmark visible at the top of the series selector. */
 .series-selector-heading{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}.series-selector-copy{min-width:0;width:100%}.series-selector-logo{display:block;width:min(68%,240px);height:72px;max-width:100%;object-fit:contain;object-position:left center;filter:drop-shadow(0 5px 10px #0004)}.series-selector-monogram{width:54px;height:54px;display:grid;place-items:center;border:1px solid var(--line);border-radius:13px;background:var(--panel2);color:var(--brand);font:800 16px Sora;text-transform:uppercase}
 @media(max-width:600px){.series-selector-heading{gap:4px}.series-selector-logo{width:min(74%,210px);height:60px}}
+
+
+/* Expansion wordmark: one prominent, responsive logo in the selector; avoid repeating it in the summary. */
+.series-selector-heading{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:12px;min-width:0}
+.series-selector-copy{width:100%;min-width:0}
+.series-selector-logo{display:block;width:100%;max-width:min(100%,720px);height:auto;max-height:min(42vw,220px);object-fit:contain;object-position:left center;filter:drop-shadow(0 7px 4px rgba(0,0,0,.48)) drop-shadow(0 16px 18px rgba(0,0,0,.38)) drop-shadow(0 0 12px color-mix(in srgb,var(--brand) 22%,transparent));transform:translateZ(0)}
+.set-overview-main{grid-template-columns:minmax(0,1fr) minmax(180px,.72fr);gap:18px}
+.set-overview-logo,.set-overview-monogram{display:none!important}
+@media(max-width:760px){.series-selector-heading{gap:9px}.series-selector-logo{max-height:min(44vw,190px)}.set-overview-main{grid-template-columns:minmax(0,1fr);gap:12px}.set-overview-progress{grid-column:1/-1}}
