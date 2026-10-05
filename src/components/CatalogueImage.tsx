@@ -38,7 +38,7 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
 }
 type ArtworkCandidate={id:string;name:string;image?:string}
 const mcdArtworkCache=new Map<string,Promise<ArtworkCandidate[]>>()
-const normalizeArtworkName=(name:string)=>name.normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').trim().toLocaleLowerCase('en')
+const normalizeArtworkName=(name:string)=>name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
 const mcdEra=(setId:string)=>{
  const match=setId.match(/^(20\d{2})(bw|xy|sm|swsh|sv)(?:-fr)?$/i)
  if(!match)return undefined
