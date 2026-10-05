@@ -40,7 +40,7 @@ const curatedSetLogos:Record<string,string>={
 const normalizeSetName=(name:string)=>name.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
 const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,name='')=>{
  const english=(url?:string)=>url?.replace('/fr/','/en/').replace('/ja/','/en/').replace('/zh-tw/','/en/')
- const formats=(url?:string)=>url?(/assets\\.tcgdex\\.net/.test(url)&&! /\\.(png|webp|jpg)$/i.test(url)?[url+'.png',url+'.webp',url]:[url]):[]
+ const formats=(url?:string)=>url?(/assets\.tcgdex\.net/.test(url)&&!/\.(png|webp|jpg)$/i.test(url)?[url+'.png',url+'.webp',url]:[url]):[]
  const base=seriesId?'https://assets.tcgdex.net/en/'+seriesId+'/'+setId:''
  const normalized=normalizeSetName(name)
  const curated=Object.entries(curatedSetLogos).find(([key])=>normalized.includes(key))?.[1]
