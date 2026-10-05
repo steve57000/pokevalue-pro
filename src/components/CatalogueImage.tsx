@@ -53,8 +53,8 @@ const mcdEra=(setId:string)=>{
 export function selectRelatedArtwork(candidates:ArtworkCandidate[],mcdSetId:string,rejectedUrls:Set<string>=new Set()){
  const era=mcdEra(mcdSetId)
  const sameEra=candidates.filter(candidate=>candidate.image&&setIdFromCardId(candidate.id).toLowerCase()!==mcdSetId&&(!era||setIdFromCardId(candidate.id).toLowerCase().startsWith(era)))
- const otherEra=candidates.filter(candidate=>candidate.image&&candidate.id!==mcdSetId&&!sameEra.includes(candidate))
- return [...sameEra,...otherEra].find(candidate=>candidate.image&&!isRejected(candidate.image,rejectedUrls))
+ const otherEra=candidates.filter(candidate=>candidate.image&&setIdFromCardId(candidate.id).toLowerCase()!==mcdSetId&&!sameEra.includes(candidate))
+ return [...sameEra,...otherEra].find(candidate=>candidate.image&&![candidate.image,`${candidate.image}/low.webp`,`${candidate.image}/high.webp`,`${candidate.image}/low.png`,`${candidate.image}/high.png`].some(url=>isRejected(url,rejectedUrls)))
 }
 async function searchRelatedArtwork(name:string){
  const key=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
