@@ -96,7 +96,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},20_000)
   return()=>window.clearTimeout(timer)
  },[image,card.id])
- const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
+ const mark=card.name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??card.name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
  const show=image?.url
  const failImage=()=>{
   if(!show)return
