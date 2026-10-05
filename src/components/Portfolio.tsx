@@ -43,7 +43,7 @@ const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,
  const formats=(url?:string)=>url?(/assets\.tcgdex\.net/.test(url)&&!/\.(png|webp|jpg)$/i.test(url)?[url+'.png',url+'.webp',url]:[url]):[]
  const base=seriesId?'https://assets.tcgdex.net/en/'+seriesId+'/'+setId:''
  const normalized=normalizeSetName(name)
- const curated=Object.entries(curatedSetLogos).find(([key])=>normalized.includes(key))?.[1]
+ const curated=setId==='30th-c'?'https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png':Object.entries(curatedSetLogos).find(([key])=>normalized.includes(key))?.[1]
  return [...new Set([curated,...formats(logo),...formats(english(logo)),...formats(base?base+'/logo':undefined),...formats(symbol),...formats(english(symbol)),...formats(base?base+'/symbol':undefined)])].filter((url):url is string=>!!url)
 }
 type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void;isFavorite?:(card:Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>)=>boolean;onFavorite?:(card:FavoriteInput)=>void}
