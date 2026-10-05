@@ -72,6 +72,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
  let englishCandidate:ExternalCard|undefined
+ let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
   try{
    const candidate=await getCard(card.id,language)
@@ -83,22 +84,15 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    if(image.url&&isRejected(image.url,rejectedUrls)){
     const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
     const isMepPromo=/^mep-\d+$/i.test(card.id)
-    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))return alternate
+    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))englishApiFallback??=alternate
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
    const isMepPromo=/^mep-\d+$/i.test(card.id)
-   if(image.url&&!isRejected(image.url,rejectedUrls)&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds)))return image
+   if(image.url&&!isRejected(image.url,rejectedUrls)){if(image.source==='Pokémon TCG API'){if(!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))englishApiFallback??=image}else return image}
   }catch{/* Continue through the other exact-language image sources. */}
- }
- if(englishCandidate&&mcdEra(setIdFromCardId(card.id).toLowerCase())){
-  const related=selectRelatedArtwork(await relatedSearch(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
-  if(related?.image){
-   const url=quality==='high'?related.image+'/high.webp':related.image+'/low.webp'
-   if(!isRejected(url,rejectedUrls))return{url,language:'en',quality,source:'TCGdex',isFallback:true,verified:true} satisfies ResolvedCardImage
-  }
  }
  if(englishCandidate){
   const promoImage=buildMepPromoImage(englishCandidate)
@@ -113,6 +107,14 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
   const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejectedUrls))
   if(url)return{url,language:'en',quality,source:'TCGdex',isFallback:requestedLanguage!=='en',verified:true} satisfies ResolvedCardImage
  }
+ if(englishCandidate){
+  const related=selectRelatedArtwork(await relatedSearch(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
+  if(related?.image){
+   const url=quality==='high'?related.image+'/high.webp':related.image+'/low.webp'
+   if(!isRejected(url,rejectedUrls))return{url,language:'en',quality,source:'TCGdex',isFallback:true,verified:true} satisfies ResolvedCardImage
+  }
+ }
+ if(englishApiFallback)return englishApiFallback
  return{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage
 }
 function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejectedUrls:Set<string>=new Set()){
