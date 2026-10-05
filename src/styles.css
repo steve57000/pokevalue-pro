@@ -415,3 +415,9 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
  .set-overview-progress>small{grid-column:1/-1;grid-row:2;margin-top:2px;font-size:11px}
  .set-overview-track{grid-column:1/-1;grid-row:3;width:100%;margin-top:5px}
 }
+
+
+/* Center variable-width expansion wordmarks inside the full available row. */
+.series-selector-logo{object-position:center}
+.series-family-logo,.series-progress-logo,.set-overview-logo{object-position:center}
+.series-family-logo,.series-progress-logo{display:block;margin-inline:auto}
