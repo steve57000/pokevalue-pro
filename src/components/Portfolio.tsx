@@ -58,12 +58,14 @@ export function CollectionQuantityStepper({entry,cardName,flash,onDecrement,onIn
 }
 type SetBadgeProps={sources:string[];name:string;imageClass:string;fallbackClass:string}
 function SetBadge({sources,name,imageClass,fallbackClass}:SetBadgeProps){
- const [index,setIndex]=useState(0)
+ const [index,setIndex]=useState(0),[retryCycle,setRetryCycle]=useState(0)
  const sourceKey=sources.join('|')
- useEffect(()=>setIndex(0),[sourceKey])
+ useEffect(()=>{setIndex(0);setRetryCycle(0)},[sourceKey])
  const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
- const src=sources[index]
- return src?<img className={imageClass} src={src} alt={'Logo '+name} loading='lazy' onError={()=>setIndex(current=>Math.min(current+1,sources.length))}/>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
+ const source=sources[index]
+ const src=source&&retryCycle?source+(source.includes('?')?'&':'?')+'pvRetry='+retryCycle:source
+ const retry=()=>{if(index+1<sources.length)setIndex(index+1);else window.setTimeout(()=>{setIndex(0);setRetryCycle(cycle=>cycle+1)},2500)}
+ return src?<img className={imageClass} src={src} alt={'Logo '+name} loading='lazy' decoding='async' onError={retry}/>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
 }
 export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Props){
  const saved=useRef(read(VIEW_KEY,initial)).current
