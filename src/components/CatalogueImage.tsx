@@ -7,7 +7,7 @@ type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLangua
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
 export const imageFallbackOrder=(requested:string)=>[requested,...(requested==='fr'?['en','ja','zh-tw']:requested==='en'?['fr','ja','zh-tw']:requested==='ja'?['en','fr','zh-tw']:['en','fr','ja'])].filter((x,i,a)=>a.indexOf(x)===i)
-const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\\d+/g,'').replace(/[?&]$/,'')
+const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\d+/g,'').replace(/[?&]$/,'')
 const isRejected=(url:string|undefined,rejected:Set<string>)=>!!url&&rejected.has(cleanUrl(url))
 const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[]}>={
  'swsh4.5sv':{serie:'swsh',set:'swsh4.5'},
@@ -49,7 +49,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    if(subset)return subset
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
-   const isMepPromo=/^mep-\\d+$/i.test(card.id)
+   const isMepPromo=/^mep-\d+$/i.test(card.id)
    if(image.url&&!isRejected(image.url,rejectedUrls)&&!(image.source==='Pokémon TCG API'&&(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo)))return image
   }catch{/* Continue through the other exact-language image sources. */}
  }
@@ -58,7 +58,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
   if(promoImage&&!isRejected(promoImage,rejectedUrls))return{url:promoImage,language:'en',quality,source:'promo-archive',isFallback:requestedLanguage!=='en',verified:true} satisfies ResolvedCardImage
  }
  // TCGdex has scans for some MEP cards even when its API omits the image field.
- const mepMatch=card.id.match(/^mep-(\\d+)$/i)
+ const mepMatch=card.id.match(/^mep-(\d+)$/i)
  if(mepMatch){
   const localId=String(Number(mepMatch[1])).padStart(3,'0')
   const base='https://assets.tcgdex.net/en/me/mep/'+localId+'/'
@@ -96,7 +96,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},20_000)
   return()=>window.clearTimeout(timer)
  },[image,card.id])
- const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
+ const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
  const show=image?.url
  const failImage=()=>{
   if(!show)return
