@@ -84,8 +84,8 @@ function App() {
     document.documentElement.dataset.theme = theme
     writeStoredString('pv-theme', theme)
   }, [theme])
-  useEffect(() => writeStoredJson('pv-portfolio-v1', portfolio), [portfolio])
-  useEffect(() => writeStoredJson(SCANNED_CARDS_STORAGE_KEY, recentScans), [recentScans])
+  useEffect(() => { writeStoredJson('pv-portfolio-v1', portfolio) }, [portfolio])
+  useEffect(() => { writeStoredJson(SCANNED_CARDS_STORAGE_KEY, recentScans) }, [recentScans])
   useEffect(() => {
     const titles: Record<View, string> = {
       collection: 'Collection', featured: 'Cartes à surveiller', scanner: 'Identifier une carte',
