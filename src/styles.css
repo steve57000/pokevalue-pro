@@ -591,3 +591,73 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
   .binder-grid.view-grid article {transition:none}
   .binder-grid.view-grid article:hover {transform:none}
 }
+
+/* Compact card details and give market prices a clear holographic highlight. */
+.binder-grid:not(.view-list) article{
+  grid-template-rows:none;
+  align-content:start;
+  row-gap:8px;
+}
+.binder-grid:not(.view-list) .binder-title{
+  min-height:0;
+  margin:0;
+  line-height:1.2;
+}
+.binder-grid:not(.view-list) .binder-meta{
+  min-height:0;
+  margin:0;
+  line-height:1.25;
+}
+.binder-grid:not(.view-list) .binder-price{
+  display:flex;
+  align-items:center;
+  justify-self:stretch;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:5px 0;
+  overflow:visible;
+  border:0;
+}
+.binder-grid:not(.view-list) .binder-price>small{
+  flex:1 1 auto;
+  min-width:0;
+  line-height:1.2;
+}
+.binder-grid:not(.view-list) .binder-price>strong,
+.binder-grid:not(.view-list) .binder-price>span{
+  flex:0 0 auto;
+  width:max-content;
+  max-width:55%;
+  margin-left:auto;
+  padding:5px 11px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,#a5b4fc 52%,var(--line));
+  border-radius:999px;
+  background:linear-gradient(115deg,
+    color-mix(in srgb,#5eead4 24%,var(--panel2)),
+    color-mix(in srgb,#a78bfa 28%,var(--panel2)) 52%,
+    color-mix(in srgb,#f9a8d4 24%,var(--panel2)));
+  box-shadow:0 4px 13px rgba(0,0,0,.24),
+    0 0 12px color-mix(in srgb,#a78bfa 24%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.32);
+  color:var(--text);
+  font-size:clamp(14px,7cqi,17px);
+  font-weight:800;
+  line-height:1.15;
+  text-align:center;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.binder-grid:not(.view-list) .binder-price>strong{
+  text-shadow:0 1px 1px rgba(0,0,0,.2);
+}
+@media(max-width:600px){
+  .binder-grid:not(.view-list){row-gap:10px}
+  .binder-grid:not(.view-list) article{row-gap:6px}
+  .binder-grid:not(.view-list) .binder-price{padding:3px 0}
+  .binder-grid:not(.view-list) .binder-price>strong,
+  .binder-grid:not(.view-list) .binder-price>span{padding:4px 9px}
+}
