@@ -426,3 +426,24 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 
 /* Center the full mobile wordmark block, including logos whose source image has transparent margins. */
 @media(max-width:760px){.series-selector-heading{width:100%;justify-items:center;text-align:center}.series-selector-logo{justify-self:center;margin-inline:auto;object-position:center}.series-selector-copy{text-align:center}.series-selector-monogram{justify-self:center}.set-overview-main .set-overview-logo{margin-inline:auto;object-position:center}}
+
+/* Mobile collection feedback, compact filters, and a single selected-set wordmark. */
+.mobile-filters-toggle{display:none}
+.set-overview-main{align-items:center;gap:24px}
+.set-overview-logo{display:block;width:min(42vw,420px);max-height:150px;object-fit:contain;object-position:center;filter:drop-shadow(0 12px 18px rgba(0,0,0,.42)) drop-shadow(0 0 12px rgba(255,255,255,.12));margin-inline:auto}
+.set-overview-info{min-width:0}
+.pv-spinner{display:inline-block;width:1em;height:1em;margin-right:.4em;vertical-align:-.12em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:pv-spin .7s linear infinite}
+@keyframes pv-spin{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+ .set-overview-main{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+ .set-overview-logo{width:min(82vw,560px);max-height:190px;justify-self:center}
+ .set-overview-info{width:100%}
+ .series-controls{grid-template-columns:minmax(0,1fr) minmax(110px,.45fr);gap:12px}
+ .mobile-filters-toggle{display:flex;grid-column:1/-1;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+ .mobile-filters-toggle svg{transition:transform .18s ease}
+ .series-controls.filters-open .mobile-filters-toggle svg{transform:rotate(180deg)}
+ .series-controls .control-filters{display:none;grid-column:1/-1;margin:0}
+ .series-controls.filters-open .control-filters{display:grid}
+ .catalogue-count{scroll-margin-top:calc(var(--app-header-height,72px) + 18px)}
+}
+@media(prefers-reduced-motion:reduce){.pv-spinner{animation-duration:1.8s}.mobile-filters-toggle svg{transition:none}}
