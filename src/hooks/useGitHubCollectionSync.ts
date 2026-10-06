@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { emptyCollection, mergeCollections, type CollectionDocument } from '../domain/collection'
 import { readRemotePortfolio, writeRemotePortfolio, type GitHubConnection } from '../services/githubSync'
+import { readStoredJson, removeStoredValue, writeStoredJson } from '../utils/storage'
 
 const CONNECTION_KEY = 'pv-github-connection-v1'
 const blankConnection: GitHubConnection = { owner: '', repo: '', token: '' }
 
 function savedConnection(): GitHubConnection {
   try {
-    const value = JSON.parse(localStorage.getItem(CONNECTION_KEY) ?? '{}')
+    const value = readStoredJson<Record<string, string>>(CONNECTION_KEY, {})
     return { owner: value.owner ?? '', repo: value.repo ?? '', token: value.token ?? '' }
   } catch { return blankConnection }
 }
@@ -38,8 +39,8 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   shaRef.current = sha
 
   useEffect(() => {
-    if (remember) localStorage.setItem(CONNECTION_KEY, JSON.stringify(connection))
-    else localStorage.removeItem(CONNECTION_KEY)
+    if (remember) writeStoredJson(CONNECTION_KEY, connection)
+    else removeStoredValue(CONNECTION_KEY)
   }, [connection, remember])
 
   const connect = useCallback(async () => {

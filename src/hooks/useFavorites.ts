@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Card } from '../types'
 import { createFavorite, favoriteKey, parseFavorites, type FavoriteCard, type FavoriteInput } from '../domain/favorites'
-import { readStoredJson, readStoredStringArray } from '../utils/storage'
+import { readStoredJson, readStoredStringArray, writeStoredJson } from '../utils/storage'
 
 export const FAVORITES_KEY = 'pv-favorites-v2'
 
@@ -15,10 +15,10 @@ export function migrateLegacyFavorites(editorialCards: Card[]): FavoriteCard[] {
 
 export function useFavorites(editorialCards: Card[] = []) {
   const [favorites, setFavorites] = useState<FavoriteCard[]>(() => {
-    if (localStorage.getItem(FAVORITES_KEY) !== null) return parseFavorites(readStoredJson<unknown>(FAVORITES_KEY, []))
+    if (readStoredJson<unknown | null>(FAVORITES_KEY, null) !== null) return parseFavorites(readStoredJson<unknown>(FAVORITES_KEY, []))
     return migrateLegacyFavorites(editorialCards)
   })
-  useEffect(() => localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)), [favorites])
+  useEffect(() => { writeStoredJson(FAVORITES_KEY, favorites) }, [favorites])
   const isFavorite = useCallback((card: Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>) => favorites.some(item => item.key === favoriteKey(card)), [favorites])
   const addFavorite = useCallback((card: FavoriteInput) => setFavorites(current => {
     const next = createFavorite(card)

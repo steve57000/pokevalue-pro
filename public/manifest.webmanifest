@@ -6,9 +6,8 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#080d18",
-  "theme_color": "#f04438",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
   "icons": [
     {
       "src": "./pokevalue-icon.svg",
@@ -16,5 +15,11 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "./",
+  "categories": [
+    "entertainment",
+    "utilities"
+  ],
+  "prefer_related_applications": false
 }

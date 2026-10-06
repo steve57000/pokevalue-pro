@@ -19,7 +19,7 @@ import { getPriceStats,selectCardmarketPrice } from './domain/pricing'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
-import { readStoredJson } from './utils/storage'
+import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT } from './utils/storage'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
@@ -33,6 +33,11 @@ import type { FavoriteCard, FavoriteInput } from './domain/favorites'
 type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'grading' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
+const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'grading', 'estimator', 'guide', 'sync']
+const routeView = (): View => {
+  const candidate = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) as View : window.location.hash.slice(1) as View
+  return validViews.includes(candidate) ? candidate : 'collection'
+}
 
 function readRecentScans(): ScannerCandidate[] {
   const stored = readStoredJson<unknown>(SCANNED_CARDS_STORAGE_KEY, [])
@@ -49,9 +54,9 @@ function readRecentScans(): ScannerCandidate[] {
 }
 
 function App() {
-  const [theme, setTheme] = useState<'dark'|'light'>(() => (localStorage.getItem('pv-theme') as 'dark'|'light') || 'dark')
-  const [view, setView] = useState<View>('collection')
-  const viewRef=useRef<View>('collection'), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,grading:0,estimator:0,guide:0,sync:0})
+  const [theme, setTheme] = useState<'dark'|'light'>(() => readStoredString('pv-theme') === 'light' ? 'light' : 'dark')
+  const [view, setView] = useState<View>(routeView)
+  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,grading:0,estimator:0,guide:0,sync:0)
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -65,16 +70,49 @@ function App() {
   })
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [storageWarning, setStorageWarning] = useState(false)
   const { entries: liveCards, retry } = useLiveCards(cards)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
   const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
 
   useEffect(() => {
+    const warn = () => setStorageWarning(true)
+    window.addEventListener(STORAGE_WARNING_EVENT, warn)
+    return () => window.removeEventListener(STORAGE_WARNING_EVENT, warn)
+  }, [])
+  useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('pv-theme', theme)
+    writeStoredString('pv-theme', theme)
   }, [theme])
-  useEffect(() => localStorage.setItem('pv-portfolio-v1', JSON.stringify(portfolio)), [portfolio])
-  useEffect(() => localStorage.setItem(SCANNED_CARDS_STORAGE_KEY, JSON.stringify(recentScans)), [recentScans])
+  useEffect(() => writeStoredJson('pv-portfolio-v1', portfolio), [portfolio])
+  useEffect(() => writeStoredJson(SCANNED_CARDS_STORAGE_KEY, recentScans), [recentScans])
+  useEffect(() => {
+    const titles: Record<View, string> = {
+      collection: 'Collection', featured: 'Cartes à surveiller', scanner: 'Identifier une carte',
+      favorites: 'Favoris', history: 'Suivi des prix', grading: 'Gradation',
+      estimator: 'Estimer un lot', guide: 'Guide achat', sync: 'Sauvegarde',
+    }
+    document.title = `${titles[view]} · PokéValue Pro`
+  }, [view])
+  useEffect(() => {
+    const onPopState = () => {
+      const next = routeView()
+      if (next === viewRef.current) return
+      scrollByView.current[viewRef.current] = window.scrollY
+      viewRef.current = next
+      setView(next)
+      if (next !== 'featured') setQuery('')
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, scrollByView.current[next] ?? 0)))
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setMobileMenuOpen(false) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [mobileMenuOpen])
 
   const filtered = useMemo(() => cards.filter(card => {
     const matchesText = `${card.name} ${card.pokemon} ${card.set} ${card.number}`.toLowerCase().includes(query.toLowerCase())
@@ -111,7 +149,15 @@ function App() {
     }))
   }
 
-  const navigate=useCallback((next:View)=>{if(next===viewRef.current)return;if(next!=='featured')setQuery('');scrollByView.current[viewRef.current]=window.scrollY;viewRef.current=next;setView(next);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))},[])
+  const navigate=useCallback((next:View)=>{
+    if(next===viewRef.current)return
+    if(next!=='featured')setQuery('')
+    scrollByView.current[viewRef.current]=window.scrollY
+    viewRef.current=next
+    window.history.pushState({pokevalueView:next}, '', `${window.location.pathname}${window.location.search}#/${next}`)
+    setView(next)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))
+  },[])
 
   const nav = [
     {id:'collection', label:'Collection', icon:Library,group:'Collection'},
@@ -159,6 +205,7 @@ function App() {
           <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
+        {storageWarning&&<div className="storage-warning" role="alert"><span>La sauvegarde locale a échoué. Exporte ta collection pour en garder une copie.</span><button onClick={()=>{setStorageWarning(false);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(false)}><X size={18}/></button></div>}
         <div className="content">
           {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
           {view==='featured' && <>
@@ -219,10 +266,10 @@ function App() {
 
       <nav className="bottom-nav">
         {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Prix':item.id==='featured'?'Cartes':item.label.split(' ')[0]}</span></button>})}
-        <button className={['sync','estimator','guide','scanner'].includes(view)?'active':''} onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
+        <button className={['sync','estimator','guide','scanner','grading'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div className="mobile-menu" onMouseDown={event=>event.stopPropagation()}><div><strong>Plus de services</strong><button aria-label="Fermer le menu" onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','scanner','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','scanner','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
