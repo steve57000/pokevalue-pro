@@ -447,3 +447,12 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
  .catalogue-count{scroll-margin-top:calc(var(--app-header-height,72px) + 18px)}
 }
 @media(prefers-reduced-motion:reduce){.pv-spinner{animation-duration:1.8s}.mobile-filters-toggle svg{transition:none}}
+
+/* Keep the selected expansion logo visible; place it above its details at every width. */
+.set-overview-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.72fr);grid-template-rows:auto auto;gap:20px 24px}
+.set-overview-logo{display:block!important;grid-column:1/-1;grid-row:1;width:min(100%,860px);height:clamp(120px,22vw,240px);max-height:240px;justify-self:center;object-fit:contain;object-position:center;filter:drop-shadow(0 12px 18px rgba(0,0,0,.42)) drop-shadow(0 0 12px rgba(255,255,255,.12));margin-inline:auto}
+.set-overview-monogram{display:grid!important;grid-column:1/-1;grid-row:1;justify-self:center;align-self:center}
+.set-overview-info{grid-column:1;grid-row:2;min-width:0}
+.set-overview-progress{grid-column:2;grid-row:2;min-width:0}
+@media(max-width:980px){.set-overview-main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;gap:16px}.set-overview-logo,.set-overview-monogram{grid-column:1;grid-row:1;width:min(100%,720px);max-height:210px}.set-overview-info{grid-column:1;grid-row:2;width:100%}.set-overview-progress{grid-column:1;grid-row:3;width:100%}}
+@media(max-width:760px){.set-overview-logo{width:100%;height:clamp(115px,34vw,190px);max-height:190px}.set-overview-monogram{width:74px;height:74px;font-size:21px}}
