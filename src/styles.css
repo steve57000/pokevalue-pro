@@ -459,3 +459,134 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 
 
 .storage-warning{position:sticky;top:var(--app-header-height,72px);z-index:20;display:flex;align-items:center;gap:12px;margin:0 auto 12px;padding:12px 16px;border:1px solid color-mix(in srgb,var(--brand) 50%,var(--line));border-radius:14px;background:var(--panel);box-shadow:var(--shadow);color:var(--text);font-size:14px}.storage-warning>span{flex:1}.storage-warning button{border:0;background:transparent;color:var(--brand);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}.storage-warning .storage-warning-close{display:grid;place-items:center;padding:4px;color:var(--muted)}@media(max-width:600px){.storage-warning{align-items:flex-start;flex-wrap:wrap;margin:0 10px 10px;padding:10px 12px;font-size:13px}.storage-warning>span{flex-basis:calc(100% - 40px)}.storage-warning>button:nth-of-type(1){margin-left:auto}}
+
+
+/* In dark mode, give series wordmarks a light edge and colored halo so the artwork separates from the panel. */
+:root[data-theme="dark"] .series-selector-logo,
+:root[data-theme="dark"] .set-overview-logo,
+:root[data-theme="dark"] .series-family-logo,
+:root[data-theme="dark"] .series-progress-logo {
+  filter: drop-shadow(0 0 1px rgba(255,255,255,.78))
+    drop-shadow(0 4px 7px rgba(0,0,0,.72))
+    drop-shadow(0 0 12px rgba(143,174,255,.48))
+    drop-shadow(0 0 22px rgba(255,255,255,.18));
+}
+
+/* Grid is an image-first gallery, while Cards keeps the fuller binder details. */
+.binder-grid.view-grid article {
+  position:relative;
+  align-content:start;
+  gap:7px;
+  padding:9px;
+  overflow:hidden;
+  border-radius:18px;
+  border-color:color-mix(in srgb,var(--line) 70%,#8298e8 30%);
+  background:linear-gradient(155deg,color-mix(in srgb,var(--panel2) 76%,#253659),var(--panel));
+  box-shadow:0 8px 20px rgba(0,0,0,.17);
+  opacity:.92;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.binder-grid.view-grid article:hover {
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--brand) 55%,var(--line));
+  box-shadow:0 12px 26px rgba(0,0,0,.25),0 0 18px color-mix(in srgb,var(--brand) 12%,transparent);
+}
+.binder-grid.view-grid article.owned {
+  opacity:1;
+  border-color:color-mix(in srgb,#22c55e 65%,var(--line));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,#22c55e 60%,transparent),0 7px 18px rgba(0,0,0,.2);
+}
+.binder-grid.view-grid .binder-preview {
+  display:grid;
+  place-items:center;
+  width:100%;
+  aspect-ratio:63/88;
+  border:1px solid color-mix(in srgb,var(--line) 58%,#8798c7 42%)!important;
+  border-radius:13px!important;
+  background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,#6179b7 22%,var(--panel2)),var(--panel))!important;
+  box-shadow:inset 0 0 22px rgba(125,157,235,.08),0 4px 10px rgba(0,0,0,.2);
+}
+.binder-grid.view-grid .binder-preview>.catalogue-image {
+  width:100%;
+  height:100%;
+  aspect-ratio:63/88;
+}
+.binder-grid.view-grid .binder-preview .catalogue-image img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.binder-grid.view-grid .binder-title {
+  min-height:2.4em;
+  margin:2px 0 0;
+  text-align:center;
+  font-size:clamp(12px,3.2cqi,15px);
+  line-height:1.2;
+  -webkit-line-clamp:2;
+}
+.binder-grid.view-grid .binder-meta {
+  width:100%;
+  text-align:center;
+  font-size:10px;
+  line-height:1.2;
+}
+.binder-grid.view-grid .binder-price {
+  align-self:center;
+  justify-self:center;
+  display:flex;
+  align-items:baseline;
+  gap:4px;
+  min-height:0;
+  max-width:100%;
+  margin-top:1px;
+  padding:4px 10px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--panel2) 88%,transparent);
+}
+.binder-grid.view-grid .binder-price strong,
+.binder-grid.view-grid .binder-price>span {font-size:12px;white-space:nowrap}
+.binder-grid.view-grid .card-quick-actions {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  flex-wrap:wrap;
+  min-width:0;
+}
+.binder-grid.view-grid .card-quick-actions.is-missing {display:grid;grid-template-columns:minmax(0,1fr) 30px 30px}
+.binder-grid.view-grid .card-quick-actions.is-owned {display:flex}
+.binder-grid.view-grid .add-card-action {
+  width:100%;
+  min-width:0!important;
+  min-height:34px;
+  justify-content:center;
+  padding:5px 7px!important;
+  font-size:11px;
+  line-height:1.15;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.binder-grid.view-grid .tile-grading-badge {
+  position:absolute;
+  z-index:2;
+  top:13px;
+  left:13px;
+  max-width:calc(100% - 26px);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:999px;
+  background:rgba(12,18,31,.84);
+  backdrop-filter:blur(8px);
+}
+@media(max-width:600px) {
+  .binder-grid.view-grid article {padding:7px;gap:6px;border-radius:15px}
+  .binder-grid.view-grid .binder-preview {border-radius:11px!important}
+  .binder-grid.view-grid .binder-meta {font-size:9px}
+  .binder-grid.view-grid .binder-price {padding:3px 8px}
+  .binder-grid.view-grid .tile-grading-badge {top:10px;left:10px;max-width:calc(100% - 20px)}
+}
+@media(prefers-reduced-motion:reduce) {
+  .binder-grid.view-grid article {transition:none}
+  .binder-grid.view-grid article:hover {transform:none}
+}
