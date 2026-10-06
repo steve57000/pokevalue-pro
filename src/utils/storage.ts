@@ -2,8 +2,11 @@ export const STORAGE_WARNING_EVENT = 'pv-storage-warning'
 type StorageArea = 'local' | 'session'
 
 function storageFor(area: StorageArea): Storage | undefined {
-  if (typeof window === 'undefined') return undefined
-  try { return area === 'session' ? window.sessionStorage : window.localStorage } catch { return undefined }
+  try {
+    if (typeof window !== 'undefined') return area === 'session' ? window.sessionStorage : window.localStorage
+    const root = globalThis as typeof globalThis & { localStorage?: Storage; sessionStorage?: Storage }
+    return area === 'session' ? root.sessionStorage : root.localStorage
+  } catch { return undefined }
 }
 
 export function readStoredJson<T>(key: string, fallback: T, area: StorageArea = 'local'): T {
