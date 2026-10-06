@@ -56,7 +56,7 @@ function readRecentScans(): ScannerCandidate[] {
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => readStoredString('pv-theme') === 'light' ? 'light' : 'dark')
   const [view, setView] = useState<View>(routeView)
-  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,grading:0,estimator:0,guide:0,sync:0)
+  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,grading:0,estimator:0,guide:0,sync:0})
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
