@@ -661,3 +661,70 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
   .binder-grid:not(.view-list) .binder-price>strong,
   .binder-grid:not(.view-list) .binder-price>span{padding:4px 9px}
 }
+
+/* Mobile owned-card controls: keep the stepper and utility actions in separate columns. */
+@media(max-width:600px){
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    min-width:0;
+  }
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .collection-quantity{
+    grid-column:1;
+    display:flex;
+    justify-content:flex-start;
+    align-items:center;
+    gap:5px;
+    min-width:0;
+    min-height:40px;
+    white-space:nowrap;
+  }
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .collection-quantity button{
+    width:36px!important;
+    min-width:36px!important;
+    height:38px;
+    min-height:38px;
+    flex:0 0 36px;
+  }
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .collection-quantity span{
+    min-width:30px;
+    padding:0 2px;
+    text-align:center;
+    font-size:12px;
+  }
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .card-utility-actions{
+    grid-column:2;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+    min-width:0;
+  }
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .card-utility-actions>button,
+  .binder-grid:not(.view-list) .card-quick-actions.is-owned .card-utility-actions>.favorite-button{
+    width:38px!important;
+    min-width:38px!important;
+    height:38px;
+    min-height:38px;
+    flex:0 0 38px;
+    border-radius:11px;
+  }
+  @container(max-width:245px){
+    .binder-grid:not(.view-list) .card-quick-actions.is-owned{
+      grid-template-columns:minmax(0,1fr);
+      justify-items:stretch;
+      gap:6px;
+    }
+    .binder-grid:not(.view-list) .card-quick-actions.is-owned .collection-quantity{
+      grid-column:1;
+      justify-content:center;
+    }
+    .binder-grid:not(.view-list) .card-quick-actions.is-owned .card-utility-actions{
+      grid-column:1;
+      justify-content:center;
+    }
+  }
+}
