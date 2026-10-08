@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react'
-import {Activity,CalendarDays,RefreshCw,Search,TrendingDown,TrendingUp} from 'lucide-react'
+import {Activity,CalendarDays,Heart,Library,RefreshCw,Search,ShieldCheck,TrendingDown,TrendingUp} from 'lucide-react'
 import {useCardPrices,refreshCardPrices} from '../hooks/useCardPrices'
 import {getAllPriceHistory,getPriceHistory,type PriceSnapshot} from '../domain/priceHistory'
 import type {Card} from '../types'
@@ -29,7 +29,13 @@ export function PriceHistoryPage({cards,entries,favorites,historySync}:Props){
  const visibleHistory=useMemo(()=>{if(range==='all'||history.length<2)return history;const cutoff=Date.now()-Number(range)*24*60*60*1000;return history.filter(point=>new Date(`${point.date}T00:00:00`).getTime()>=cutoff)},[history,range])
  const values=visibleHistory.map(point=>point.value),latest=values[values.length-1],first=values[0],change=latest!==undefined&&first!==undefined?latest-first:undefined,changePercent=change!==undefined&&first?change/first*100:undefined
  return <section className="price-history-page">
-  <div className="page-heading"><span className="eyebrow"><Activity size={15}/> Marché & collection</span><h1>Suivi des prix</h1><p>Consulte le prix Cardmarket actuel et l’évolution observée depuis tes premiers relevés.</p><p className={`history-sync-note ${historySync.status}`} role="status">{historySync.message}</p></div>
+  <div className="page-heading"><span className="eyebrow"><Activity size={15}/> Marché & collection</span><h1>Statistiques & prix</h1><p>Analyse la valeur de ta collection, les tendances de prix et les relevés du marché.</p><p className={`history-sync-note ${historySync.status}`} role="status">{historySync.message}</p></div>
+  <div className="history-insight-grid" aria-label="Indicateurs du catalogue">
+   <article><span><Library size={17}/> Cartes référencées</span><strong>{cards.length}</strong></article>
+   <article><span><TrendingUp size={17}/> Tendance positive</span><strong>{cards.filter(card=>card.trend==='up').length}</strong></article>
+   <article><span><ShieldCheck size={17}/> Raretés couvertes</span><strong>{new Set(cards.map(card=>card.rarity)).size}</strong></article>
+   <article><span><Heart size={17}/> Favoris enregistrés</span><strong>{favorites.length}</strong></article>
+  </div>
   <div className="history-overview"><article><span>Cartes suivies</span><strong>{trackedCount}</strong><small>avec au moins un relevé</small></article><article><span>Relevés enregistrés</span><strong>{allHistory.length}</strong><small>sur cet appareil</small></article><article><span>Période affichée</span><strong>{range==='all'?'Tout':`${range} jours`}</strong><small>prix en euros</small></article></div>
   <PriceHistoryExplorer cards={cards} entries={entries} favorites={favorites} onSelect={(id,language)=>{setSelectedKey(language+':'+id);setSearch('')}} />
   <div className="history-controls"><label className="history-search"><Search size={17}/><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Rechercher une carte ou une extension"/></label><label className="history-card-select"><span>Carte</span><select value={selected?identity(selected):''} onChange={event=>setSelectedKey(event.target.value)}>{selected&&!filteredOptions.some(card=>identity(card)===identity(selected))&&<option value={identity(selected)}>{selected.name} · {selected.setName} ({selected.language.toUpperCase()})</option>}{filteredOptions.map(card=><option key={identity(card)} value={identity(card)}>{card.name} · {card.number?`nº ${card.number} · `:''}{card.setName} ({card.language.toUpperCase()})</option>)}</select></label><div className="history-actions"><div className="history-range" aria-label="Période du graphique">{(['30','90','all'] as const).map(value=><button key={value} className={range===value?'active':''} onClick={()=>setRange(value)}>{value==='all'?'Tout':`${value} j`}</button>)}</div>{selected&&<button className="history-refresh" onClick={()=>refreshCardPrices([selected.id],selected.language)} disabled={livePrice?.status==='loading'}><RefreshCw size={15} className={livePrice?.status==='loading'?'spinning':''}/><span>Actualiser</span></button>}</div></div>

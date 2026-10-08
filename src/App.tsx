@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck, History,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
-  Library, Star, ArrowUpRight, AlertTriangle, CheckCircle2, ScanLine, Cloud, Menu
+  Library, ArrowUpRight, AlertTriangle, CheckCircle2, Cloud, Menu
 } from 'lucide-react'
 import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
@@ -36,6 +36,7 @@ const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
 const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'grading', 'estimator', 'guide', 'sync']
 const routeView = (): View => {
   const candidate = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) as View : window.location.hash.slice(1) as View
+  if (candidate === 'scanner') return 'featured' // legacy links open the market-search tab
   return validViews.includes(candidate) ? candidate : 'collection'
 }
 
@@ -70,6 +71,7 @@ function App() {
   })
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [trendTab,setTrendTab]=useState<'popular'|'market'>(()=>window.location.hash.includes('scanner')?'market':'popular')
   const [storageWarning, setStorageWarning] = useState(false)
   const { entries: liveCards, retry } = useLiveCards(cards)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
@@ -88,15 +90,16 @@ function App() {
   useEffect(() => { writeStoredJson(SCANNED_CARDS_STORAGE_KEY, recentScans) }, [recentScans])
   useEffect(() => {
     const titles: Record<View, string> = {
-      collection: 'Collection', featured: 'Cartes à surveiller', scanner: 'Identifier une carte',
-      favorites: 'Favoris', history: 'Suivi des prix', grading: 'Gradation',
+      collection: 'Collection', featured: trendTab==='market'?'Tendances · Recherche marché':'Tendances', scanner: 'Tendances',
+      favorites: 'Favoris', history: 'Statistiques & prix', grading: 'Gradation',
       estimator: 'Estimer un lot', guide: 'Guide achat', sync: 'Sauvegarde',
     }
     document.title = `${titles[view]} · PokéValue Pro`
-  }, [view])
+  }, [view,trendTab])
   useEffect(() => {
     const onPopState = () => {
       const next = routeView()
+      setTrendTab(window.location.hash.includes('scanner')?'market':'popular')
       if (next === viewRef.current) return
       scrollByView.current[viewRef.current] = window.scrollY
       viewRef.current = next
@@ -150,25 +153,26 @@ function App() {
   }
 
   const navigate=useCallback((next:View)=>{
-    if(next===viewRef.current)return
-    if(next!=='featured')setQuery('')
+    const destination:View=next==='scanner'?'featured':next
+    if(next==='scanner')setTrendTab('market')
+    if(destination===viewRef.current)return
+    if(destination!=='featured')setQuery('')
     scrollByView.current[viewRef.current]=window.scrollY
-    viewRef.current=next
-    window.history.pushState({pokevalueView:next}, '', `${window.location.pathname}${window.location.search}#/${next}`)
-    setView(next)
-    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[next]??0)))
+    viewRef.current=destination
+    window.history.pushState({pokevalueView:destination}, '', `${window.location.pathname}${window.location.search}#/${destination}`)
+    setView(destination)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,scrollByView.current[destination]??0)))
   },[])
 
   const nav = [
-    {id:'collection', label:'Collection', icon:Library,group:'Collection'},
-    {id:'favorites', label:'Favoris', icon:Heart,group:'Collection'},
-    {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Collection'},
-    {id:'featured', label:'Cartes à surveiller', icon:TrendingUp,group:'Découvrir'},
-    {id:'history', label:'Suivi des prix', icon:History,group:'Découvrir'},
-    {id:'scanner', label:'Identifier une carte', icon:ScanLine,group:'Découvrir'},
-    {id:'estimator', label:'Estimer un lot', icon:Calculator},
-    {id:'guide', label:'Guide achat', icon:BookOpen},
-    {id:'sync', label:'Sauvegarde', icon:Cloud},
+    {id:'collection', label:'Collection', icon:Library,group:'Mon espace'},
+    {id:'favorites', label:'Favoris', icon:Heart,group:'Ma espace'},
+    {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Ma espace'},
+    {id:'featured', label:'Tendances', icon:TrendingUp,group:'Marché'},
+    {id:'history', label:'Stats', icon:History,group:'Marché'},
+    {id:'estimator', label:'Estimer un lot', icon:Calculator,group:'Outils'},
+    {id:'guide', label:'Guide achat', icon:BookOpen,group:'Outils'},
+    {id:'sync', label:'Sauvegarde', icon:Cloud,group:'Données'},
   ] as const
 
   return (
@@ -181,7 +185,7 @@ function App() {
         <nav>
           {nav.map((item,index) => {
             const Icon = item.icon
-            const navGroups:Record<View,string>={collection:'Collection',favorites:'Collection',grading:'Collection',featured:'Découvrir',history:'Découvrir',scanner:'Découvrir',estimator:'Outils',guide:'Outils',sync:'Données'},group=navGroups[item.id],previous=index?navGroups[nav[index-1].id]:''
+            const group=item.group,previous=index?nav[index-1].group:''
             return <div className="nav-item" key={item.id}>{group!==previous&&<span className="nav-label">{group}</span>}<button className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
               <Icon size={19}/><span>{item.label}</span>
               {item.id==='favorites' && favorites.length>0 && <b>{favorites.length}</b>}
@@ -201,7 +205,7 @@ function App() {
       <main>
         <header className="topbar">
           <div className="mobile-brand"><div className="brand-mark">PV</div><strong>PokéValue</strong></div>
-          {view==='featured'&&<div className="global-search"><Search size={18}/><input aria-label="Rechercher parmi les cartes à surveiller" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher parmi les cartes à surveiller…"/></div>}
+          {view==='featured'&&trendTab==='popular'&&<div className="global-search"><Search size={18}/><input aria-label="Rechercher dans les tendances" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher dans les cartes tendance…"/></div>}
           <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
@@ -211,24 +215,23 @@ function App() {
           {view==='featured' && <>
             <section className="hero">
               <div>
-                <span className="eyebrow"><TrendingUp size={15}/> Guide de valeur 2026</span>
-                <h1>Les cartes Pokémon à surveiller</h1>
-                <p>Recherche, compare et organise rapidement les cartes qui ont le plus d’intérêt sur le marché.</p>
+                <span className="eyebrow"><TrendingUp size={15}/> Marché Pokémon</span>
+                <h1>Tendances</h1>
+                <p>Parcours les cartes sélectionnées pour leur intérêt de marché ou cherche directement une carte et ses références de prix.</p>
               </div>
               <div className="hero-stat">
-                <span>Valeur brute max du catalogue</span>
-                <strong>{money(Math.max(...cards.map(c=>c.rawMax)))}</strong>
-                <small>sur une carte non gradée</small>
+                <span>Cartes de la sélection</span>
+                <strong>{cards.length}</strong>
+                <small>avec données de tendance indicatives</small>
               </div>
             </section>
 
-            <section className="stats-grid">
-              <Stat icon={<Star/>} label="Cartes référencées" value={cards.length.toString()} />
-              <Stat icon={<TrendingUp/>} label="Tendance positive" value={cards.filter(c=>c.trend==='up').length.toString()} />
-              <Stat icon={<ShieldCheck/>} label="Raretés couvertes" value={new Set(cards.map(c=>c.rarity)).size.toString()} />
-              <Stat icon={<Heart/>} label="Favoris enregistrés" value={favorites.length.toString()} />
-            </section>
+            <nav className="trend-tabs" aria-label="Explorer le marché">
+              <button type="button" className={trendTab==='popular'?'active':''} aria-pressed={trendTab==='popular'} onClick={()=>{setTrendTab('popular');setQuery('')}}><TrendingUp size={17}/> Tendances</button>
+              <button type="button" className={trendTab==='market'?'active':''} aria-pressed={trendTab==='market'} onClick={()=>setTrendTab('market')}><Search size={17}/> Recherche marché</button>
+            </nav>
 
+            {trendTab==='market'?<CardIdentifier document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>:<>
             <section className="filters">
               <div className="filter-title"><SlidersHorizontal size={17}/> Filtres</div>
               <select value={setFilter} onChange={e=>setSetFilter(e.target.value)}><option>Toutes</option>{sets.map(s=><option key={s}>{s}</option>)}</select>
@@ -250,6 +253,7 @@ function App() {
               )}
             </section>
             {filtered.length===0 && <div className="empty"><Search size={34}/><h3>Aucune carte trouvée</h3><p>Modifie les filtres ou la recherche.</p></div>}
+            </>}
           </>}
 
           {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
@@ -257,7 +261,6 @@ function App() {
           {view==='grading'&&<GradingPage entries={portfolio.entries} onPriceHistory={()=>navigate('history')}/> }
 
 
-          {view==='scanner' && <CardIdentifier document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
           {view==='sync' && <CollectionSyncSettings sync={githubSync} document={portfolio} onChange={setPortfolio}/>}
@@ -265,11 +268,11 @@ function App() {
       </main>
 
       <nav className="bottom-nav">
-        {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Prix':item.id==='featured'?'Cartes':item.label.split(' ')[0]}</span></button>})}
-        <button className={['sync','estimator','guide','scanner','grading'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
+        {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Stats':item.id==='featured'?'Tendances':item.label.split(' ')[0]}</span></button>})}
+        <button className={['sync','estimator','guide','grading'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','scanner','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
@@ -278,10 +281,6 @@ function App() {
       {selected && (()=>{const cardId=selected.tcgdexId??selected.id,live=liveCards[selected.id]?.data,entry=portfolio.entries.find(e=>e.cardId===cardId&&e.language===selected.language.toLowerCase()&&e.quantity>0),stats=getPriceStats(live?.pricing),market=selectCardmarketPrice(live?.pricing),favorite=editorialFavorite(selected);const change=(quantity:number)=>setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(cardId),cardId,language:selected.language.toLowerCase(),variant:'normal',name:selected.name,setName:selected.set,number:selected.number,rarity:selected.rarity,quantity,condition:entry?.condition??'near-mint',notes:entry?.notes??'',manualPrice:entry?.manualPrice}));return <CardDetailsModal card={{id:cardId,name:selected.name,localId:selected.number,image:live?.image,rarity:selected.rarity}} setName={selected.set} language={selected.language.toLowerCase()} entry={entry} price={{status:liveCards[selected.id]?.status==='error'?'error':'success',language:selected.language.toLowerCase(),price:market,...stats}} favorite={isFavorite(favorite)} onFavorite={()=>toggleFavorite(favorite)} onQuantity={change} onEdit={()=>{}} onShowcase={()=>{setSelected(null);setShowcase(selected);setShowcaseFavorite(favorite)}} onClose={()=>setSelected(null)}/>})()}
     </div>
   )
-}
-
-function Stat({icon,label,value}:{icon:React.ReactNode,label:string,value:string}) {
-  return <div className="stat-card"><div>{icon}</div><span>{label}</span><strong>{value}</strong></div>
 }
 
 function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},favorite:boolean,collected:boolean,onShowcase:()=>void,onOpen:()=>void,onRetry:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
