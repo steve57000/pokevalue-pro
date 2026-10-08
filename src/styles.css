@@ -728,3 +728,22 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
     }
   }
 }
+
+
+/* Image-first gallery: visually separate the compact grid from detailed card tiles. */
+.binder-grid.view-grid article{align-content:start;gap:8px;padding:8px;border-radius:16px}
+.binder-grid.view-grid .binder-preview{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:63/88;border-radius:11px;background:#080d18;box-shadow:0 5px 14px #0005}
+.binder-grid.view-grid .binder-preview>img{display:block;width:100%;height:100%;object-fit:cover}
+.binder-grid.view-grid .binder-title,.binder-grid.view-grid .binder-meta,.binder-grid.view-grid .binder-price{display:none}
+.binder-grid.view-grid .binder-preview>.grid-card-overlay{position:absolute;inset:auto 0 0;z-index:2;display:grid;gap:3px;padding:26px 8px 8px;text-align:left;opacity:1;color:#fff;background:linear-gradient(transparent,rgba(4,8,17,.94))}
+.binder-grid.view-grid .grid-card-overlay strong{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:clamp(11px,3cqi,14px);line-height:1.12}
+.binder-grid.view-grid .grid-card-overlay small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;line-height:1.15;color:#d5dceb}
+.binder-grid.view-grid .binder-preview>.grid-price-badge{position:absolute;inset:7px 7px auto auto;z-index:4;display:inline-flex;width:max-content;max-width:calc(100% - 14px);padding:4px 8px;border:1px solid #ffffff75;border-radius:999px;opacity:1;color:#fff;font-size:clamp(10px,2.7cqi,13px);font-weight:850;line-height:1.1;background:linear-gradient(120deg,#fb655c,#a77aff 52%,#55d5d5);box-shadow:0 3px 10px #0009,0 0 12px #aa80ff55}
+.binder-grid.view-grid .binder-preview>.grid-owned-badge{position:absolute;inset:7px auto auto 7px;z-index:4;display:inline-flex;min-width:26px;justify-content:center;padding:4px 7px;border:1px solid #73edaf99;border-radius:999px;opacity:1;color:#ecfff4;font-size:11px;font-weight:850;line-height:1;background:#0b754ecc;box-shadow:0 3px 9px #0008}
+.binder-grid.view-grid .tile-grading-badge{top:40px;left:8px;z-index:5;padding:3px 6px;font-size:9px}
+.binder-grid.view-grid .card-quick-actions{gap:5px}
+.binder-grid.view-grid .card-quick-actions.is-missing{display:grid;grid-template-columns:minmax(0,1fr) 36px 36px}
+.binder-grid.view-grid .add-card-action{min-width:36px;min-height:36px;padding:0 8px;justify-content:center}
+.binder-grid.view-grid .add-card-action span{display:none}
+.binder-grid.view-grid .card-utility-actions{gap:4px}
+@media(max-width:600px){.binder-grid.view-grid article{padding:6px;gap:6px}.binder-grid.view-grid .binder-preview{border-radius:9px}.binder-grid.view-grid .grid-card-overlay{padding:23px 6px 6px}.binder-grid.view-grid .grid-card-overlay small{font-size:8px}.binder-grid.view-grid .card-quick-actions.is-missing{grid-template-columns:minmax(0,1fr) 32px 32px}.binder-grid.view-grid .collection-quantity button,.binder-grid.view-grid .card-utility-actions>button,.binder-grid.view-grid .favorite-button{width:32px;min-width:32px;height:32px;min-height:32px}}

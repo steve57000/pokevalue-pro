@@ -120,7 +120,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
     <button onClick={()=>openSubView('card',card)} aria-label={`Détails et statistiques de ${card.name}`} title="Détails et statistiques"><BarChart3 size={17}/></button>
    </div>
    return <article key={card.id} className={has?'owned':''}>
-    <button className="binder-preview" onClick={()=>setShowcase(card)} aria-label={`Voir ${card.name} en 3D`}><CatalogueImage card={card} requestedLanguage={language}/></button>
+    <button className="binder-preview" onClick={()=>setShowcase(card)} aria-label={`Voir ${card.name} en 3D`}><CatalogueImage card={card} requestedLanguage={language}/>{displayMode==='grid'&&<><span className="grid-card-overlay" aria-hidden="true"><strong>{card.name}</strong><small>{card.localId} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</small></span>{prices[card.id]?.price&&<span className="grid-price-badge" aria-hidden="true">{money(prices[card.id].price!.value)}</span>}{entry&&<span className="grid-owned-badge" aria-hidden="true">×{entry.quantity}</span>}</>}</button>
     {getGradingInterest({rawPrice:prices[card.id]?.price?.value,rarity:card.rarity,...prices[card.id]?.cardmarket}).level==='high'&&<span className="tile-grading-badge" title="Potentiel à étudier — estimation basée sur prix, rareté et tendance">★ Potentiel gradation</span>}
     <strong className="binder-title">{card.name}</strong>
     <span className="binder-meta">{card.localId}/{detail?.cardCount.official??detail?.cardCount.total} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</span>
