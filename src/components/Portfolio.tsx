@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart3, ChevronDown, Minus, Plus } from 'lucide-react'
+import { ChevronDown, Minus, Plus, SlidersHorizontal } from 'lucide-react'
 import { listSets,getSet,listSeries,getSeries,type CatalogLanguage,type SeriesSummary,type SetDetail,type SetSummary,type SetCard } from '../api/sets'
 import { CatalogueImage } from './CatalogueImage'
 import type { CollectionDocument,CollectionEntry } from '../domain/collection'
@@ -117,7 +117,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
    const changeQuantity=(quantity:number)=>setEntry(card,{quantity})
    const utilities=<div className="card-utility-actions">
     {onFavorite&&<FavoriteButton favorite={favorite} onToggle={()=>onFavorite(favoriteFor(card))}/>}
-    <button onClick={()=>openSubView('card',card)} aria-label={`Détails et statistiques de ${card.name}`} title="Détails et statistiques"><BarChart3 size={17}/></button>
+    <button onClick={()=>setEditing(card)} aria-label={`Paramètres de ${card.name}`} title="Paramètres de la carte"><SlidersHorizontal size={17}/></button>
    </div>
    return <article key={card.id} className={has?'owned':''}>
     <button className="binder-preview" onClick={()=>setShowcase(card)} aria-label={`Voir ${card.name} en 3D`}><CatalogueImage card={card} requestedLanguage={language}/>{displayMode==='grid'&&<><span className="grid-card-overlay" aria-hidden="true"><strong>{card.name}</strong><small>{card.localId} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</small></span>{prices[card.id]?.price&&<span className="grid-price-badge" aria-hidden="true">{money(prices[card.id].price!.value)}</span>}{entry&&<span className="grid-owned-badge" aria-hidden="true">×{entry.quantity}</span>}</>}</button>
