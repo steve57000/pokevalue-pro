@@ -4,6 +4,7 @@ export type CardImageOverride={
  name:string
  englishName?:string
  printedNumber:string
+ rarity?:string
  image?:{localPath:string;language:string;source:string;verified:true}
  cardmarket?:{directUrl?:string;searchName:string;searchCode?:string}
  verified:boolean
