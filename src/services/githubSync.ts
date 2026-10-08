@@ -28,12 +28,50 @@ async function github<T>(path: string, connection: GitHubConnection, init: Reque
   return response.status === 204 ? undefined as T : response.json() as Promise<T>
 }
 
+async function githubRawFile(path: string, connection: GitHubConnection): Promise<string> {
+  const response = await fetch(API + path, {
+    headers: {
+      Accept: 'application/vnd.github.raw+json',
+      Authorization: 'Bearer ' + connection.token,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  })
+  if (!response.ok) {
+    const message = response.status === 401 ? 'Jeton expiré, révoqué ou invalide.'
+      : response.status === 403 ? 'Le jeton ne possède pas la permission Contents requise.'
+      : response.status === 409 ? 'Conflit distant : rechargez puis fusionnez les changements.'
+      : 'GitHub a répondu ' + response.status + '.'
+    throw Object.assign(new Error(message), { status: response.status })
+  }
+  const content = await response.text()
+  if (!content.trim()) throw new Error('GitHub a renvoyé un fichier vide pour l’historique des prix.')
+  return content
+}
+
+function decodeGithubContent(content: string): string {
+  const binary = atob(content.replace(/\s/g, ''))
+  const bytes = Uint8Array.from(binary, character => character.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
+}
+
+async function githubFileText(
+  path: string,
+  connection: GitHubConnection,
+  file: { content?: string; encoding: string; size?: number },
+): Promise<string> {
+  const content = file.content?.replace(/\s/g, '') ?? ''
+  const decodedSize = Math.floor(content.length * 3 / 4) - (content.endsWith('==') ? 2 : content.endsWith('=') ? 1 : 0)
+  if (file.encoding === 'none' || !content || (file.size !== undefined && (file.size > 1_000_000 || decodedSize < file.size))) {
+    return githubRawFile(path, connection)
+  }
+  return decodeGithubContent(content)
+}
 export async function readRemotePortfolio(connection: GitHubConnection): Promise<RemotePortfolio> {
   const user = await github<{ login: string }>('/user', connection)
   const path = `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PORTFOLIO_PATH}`
   try {
-    const file = await github<{ content: string; sha: string; encoding: string }>(path, connection)
-    const json = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))))
+    const file = await github<{ content: string; sha: string; encoding: string; size?: number }>(path, connection)
+    const json = await githubFileText(path, connection, file)
     return { login: user.login, sha: file.sha, document: parseCollection(JSON.parse(json)) }
   } catch (error) {
     if ((error as { status?: number }).status === 404) return { login: user.login }
@@ -55,8 +93,8 @@ export type RemotePriceHistory = { document?: PriceHistoryDocument; sha?: string
 export async function readRemotePriceHistory(connection: GitHubConnection): Promise<RemotePriceHistory> {
   const path = `/repos/${encodeURIComponent(connection.owner)}/${encodeURIComponent(connection.repo)}/contents/${PRICE_HISTORY_PATH}`
   try {
-    const file = await github<{ content: string; sha: string; encoding: string }>(path, connection)
-    const json = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))))
+    const file = await github<{ content: string; sha: string; encoding: string; size?: number }>(path, connection)
+    const json = await githubFileText(path, connection, file)
     const document = parsePriceHistoryDocument(JSON.parse(json))
     return { document, sha: file.sha }
   } catch (error) {
