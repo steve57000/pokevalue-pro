@@ -19,7 +19,7 @@ export const rgbMewImageByNumber: Readonly<Record<string,{url:string;language:st
 // These identities describe the 30th-anniversary reprints. When TCGdex has no scan,
 // use the matching English TCGplayer product image and identify it as an English fallback.
 const baseCardImageOverrides:readonly CardImageOverride[]=[
-  {cardId:'30th-c-001',setId:'30th-c',name:'Dracaufeu',englishName:'Charizard',printedNumber:'4/102',cardmarket:{searchName:'Charizard',searchCode:'30C'},verified:false},
+  {cardId:'30th-c-001',setId:'30th-c',name:'Dracaufeu',englishName:'Charizard',printedNumber:'4/102',rarity:'Rare Holo',cardmarket:{searchName:'Charizard',searchCode:'30C'},verified:false},
   {cardId:'30th-c-002',setId:'30th-c',name:'Delcatty',englishName:'Delcatty',printedNumber:'5/109',cardmarket:{searchName:'Delcatty',searchCode:'30C'},verified:false},
   {cardId:'30th-c-003',setId:'30th-c',name:'Métalosse δ Espèces Delta',englishName:'Metagross δ Delta Species',printedNumber:'11/113',cardmarket:{searchName:'Metagross δ Delta Species',searchCode:'30C'},verified:false},
   {cardId:'30th-c-004',setId:'30th-c',name:'Genesect-EX',englishName:'Genesect-EX',printedNumber:'11/101',cardmarket:{searchName:'Genesect-EX',searchCode:'30C'},verified:false},

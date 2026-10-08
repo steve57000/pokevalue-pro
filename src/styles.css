@@ -786,3 +786,6 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
   .details-quick-actions>*{max-width:100%}
 }
 @media(max-width:360px){.trend-tabs button{font-size:12px;padding-inline:5px}.details-hero{grid-template-columns:82px minmax(0,1fr);gap:9px;padding-right:32px}.details-hero p{font-size:12px}.details-close{right:10px;top:10px;width:36px;height:36px}.details-quick-actions{gap:5px}}
+
+/* Market search uses the shared verified image resolver for front scans. */
+.identifier-image .catalogue-image{width:80px;height:112px;overflow:hidden;border-radius:8px;background:var(--panel2)}.identifier-image .catalogue-image img{width:100%;height:100%;object-fit:contain}@media(max-width:600px){.identifier-image .catalogue-image{width:64px;height:90px}}
