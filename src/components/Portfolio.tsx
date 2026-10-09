@@ -34,13 +34,14 @@ const curatedSetLogos:Record<string,string>={
  'equilibre parfait':'https://www.pokepedia.fr/images/thumb/c/c6/Logo_M%C3%A9ga-%C3%89volution_%C3%89quilibre_Parfait_JCC.png/800px-Logo_M%C3%A9ga-%C3%89volution_%C3%89quilibre_Parfait_JCC.png',
  'chaos ascendant':'https://www.pokepedia.fr/images/thumb/2/2a/Logo_M%C3%A9ga-%C3%89volution_Chaos_Ascendant_JCC.png/800px-Logo_M%C3%A9ga-%C3%89volution_Chaos_Ascendant_JCC.png',
  'flammes fantasmagoriques':'https://www.pokepedia.fr/images/thumb/1/18/Logo_M%C3%A9ga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png/800px-Logo_M%C3%A9ga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png',
+ 'mep black star promos':'https://data.eyevo.app/eyevo/logos/sets/mep.png',
  '30e anniversaire':'https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png',
  '30th anniversary':'https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png',
  'mega evolution':'https://www.pokepedia.fr/images/thumb/8/83/Logo_M%C3%A9ga-%C3%89volution_JCC.png/800px-Logo_M%C3%A9ga-%C3%89volution_JCC.png',
 }
 // Normalize accents and punctuation so localized family names like “Méga-Évolution” match curated logos.
 const normalizeSetName=(name:string)=>name.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
-const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,name='')=>{
+export const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,name='')=>{
  const english=(url?:string)=>url?.replace('/fr/','/en/').replace('/ja/','/en/').replace('/zh-tw/','/en/')
  const formats=(url?:string)=>url?(/assets\.tcgdex\.net/.test(url)&&!/\.(png|webp|jpg)$/i.test(url)?[url+'.png',url+'.webp',url]:[url]):[]
  const base=seriesId?'https://assets.tcgdex.net/en/'+seriesId+'/'+setId:''
