@@ -91,8 +91,6 @@ async function searchRelatedArtwork(name:string){
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
- const nativeAsianImage=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
- if(nativeAsianImage)return nativeAsianImage
  let englishCandidate:ExternalCard|undefined
  let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
@@ -110,6 +108,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
+   if(language===requestedLanguage){const native=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls);if(native)return native}
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
    const isMepPromo=/^mep-\d+$/i.test(card.id)
