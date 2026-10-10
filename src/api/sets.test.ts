@@ -5,7 +5,7 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('localized set catalogue', () => {
   it('requests the selected language for set, series and set list', async () => {
-    const fetchMock = vi.fn(async (_url: string) => ({ ok: true, json: async () => [] }) as Response)
+    const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => url.includes('/series/') ? { id: 'sv', name: 'Scarlet & Violet', sets: [] } : [] }) as Response)
     vi.stubGlobal('fetch', fetchMock)
 
     await listSets('ja')
