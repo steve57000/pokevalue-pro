@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getSet, getSeries, listSets } from './sets'
+import { chooseAvailableSetId, filterLocalizedSets, getSet, getSeries, listSets } from './sets'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -17,6 +17,36 @@ describe('localized set catalogue', () => {
       'https://api.tcgdex.net/v2/zh-tw/sets/sv01',
       'https://api.tcgdex.net/v2/ja/series/sv',
     ])
+  })
+
+  it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
+    const summaries = [{id:'CS2a',name:'entrée fantôme'}, {id:'SV8a',name:'extension valide'}]
+    expect(filterLocalizedSets(summaries, 'ja').map(set => set.id)).toEqual(['SV8a'])
+    expect(filterLocalizedSets(summaries, 'zh-tw').map(set => set.id)).toEqual(['SV8a'])
+    expect(filterLocalizedSets(summaries, 'fr')).toEqual(summaries)
+  })
+
+  it('keeps the current localized set or selects the best owned set after a language switch', () => {
+    const summaries = [{id:'SV8a',name:'A',cardCount:{total:1,official:1}}, {id:'SV9',name:'B',cardCount:{total:1,official:1}}]
+    expect(chooseAvailableSetId(summaries, 'SV8a')).toBe('SV8a')
+    expect(chooseAvailableSetId(summaries, 'missing', new Map([['SV8a',1],['SV9',3]]))).toBe('SV9')
+    expect(chooseAvailableSetId(summaries, 'missing')).toBe('SV9')
+    expect(chooseAvailableSetId([], 'missing')).toBe('')
+  })
+
+  it('filters ghost entries from localized set and series responses', async () => {
+    const summaries = [{id:'CS2a',name:'entrée vide',cardCount:{total:101,official:101}}, {id:'SV8a',name:'Terastal Fest',cardCount:{total:187,official:187}}]
+    const fetchMock = vi.fn(async (url: string) => ({ok:true,json:async()=>url.endsWith('/sets')?summaries:{id:'SV',name:'Série',sets:summaries}}) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    expect((await listSets('zh-tw')).map(set=>set.id)).toEqual(['SV8a'])
+    expect((await getSeries('SV','ja')).sets.map(set=>set.id)).toEqual(['SV8a'])
+  })
+
+  it('rejects a known empty Asian catalogue entry even if opened from stale saved state', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(getSet('CS2a','zh-tw')).rejects.toThrow('entrée vide')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('adds missing 30th-anniversary MEP promos with French names and exact IDs', async () => {
