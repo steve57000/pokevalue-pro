@@ -13,9 +13,9 @@ export const dragOffset=(origin:{x:number;y:number},point:{x:number;y:number}):R
 export const pointerRotation=(origin:{x:number;y:number},point:{x:number;y:number}):Rotation=>({x:clamp(-(point.y-origin.y)*.65,-360,360),y:clamp((point.x-origin.x)*.65,-720,720)})
 export const settleNearEdge=(angle:number,direction:number)=>{const edge=90+180*Math.round((angle-90)/180);if(Math.abs(angle-edge)>=18)return angle;return edge+(Math.sign(direction)||Math.sign(angle-edge)||1)*18}
 export const cardTransform=(tilt:Rotation,drag:Rotation,side:'front'|'back')=>`rotateX(${tilt.x+drag.x}deg) rotateY(${(side==='back'?180:0)+tilt.y+drag.y}deg)`
-type Props={card:SetCard;setName:string;owned:boolean;onToggle:()=>void;quantity?:number;favorite?:boolean;onFavorite?:()=>void;onIncrement?:()=>void;onDecrement?:()=>void;onDetails?:()=>void;onClose:()=>void}
-export function CardFaces({card}:{card:SetCard}){return <><div className="showcase-face showcase-front"><CatalogueImage key={card.id} card={card} quality="high"/></div><div className="showcase-face showcase-back"><img src={POKEMON_CARD_BACK} alt="Dos officiel d’une carte Pokémon" draggable={false}/></div></>}
-export function CardShowcase({card,setName,owned,onToggle,quantity=owned?1:0,favorite=false,onFavorite,onIncrement,onDecrement,onDetails,onClose}:Props){
+type Props={card:SetCard;setName:string;requestedLanguage:string;owned:boolean;onToggle:()=>void;quantity?:number;favorite?:boolean;onFavorite?:()=>void;onIncrement?:()=>void;onDecrement?:()=>void;onDetails?:()=>void;onClose:()=>void}
+export function CardFaces({card,requestedLanguage}:{card:SetCard;requestedLanguage:string}){return <><div className="showcase-face showcase-front"><CatalogueImage key={card.id} card={card} quality="high" requestedLanguage={requestedLanguage}/></div><div className="showcase-face showcase-back"><img src={POKEMON_CARD_BACK} alt="Dos officiel d’une carte Pokémon" draggable={false}/></div></>}
+export function CardShowcase({card,setName,requestedLanguage,owned,onToggle,quantity=owned?1:0,favorite=false,onFavorite,onIncrement,onDecrement,onDetails,onClose}:Props){
  const [side,setSide]=useState<'front'|'back'>('front'),[dragging,setDragging]=useState(false)
  const cardRef=useRef<HTMLDivElement>(null),drag=useRef<Rotation>({x:0,y:0}),dragStart=useRef<Rotation>({x:0,y:0}),origin=useRef({x:0,y:0}),lastPoint=useRef({x:0,y:0}),lastDirection=useRef<Rotation>({x:0,y:0}),pointer=useRef<number|null>(null),frame=useRef<number>(),pending=useRef<Rotation>({x:0,y:0}),sideRef=useRef(side),dialogRef=useModalDialog(onClose)
  sideRef.current=side
@@ -31,7 +31,7 @@ export function CardShowcase({card,setName,owned,onToggle,quantity=owned?1:0,fav
    <div ref={dialogRef as React.RefObject<HTMLDivElement>} className="showcase" role="dialog" aria-modal="true" aria-label={`${card.name}, ${setName}`}>
     <button className="showcase-close" onClick={onClose} aria-label="Fermer la carte"><X/></button>
     <div className="showcase-spotlight" aria-hidden="true"/>
-    <div className="showcase-stage"><div ref={cardRef} className={`showcase-card ${dragging?'dragging':''}`} style={{transform:cardTransform({x:0,y:0},drag.current,side)}} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}><CardFaces card={card}/></div></div>
+    <div className="showcase-stage"><div ref={cardRef} className={`showcase-card ${dragging?'dragging':''}`} style={{transform:cardTransform({x:0,y:0},drag.current,side)}} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}><CardFaces card={card} requestedLanguage={requestedLanguage}/></div></div>
     <div className="showcase-info">
      <span className="showcase-overline">{setName} · Nº {card.localId}</span><h2>{card.name}</h2>
      <p>Glisse sur la carte pour la tourner librement ; maintiens sans bouger pour la garder face à toi.</p>

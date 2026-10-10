@@ -1,5 +1,12 @@
 import type { ExternalCard } from './cards'
 import {cardImageOverrideById,rgbMewImageByNumber} from '../data/cardImageOverrides'
+export function normalizeImageLanguage(language:string='fr'){
+ const normalized=language.trim().toLowerCase().replace(/_/g,'-')
+ if(normalized==='jp'||normalized==='ja')return 'ja'
+ if(normalized==='zh'||normalized==='zh-tw'||normalized==='zh-hant')return 'zh-tw'
+ if(normalized==='en')return 'en'
+ return 'fr'
+}
 export type CardImageIdentity={source:'tcgdex';setId:string;cardId:string;language:string;number?:string;name?:string}
 export type ResolvedCardImage={url?:string;language:string;quality:'low'|'high';source:'local-override'|'TCGdex'|'Pokémon TCG API'|'promo-archive'|'none';isFallback:boolean;verified:boolean}
 export interface CardImageProvider{id:string;resolve(identity:CardImageIdentity,card?:ExternalCard):Promise<ResolvedCardImage|undefined>}
@@ -11,6 +18,7 @@ export function isPokemonCardBackUrl(url?:string){
 }
 const frontImage=(image:ResolvedCardImage):ResolvedCardImage=>image.url&&!isPokemonCardBackUrl(image.url)?image:{language:image.language,quality:image.quality,source:'none',isFallback:false,verified:false}
 export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:ExternalCard;requestedLanguage:string;quality?:'low'|'high'}):ResolvedCardImage{
+ requestedLanguage=normalizeImageLanguage(requestedLanguage)
  const override=cardImageOverrideById.get(card.id)
  if(override?.verified&&override.image)return frontImage({url:override.image.localPath,language:override.image.language,quality,source:'local-override',isFallback:override.image.language!==requestedLanguage,verified:true})
  const number=card.localId?.toUpperCase()
@@ -24,7 +32,10 @@ export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:Ex
   const scan=megaEvolutionEnergyScans[energyNumber]
   if(scan)return frontImage({url:scan,language:'fr',quality,source:'local-override',isFallback:requestedLanguage!=='fr',verified:true})
  }
- if(card.id&&card.image&&!isPokemonCardBackUrl(card.image))return frontImage({url:`${card.image}/${quality}.webp`,language:card.language||requestedLanguage,quality,source:'TCGdex',isFallback:(card.language||requestedLanguage)!==requestedLanguage,verified:true})
+ if(card.id&&card.image&&!isPokemonCardBackUrl(card.image)){
+  const imageLanguage=normalizeImageLanguage(card.language||requestedLanguage)
+  return frontImage({url:`${card.image}/${quality}.webp`,language:imageLanguage,quality,source:'TCGdex',isFallback:imageLanguage!==requestedLanguage,verified:true})
+ }
  const fallback=card.fallbackImage?.[quality]
  return frontImage({url:fallback,language:'en',quality,source:fallback?'Pokémon TCG API':'none',isFallback:Boolean(fallback),verified:Boolean(fallback)})
 }

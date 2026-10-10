@@ -1,12 +1,12 @@
 import {useEffect,useRef,useState} from 'react'
 import type {SetCard} from '../api/sets'
 import {tcgDexProvider} from '../api/tcgdex'
-import {buildMepPromoImage,isPokemonCardBackUrl,resolveCardImage,setIdFromCardId,type ResolvedCardImage} from '../domain/image'
+import {buildMepPromoImage,isPokemonCardBackUrl,normalizeImageLanguage,resolveCardImage,setIdFromCardId,type ResolvedCardImage} from '../domain/image'
 import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
-export const imageFallbackOrder=(requested:string)=>requested==='ja'||requested==='zh-tw'?[requested,'en']:[requested,...(requested==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)
+export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);return language==='ja'||language==='zh-tw'?[language,'en']:[language,...(language==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)}
 const japaneseBaseExpansionNames=([
  'Bulbasaur',
  'Caterpie',
@@ -209,6 +209,7 @@ async function searchRelatedArtwork(name:string){
  return pending
 }
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
+ requestedLanguage=normalizeImageLanguage(requestedLanguage)
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
  const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
@@ -261,6 +262,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  return{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage
 }
 function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejectedUrls:Set<string>=new Set()){
+ language=normalizeImageLanguage(language)
  const rejectedKey=[...rejectedUrls].map(cleanUrl).sort().join(',')
  const key=`image:${language}:${card.id}:${quality}:${rejectedKey}`
  const existing=imageCache.get(key)
@@ -297,6 +299,6 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- return <div ref={container} className={`catalogue-image ${className}`}>{show?<img src={retryUrl(show,retryAttempt)} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} decoding="async" onError={failImage}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible&&image?'Visuel indisponible — nouvelle tentative automatique':'Chargement du visuel…'}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
+ return <div ref={container} className={`catalogue-image ${className}`}>{show?<img src={retryUrl(show,retryAttempt)} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onError={failImage}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible&&image?'Visuel indisponible — nouvelle tentative automatique':'Chargement du visuel…'}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()
