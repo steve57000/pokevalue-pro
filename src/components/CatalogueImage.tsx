@@ -6,7 +6,7 @@ import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
-export const imageFallbackOrder=(requested:string)=>[requested,...(requested==='fr'?['en','ja','zh-tw']:requested==='en'?['fr','ja','zh-tw']:requested==='ja'?['en','fr','zh-tw']:['en','fr','ja'])].filter((x,i,a)=>a.indexOf(x)===i)
+export const imageFallbackOrder=(requested:string)=>requested==='ja'||requested==='zh-tw'?[requested,'en']:[requested,...(requested==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)
 const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\d+/g,'').replace(/[?&]$/,'')
 const isRejected=(url:string|undefined,rejected:Set<string>)=>!!url&&rejected.has(cleanUrl(url))
 const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[]}>={
