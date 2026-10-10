@@ -2,6 +2,34 @@ export type SetSummary = { id: string; name: string; cardCount: { total: number;
 export type SetCard = { id: string; name: string; localId: string; image?: string; rarity?: string }
 export type SetDetail = SetSummary & { serie?: { id: string; name: string }; cards: SetCard[] }
 export type CatalogLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'
+
+// These CS* records are incorrectly duplicated as “Triplet Beat” by the
+// upstream Asian catalogues: each advertises 101 cards but its detail is empty.
+const asianCatalogueGhostIds = new Set([
+  'CS1.5','CS1a','CS1b','CS2.5','CS2a','CS2b','CS3.5','CS3a','CS3b',
+  'CS3D','CS4','CS4a','CS4b','CS4Da','CSA',
+])
+export function filterLocalizedSets<T extends Pick<SetSummary, 'id'>>(sets: T[], language: string): T[] {
+  if (language !== 'ja' && language !== 'zh-tw') return sets
+  return sets.filter(set => !asianCatalogueGhostIds.has(set.id))
+}
+export function chooseAvailableSetId(
+  sets: SetSummary[],
+  currentId: string,
+  ownedSetCounts: ReadonlyMap<string, number> = new Map(),
+): string {
+  if (sets.some(set => set.id === currentId)) return currentId
+  let preferredId = ''
+  let highestOwnedCount = 0
+  for (const set of sets) {
+    const ownedCount = ownedSetCounts.get(set.id) ?? 0
+    if (ownedCount > highestOwnedCount) {
+      preferredId = set.id
+      highestOwnedCount = ownedCount
+    }
+  }
+  return preferredId || sets[sets.length - 1]?.id || ''
+}
 const base = (language: string='fr') => `https://api.tcgdex.net/v2/${language}/sets`
 async function fetchSet<T>(url: string): Promise<T> {
   const response = await fetch(url)
@@ -41,12 +69,18 @@ const addMissingAnniversaryMepPromos=(set:SetDetail,language:string):SetDetail=>
  const cards:SetCard[]=missing.map(promo=>({id:`${set.id}-${promo.localId}`,name:promo.names[language as keyof typeof promo.names]??promo.names.en,localId:promo.localId,rarity:'Promo'}))
  return {...set,cardCount:{...set.cardCount,total:set.cardCount.total+cards.length},cards:[...set.cards,...cards]}
 }
-export const listSets = (language: string='fr') => fetchSet<SetSummary[]>(base(language))
+export const listSets = async (language: string='fr') => filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
 export const getSet = async (id: string, language: string='fr'): Promise<SetDetail> => {
+  if ((language === 'ja' || language === 'zh-tw') && asianCatalogueGhostIds.has(id)) {
+    throw new Error(`L’extension ${id} est une entrée vide du catalogue ${language.toUpperCase()}.`)
+  }
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
 export const listSeries = (language: string='fr') => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
-export const getSeries = (id: string, language: string='fr') => fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
+export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
+  const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
+  return { ...series, sets: filterLocalizedSets(series.sets, language) }
+}
