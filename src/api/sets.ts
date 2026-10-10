@@ -1,4 +1,4 @@
-export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string; symbol?: string }
+export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string; symbol?: string; serie?: { id: string; name?: string } }
 export type SetCard = { id: string; name: string; localId: string; image?: string; rarity?: string }
 export type SetDetail = SetSummary & { serie?: { id: string; name: string }; cards: SetCard[] }
 export type CatalogLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'
@@ -17,18 +17,22 @@ export function chooseAvailableSetId(
   sets: SetSummary[],
   currentId: string,
   ownedSetCounts: ReadonlyMap<string, number> = new Map(),
+  preferredSeriesId?: string,
 ): string {
   if (sets.some(set => set.id === currentId)) return currentId
+  const sameSeries = preferredSeriesId ? sets.filter(set => set.serie?.id === preferredSeriesId) : []
+  const candidates = sameSeries.length ? sameSeries : sets
   let preferredId = ''
   let highestOwnedCount = 0
-  for (const set of sets) {
+  for (const set of candidates) {
     const ownedCount = ownedSetCounts.get(set.id) ?? 0
     if (ownedCount > highestOwnedCount) {
       preferredId = set.id
       highestOwnedCount = ownedCount
     }
   }
-  return preferredId || sets[sets.length - 1]?.id || ''
+  // Never silently send someone to an unrelated set just because it is last in the API list.
+  return preferredId || (sameSeries[0]?.id ?? '')
 }
 const base = (language: string='fr') => `https://api.tcgdex.net/v2/${language}/sets`
 async function fetchSet<T>(url: string): Promise<T> {
@@ -81,6 +85,14 @@ export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: 
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
 export const listSeries = (language: string='fr') => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
-  const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
-  return { ...series, sets: filterLocalizedSets(series.sets, language) }
+  try {
+    const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
+    return { ...series, sets: filterLocalizedSets(series.sets ?? [], language) }
+  } catch (error) {
+    // Some Asian catalogue endpoints list a series but do not implement its detail route.
+    // The set summaries still include their serie.id, so rebuild this family from the catalogue.
+    if (!(error instanceof Error) || !error.message.includes('(404)')) throw error
+    const sets = await listSets(language)
+    return { id, name: id, sets: sets.filter(set => set.serie?.id === id) }
+  }
 }
