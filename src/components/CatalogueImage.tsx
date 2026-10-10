@@ -112,7 +112,7 @@ const japaneseBaseExpansionNames=([
  'Fighting Energy'
 ] as const)
 export function japaneseBaseExpansionScan(card:Pick<SetCard,'id'|'localId'>,requestedLanguage:string,quality:'low'|'high'='low'):ResolvedCardImage|undefined{
- if(requestedLanguage!=='ja'||setIdFromCardId(card.id).toLowerCase()!=='base1'||!/^\d{1,3}$/.test(card.localId))return undefined
+ if(requestedLanguage!=='ja'||!['base1','pmcg1'].includes(setIdFromCardId(card.id).toLowerCase())||!/^\d{1,3}$/.test(card.localId))return undefined
  const number=Number(card.localId)
  if(!Number.isInteger(number)||number<1||number>japaneseBaseExpansionNames.length)return undefined
  const name=japaneseBaseExpansionNames[number-1]
@@ -213,11 +213,6 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  requestedLanguage=normalizeImageLanguage(requestedLanguage)
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
- const setId=setIdFromCardId(card.id).toLowerCase()
- if(requestedLanguage==='ja'&&setId==='pmcg1'){
-  const nativeExpansionPack=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
-  if(nativeExpansionPack?.url)return nativeExpansionPack
- }
  const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
  if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
  let englishCandidate:ExternalCard|undefined
