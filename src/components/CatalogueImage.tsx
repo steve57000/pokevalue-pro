@@ -7,6 +7,119 @@ type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLangua
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
 export const imageFallbackOrder=(requested:string)=>requested==='ja'||requested==='zh-tw'?[requested,'en']:[requested,...(requested==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)
+const japaneseBaseExpansionNames=([
+ 'Bulbasaur',
+ 'Caterpie',
+ 'Metapod',
+ 'Weedle',
+ 'Nidoran♂',
+ 'Koffing',
+ 'Tangela',
+ 'Ivysaur',
+ 'Kakuna',
+ 'Nidorino',
+ 'Venusaur',
+ 'Beedrill',
+ 'Nidoking',
+ 'Charmander',
+ 'Vulpix',
+ 'Ponyta',
+ 'Charmeleon',
+ 'Growlithe',
+ 'Arcanine',
+ 'Magmar',
+ 'Charizard',
+ 'Ninetales',
+ 'Squirtle',
+ 'Poliwag',
+ 'Staryu',
+ 'Starmie',
+ 'Wartortle',
+ 'Poliwhirl',
+ 'Seel',
+ 'Dewgong',
+ 'Magikarp',
+ 'Blastoise',
+ 'Poliwrath',
+ 'Gyarados',
+ 'Pikachu',
+ 'Magnemite',
+ 'Voltorb',
+ 'Raichu',
+ 'Magneton',
+ 'Electrode',
+ 'Electabuzz',
+ 'Zapdos',
+ 'Abra',
+ 'Gastly',
+ 'Drowzee',
+ 'Kadabra',
+ 'Haunter',
+ 'Jynx',
+ 'Alakazam',
+ 'Mewtwo',
+ 'Sandshrew',
+ 'Diglett',
+ 'Machop',
+ 'Onix',
+ 'Machoke',
+ 'Dugtrio',
+ 'Machamp',
+ 'Hitmonchan',
+ 'Pidgey',
+ 'Rattata',
+ 'Doduo',
+ 'Raticate',
+ 'Farfetch\'d',
+ 'Porygon',
+ 'Dratini',
+ 'Pidgeotto',
+ 'Clefairy',
+ 'Chansey',
+ 'Dragonair',
+ 'Energy Removal',
+ 'Potion',
+ 'Gust of Wind',
+ 'Switch',
+ 'Bill',
+ 'Super Potion',
+ 'Energy Retrieval',
+ 'Professor Oak',
+ 'Revive',
+ 'Defender',
+ 'Full Heal',
+ 'PlusPower',
+ 'Pokedex',
+ 'Pokemon Center',
+ 'Pokemon Flute',
+ 'Maintenance',
+ 'Devolution Spray',
+ 'Item Finder',
+ 'Super Energy Removal',
+ 'Impostor Professor Oak',
+ 'Computer Search',
+ 'Clefairy Doll',
+ 'Scoop Up',
+ 'Pokemon Trader',
+ 'Pokemon Breeder',
+ 'Lass',
+ 'Double Colorless Energy',
+ 'Grass Energy',
+ 'Fire Energy',
+ 'Water Energy',
+ 'Lightning Energy',
+ 'Psychic Energy',
+ 'Fighting Energy'
+] as const)
+export function japaneseBaseExpansionScan(card:Pick<SetCard,'id'|'localId'>,requestedLanguage:string,quality:'low'|'high'='low'):ResolvedCardImage|undefined{
+ if(requestedLanguage!=='ja'||setIdFromCardId(card.id).toLowerCase()!=='base1'||!/^\\d{1,3}$/.test(card.localId))return undefined
+ const number=Number(card.localId)
+ if(!Number.isInteger(number)||number<1||number>japaneseBaseExpansionNames.length)return undefined
+ const name=japaneseBaseExpansionNames[number-1]
+ const slug=name.normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[’']/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')
+ const url=`https://den-cards.pokellector.com/311/${slug}.EXP.${number}.${37250+number}.png`
+ return{url,language:'ja',quality,source:'local-override',isFallback:false,verified:true}
+}
 const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\d+/g,'').replace(/[?&]$/,'')
 const isRejected=(url:string|undefined,rejected:Set<string>)=>!!url&&rejected.has(cleanUrl(url))
 const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[]}>={
@@ -98,6 +211,8 @@ async function searchRelatedArtwork(name:string){
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
+ const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
+ if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
  let englishCandidate:ExternalCard|undefined
  let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
