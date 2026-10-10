@@ -26,11 +26,11 @@ describe('localized set catalogue', () => {
     expect(filterLocalizedSets(summaries, 'fr')).toEqual(summaries)
   })
 
-  it('keeps the current localized set or selects the best owned set after a language switch', () => {
+  it('keeps the current localized set, favors owned cards, then selects a valid localized default', () => {
     const summaries = [{id:'SV8a',name:'A',cardCount:{total:1,official:1}}, {id:'SV9',name:'B',cardCount:{total:1,official:1}}]
     expect(chooseAvailableSetId(summaries, 'SV8a')).toBe('SV8a')
     expect(chooseAvailableSetId(summaries, 'missing', new Map([['SV8a',1],['SV9',3]]))).toBe('SV9')
-    expect(chooseAvailableSetId(summaries, 'missing')).toBe('')
+    expect(chooseAvailableSetId(summaries, 'missing')).toBe('SV8a')
     expect(chooseAvailableSetId([], 'missing')).toBe('')
   })
 
@@ -42,13 +42,40 @@ describe('localized set catalogue', () => {
     expect((await getSeries('SV','ja')).sets.map(set=>set.id)).toEqual(['SV8a'])
   })
 
-  it('uses the current family when a localized set has a different ID and never falls back to an unrelated family', () => {
+  it('uses the current family when a localized set has a different ID and falls back to a localized set otherwise', () => {
     const summaries = [
       {id:'M3',name:'ムニキスゼロ',serie:{id:'me'},cardCount:{total:117,official:80}},
       {id:'SV9',name:'バトルパートナーズ',serie:{id:'sv'},cardCount:{total:100,official:100}},
     ]
     expect(chooseAvailableSetId(summaries, 'M1S', new Map(), 'me')).toBe('M3')
-    expect(chooseAvailableSetId(summaries, 'unknown', new Map(), 'missing-family')).toBe('')
+    expect(chooseAvailableSetId(summaries, 'unknown', new Map(), 'missing-family')).toBe('M3')
+  })
+
+
+  it('rebuilds localized series from set summaries when the series index is unavailable', async () => {
+    const summaries = [
+      {id:'M3',name:'ムニキスゼロ',serie:{id:'me',name:'ポケモンカードゲーム MEGA'},cardCount:{total:117,official:80}},
+      {id:'SV9',name:'バトルパートナーズ',serie:{id:'sv',name:'スカーレット&バイオレット'},cardCount:{total:100,official:100}},
+    ]
+    const fetchMock = vi.fn(async (url:string) => url.endsWith('/series')
+      ? ({ok:false,status:503,json:async()=>({})} as Response)
+      : ({ok:true,status:200,json:async()=>summaries} as Response))
+    vi.stubGlobal('fetch',fetchMock)
+    const {listSeries}=await import('./sets')
+    expect((await listSeries('ja')).map(family=>[family.id,family.name])).toEqual([
+      ['me','ポケモンカードゲーム MEGA'],['sv','スカーレット&バイオレット'],
+    ])
+  })
+
+  it('turns a stalled catalogue request into a recoverable timeout error', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch',vi.fn((_url:string,{signal}:RequestInit)=>new Promise((_resolve,reject)=>{
+      signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')))
+    })))
+    const request=listSets('ja')
+    await vi.advanceTimersByTimeAsync(12_000)
+    await expect(request).rejects.toThrow('met trop de temps')
+    vi.useRealTimers()
   })
 
   it('rebuilds an Asian family from set summaries when the series detail endpoint returns 404', async () => {
