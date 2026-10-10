@@ -17,6 +17,21 @@ describe('catalogue image providers',()=>{
   expect(image.source).toBe('local-override')
   expect(apiCalls).toBe(0)
  })
+ it('uses official Traditional Chinese SC2D fronts across the full 157-card set',async()=>{
+  const cases=[
+   ['001','https://asia.pokemon-card.com/tw/card-img/tw00001234.png'],
+   ['157','https://asia.pokemon-card.com/tw/card-img/tw00001390.png'],
+  ] as const
+  let apiCalls=0
+  for(const [localId,expectedUrl] of cases){
+   const image=await resolveCatalogueImage({id:`SC2D-${localId}`,name:'卡牌',localId},'zh-tw','low',async(id,language)=>{apiCalls++;return{id,name:'卡牌',localId,language:language??'zh-tw'}})
+   expect(image.url).toBe(expectedUrl)
+   expect(image.language).toBe('zh-tw')
+   expect(image.isFallback).toBe(false)
+   expect(image.source).toBe('local-override')
+  }
+  expect(apiCalls).toBe(0)
+ })
  it('falls back to the native PMCG Japanese TCGdex scan after an image failure',async()=>{
   const failed='https://den-cards.pokellector.com/311/Bulbasaur.EXP.1.37251.png'
   const image=await resolveCatalogueImage({id:'PMCG1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>({id,name:'フシギダネ',localId:'001',language:language??'ja'}),new Set([failed]))
