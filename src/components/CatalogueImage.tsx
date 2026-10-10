@@ -156,6 +156,7 @@ export const asianAssetSeries=(setId:string)=>{
  if((id.startsWith('m')&&id.length>1&&id[1]>='0'&&id[1]<='9')||id.startsWith('me'))return 'me'
  if(id.startsWith('sv'))return 'sv'
  if(id.startsWith('swsh')||(id.startsWith('s')&&id.length>1&&id[1]>='0'&&id[1]<='9'))return 'swsh'
+ if(id.startsWith('pmcg'))return 'base'
  if(id.startsWith('sm'))return 'sm'
  if(id.startsWith('xy'))return 'xy'
  if(id.startsWith('bw'))return 'bw'
@@ -212,6 +213,11 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  requestedLanguage=normalizeImageLanguage(requestedLanguage)
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
+ const setId=setIdFromCardId(card.id).toLowerCase()
+ if(requestedLanguage==='ja'&&setId==='pmcg1'){
+  const nativeExpansionPack=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
+  if(nativeExpansionPack?.url)return nativeExpansionPack
+ }
  const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
  if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
  let englishCandidate:ExternalCard|undefined

@@ -8,6 +8,15 @@ describe('catalogue image providers',()=>{
  it('affiche le placeholder plutôt que le dos Pokémon dans la grille',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({...card,language:'fr',image:'/images/pokemon-card-back.jpg'}),new Set(),async()=>[]);expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
  it('uses the native Japanese TCGdex scan instead of an English back placeholder',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',fallbackImage:{low:'https://images.pokemontcg.io/sv8a/1.png',high:'https://images.pokemontcg.io/sv8a/1_hires.png',source:'Pokémon TCG API'}}),new Set(),async()=>[]);expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/1/low.webp');expect(image.language).toBe('ja');expect(image.source).toBe('TCGdex')})
  it('conserve le recto natif TCGdex des cartes japonaises',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',image:language==='ja'?'https://assets.tcgdex.net/ja/sv8a/001':undefined}));expect(image.url).toBe('https://assets.tcgdex.net/ja/sv8a/001/low.webp');expect(image.language).toBe('ja');expect(image.isFallback).toBe(false)})
+ it('loads native PMCG1 Japanese fronts before any fallback lookup',async()=>{
+  let apiCalls=0
+  const image=await resolveCatalogueImage({id:'PMCG1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'フシギダネ',localId:'001',language:language??'ja'}})
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/base/pmcg1/001/low.webp')
+  expect(image.language).toBe('ja')
+  expect(image.isFallback).toBe(false)
+  expect(image.source).toBe('TCGdex')
+  expect(apiCalls).toBe(0)
+ })
  it('uses exact Japanese Expansion Pack rectos without waiting on missing TCGdex assets',async()=>{
   const cases=[
    ['001','フシギダネ','https://den-cards.pokellector.com/311/Bulbasaur.EXP.1.37251.png'],
