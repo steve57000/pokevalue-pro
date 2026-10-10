@@ -37,6 +37,26 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
  return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
 type ArtworkCandidate={id:string;name:string;image?:string}
+const asianAssetSeries=(setId:string)=>{
+ const id=setId.toLowerCase()
+ if(/^m\d/.test(id))return 'me'
+ if(id.startsWith('sv'))return 'sv'
+ if(/^s\d/.test(id))return 'swsh'
+ if(id.startsWith('sm'))return 'sm'
+ if(id.startsWith('xy'))return 'xy'
+ if(id.startsWith('bw'))return 'bw'
+ return undefined
+}
+export function nativeAsianSetImage(card:SetCard,language:string,quality:'low'|'high',rejected:Set<string>=new Set()):ResolvedCardImage|undefined{
+ if((language!=='ja'&&language!=='zh-tw')||!card.localId)return undefined
+ const setId=setIdFromCardId(card.id),serie=asianAssetSeries(setId)
+ if(!serie)return undefined
+ const localId=encodeURIComponent(card.localId)
+ const root=`https://assets.tcgdex.net/${language}/${serie}/${setId.toLowerCase()}/${localId}/`
+ const formats=quality==='high'?['high.png','high.webp','low.webp','low.png']:['low.webp','low.png','high.webp','high.png']
+ const url=formats.map(file=>root+file).find(candidate=>!isRejected(candidate,rejected))
+ return url?{url,language,quality,source:'TCGdex',isFallback:false,verified:true}:undefined
+}
 const mcdArtworkCache=new Map<string,Promise<ArtworkCandidate[]>>()
 const normalizeArtworkName=(name:string)=>name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
 const mcdEra=(setId:string)=>{
@@ -71,6 +91,8 @@ async function searchRelatedArtwork(name:string){
 export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
  const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
+ const nativeAsianImage=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
+ if(nativeAsianImage)return nativeAsianImage
  let englishCandidate:ExternalCard|undefined
  let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
