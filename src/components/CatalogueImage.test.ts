@@ -11,7 +11,7 @@ describe('catalogue image providers',()=>{
  it('loads native PMCG1 Japanese fronts before any fallback lookup',async()=>{
   let apiCalls=0
   const image=await resolveCatalogueImage({id:'PMCG1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'フシギダネ',localId:'001',language:language??'ja'}})
-  expect(image.url).toBe('https://assets.tcgdex.net/ja/base/pmcg1/001/low.webp')
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/pmcg/pmcg1/001/low.webp')
   expect(image.language).toBe('ja')
   expect(image.isFallback).toBe(false)
   expect(image.source).toBe('TCGdex')

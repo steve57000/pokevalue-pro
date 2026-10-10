@@ -156,7 +156,7 @@ export const asianAssetSeries=(setId:string)=>{
  if((id.startsWith('m')&&id.length>1&&id[1]>='0'&&id[1]<='9')||id.startsWith('me'))return 'me'
  if(id.startsWith('sv'))return 'sv'
  if(id.startsWith('swsh')||(id.startsWith('s')&&id.length>1&&id[1]>='0'&&id[1]<='9'))return 'swsh'
- if(id.startsWith('pmcg'))return 'base'
+ if(id.startsWith('pmcg'))return 'pmcg'
  if(id.startsWith('sm'))return 'sm'
  if(id.startsWith('xy'))return 'xy'
  if(id.startsWith('bw'))return 'bw'
