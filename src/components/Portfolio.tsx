@@ -78,7 +78,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
  const documentRef=useRef(document);documentRef.current=document
  const [filtersOpen,setFiltersOpen]=useState(false)
  const deferredSearch=useDeferredValue(search)
- const catalogueLoading=!detail&&!catalogueError
+ const catalogueLoading=Boolean(selectedSet)&&!detail&&!catalogueError
  const keyFor=useCallback((card:SetCard)=>printingKey({source:'tcgdex',setId:card.id.slice(0,card.id.lastIndexOf('-')),cardId:card.id,language,variant:'normal'}),[language])
  useEffect(()=>{let active=true;setFamilySets({});setFamilyError('');listSeries(language).then(x=>active&&setSeries(x.reverse())).catch(e=>active&&setFamilyError((e as Error).message));listSets(language).then(x=>{if(!active)return;setSets(x);if(!x.some(set=>set.id===selectedSet)){const ownedSetCounts=new Map<string,number>();for(const entry of documentRef.current.entries){if(entry.language===language&&entry.quantity>0)ownedSetCounts.set(entry.setId,(ownedSetCounts.get(entry.setId)??0)+1)}setSelectedSet(chooseAvailableSetId(x,selectedSet,ownedSetCounts,detail?.serie?.id??sets.find(set=>set.id===selectedSet)?.serie?.id??expandedFamily??undefined))}}).catch(e=>active&&setCatalogueError((e as Error).message));return()=>{active=false}},[language])
  useEffect(()=>{let active=true;setDetail(undefined);setCatalogueError('');if(!selectedSet){setCatalogueError('Aucune extension correspondante dans cette langue. Choisis une extension dans le catalogue.');return()=>{active=false}}getSet(selectedSet,language).then(x=>{if(active){setDetail(x);setCatalogueError('')}}).catch(e=>active&&setCatalogueError((e as Error).message));return()=>{active=false}},[selectedSet,language])
