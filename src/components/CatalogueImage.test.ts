@@ -7,6 +7,21 @@ describe('catalogue image providers',()=>{
  it('affiche le placeholder plutôt que le dos Pokémon dans la grille',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({...card,language:'fr',image:'/images/pokemon-card-back.jpg'}),new Set(),async()=>[]);expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
  it('uses the native Japanese TCGdex scan instead of an English back placeholder',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',fallbackImage:{low:'https://images.pokemontcg.io/sv8a/1.png',high:'https://images.pokemontcg.io/sv8a/1_hires.png',source:'Pokémon TCG API'}}),new Set(),async()=>[]);expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/1/low.webp');expect(image.language).toBe('ja');expect(image.source).toBe('TCGdex')})
  it('conserve le recto natif TCGdex des cartes japonaises',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',image:language==='ja'?'https://assets.tcgdex.net/ja/sv8a/001':undefined}));expect(image.url).toBe('https://assets.tcgdex.net/ja/sv8a/001/low.webp');expect(image.language).toBe('ja');expect(image.isFallback).toBe(false)})
+ it('resolves Japanese base-set scans when the API omits its image field',async()=>{
+  const image=await resolveCatalogueImage({id:'base1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>({id,name:'フシギダネ',localId:'001',language:language??'ja'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/base/base1/001/low.webp')
+  expect(image.language).toBe('ja')
+ })
+ it('resolves Japanese sets using the full swsh prefix',async()=>{
+  const image=await resolveCatalogueImage({id:'swsh4a-001',name:'カード',localId:'001'},'ja','low',async(id,language)=>({id,name:'カード',localId:'001',language:language??'ja'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/swsh/swsh4a/001/low.webp')
+  expect(image.language).toBe('ja')
+ })
+ it('resolves Traditional Chinese sets using the full swsh prefix',async()=>{
+  const image=await resolveCatalogueImage({id:'swsh4-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/swsh/swsh4/001/low.webp')
+  expect(image.language).toBe('zh-tw')
+ })
  it('resolves Japanese Mega set scans omitted from the API image field',async()=>{
   const image=await resolveCatalogueImage({id:'M3-001',name:'イトマル',localId:'001'},'ja','low',async(id,language)=>({id,name:'イトマル',localId:'001',language:language??'ja'}))
   expect(image.url).toBe('https://assets.tcgdex.net/ja/me/m3/001/low.webp')
