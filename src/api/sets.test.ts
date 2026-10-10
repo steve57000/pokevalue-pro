@@ -30,7 +30,7 @@ describe('localized set catalogue', () => {
     const summaries = [{id:'SV8a',name:'A',cardCount:{total:1,official:1}}, {id:'SV9',name:'B',cardCount:{total:1,official:1}}]
     expect(chooseAvailableSetId(summaries, 'SV8a')).toBe('SV8a')
     expect(chooseAvailableSetId(summaries, 'missing', new Map([['SV8a',1],['SV9',3]]))).toBe('SV9')
-    expect(chooseAvailableSetId(summaries, 'missing')).toBe('SV9')
+    expect(chooseAvailableSetId(summaries, 'missing')).toBe('')
     expect(chooseAvailableSetId([], 'missing')).toBe('')
   })
 
@@ -40,6 +40,27 @@ describe('localized set catalogue', () => {
     vi.stubGlobal('fetch', fetchMock)
     expect((await listSets('zh-tw')).map(set=>set.id)).toEqual(['SV8a'])
     expect((await getSeries('SV','ja')).sets.map(set=>set.id)).toEqual(['SV8a'])
+  })
+
+  it('uses the current family when a localized set has a different ID and never falls back to an unrelated family', () => {
+    const summaries = [
+      {id:'M3',name:'ムニキスゼロ',serie:{id:'me'},cardCount:{total:117,official:80}},
+      {id:'SV9',name:'バトルパートナーズ',serie:{id:'sv'},cardCount:{total:100,official:100}},
+    ]
+    expect(chooseAvailableSetId(summaries, 'M1S', new Map(), 'me')).toBe('M3')
+    expect(chooseAvailableSetId(summaries, 'unknown', new Map(), 'missing-family')).toBe('')
+  })
+
+  it('rebuilds an Asian family from set summaries when the series detail endpoint returns 404', async () => {
+    const summaries = [
+      {id:'M3',name:'ムニキスゼロ',serie:{id:'me'},cardCount:{total:117,official:80}},
+      {id:'SV9',name:'バトルパートナーズ',serie:{id:'sv'},cardCount:{total:100,official:100}},
+    ]
+    const fetchMock = vi.fn(async (url:string) => url.endsWith('/series/me')
+      ? ({ok:false,status:404,json:async()=>({})} as Response)
+      : ({ok:true,status:200,json:async()=>summaries} as Response))
+    vi.stubGlobal('fetch',fetchMock)
+    expect((await getSeries('me','ja')).sets.map(set=>set.id)).toEqual(['M3'])
   })
 
   it('rejects a known empty Asian catalogue entry even if opened from stale saved state', async () => {
