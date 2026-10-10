@@ -121,7 +121,7 @@ export function japaneseBaseExpansionScan(card:Pick<SetCard,'id'|'localId'>,requ
  return{url,language:'ja',quality,source:'local-override',isFallback:false,verified:true}
 }
 export function traditionalChineseSc2dScan(card:Pick<SetCard,'id'|'localId'>,requestedLanguage:string,quality:'low'|'high'='low'):ResolvedCardImage|undefined{
- if(requestedLanguage!=='zh-tw'||setIdFromCardId(card.id).toLowerCase()!=='sc2d'||!/^\\d{1,3}$/.test(card.localId))return undefined
+ if(requestedLanguage!=='zh-tw'||setIdFromCardId(card.id).toLowerCase()!=='sc2d'||!/^\d{1,3}$/.test(card.localId))return undefined
  const number=Number(card.localId)
  if(!Number.isInteger(number)||number<1||number>157)return undefined
  // Pokémon Taiwan's official SC2D detail records run from 1234 (001/157) to 1390 (157/157).
