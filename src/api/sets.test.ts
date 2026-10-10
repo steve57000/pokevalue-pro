@@ -73,8 +73,9 @@ describe('localized set catalogue', () => {
       signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')))
     })))
     const request=listSets('ja')
+    const rejected=expect(request).rejects.toThrow('met trop de temps')
     await vi.advanceTimersByTimeAsync(12_000)
-    await expect(request).rejects.toThrow('met trop de temps')
+    await rejected
     vi.useRealTimers()
   })
 
