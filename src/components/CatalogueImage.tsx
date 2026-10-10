@@ -112,11 +112,11 @@ const japaneseBaseExpansionNames=([
  'Fighting Energy'
 ] as const)
 export function japaneseBaseExpansionScan(card:Pick<SetCard,'id'|'localId'>,requestedLanguage:string,quality:'low'|'high'='low'):ResolvedCardImage|undefined{
- if(requestedLanguage!=='ja'||setIdFromCardId(card.id).toLowerCase()!=='base1'||!/^\\d{1,3}$/.test(card.localId))return undefined
+ if(requestedLanguage!=='ja'||setIdFromCardId(card.id).toLowerCase()!=='base1'||!/^\d{1,3}$/.test(card.localId))return undefined
  const number=Number(card.localId)
  if(!Number.isInteger(number)||number<1||number>japaneseBaseExpansionNames.length)return undefined
  const name=japaneseBaseExpansionNames[number-1]
- const slug=name.normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').replace(/[’']/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')
+ const slug=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')
  const url=`https://den-cards.pokellector.com/311/${slug}.EXP.${number}.${37250+number}.png`
  return{url,language:'ja',quality,source:'local-override',isFallback:false,verified:true}
 }
