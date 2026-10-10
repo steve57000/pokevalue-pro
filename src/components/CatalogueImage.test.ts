@@ -7,6 +7,16 @@ describe('catalogue image providers',()=>{
  it('affiche le placeholder plutôt que le dos Pokémon dans la grille',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({...card,language:'fr',image:'/images/pokemon-card-back.jpg'}),new Set(),async()=>[]);expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
  it('ne montre pas le faux dos anglais comme recto des cartes japonaises',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',fallbackImage:{low:'https://images.pokemontcg.io/sv8a/1.png',high:'https://images.pokemontcg.io/sv8a/1_hires.png',source:'Pokémon TCG API'}}),new Set(),async()=>[]);expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
  it('conserve le recto natif TCGdex des cartes japonaises',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',image:language==='ja'?'https://assets.tcgdex.net/ja/sv8a/001':undefined}));expect(image.url).toBe('https://assets.tcgdex.net/ja/sv8a/001/low.webp');expect(image.language).toBe('ja');expect(image.isFallback).toBe(false)})
+ it('resolves Japanese Mega set scans omitted from the API image field',async()=>{
+  const image=await resolveCatalogueImage({id:'M3-001',name:'イトマル',localId:'001'},'ja','low',async(id,language)=>({id,name:'イトマル',localId:'001',language:language??'ja'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/me/m3/001/low.webp')
+  expect(image.language).toBe('ja')
+ })
+ it('uses native Traditional Chinese scans when the localized API omits its image field',async()=>{
+  const image=await resolveCatalogueImage({id:'sv8a-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/sv/sv8a/001/low.webp')
+  expect(image.language).toBe('zh-tw')
+ })
  it('utilise un scan anglais de secours pour une promo MEP sans image TCGdex',async()=>{const image=await resolveCatalogueImage({id:'mep-037',name:'Bulbizarre',localId:'037'},'fr','low',async(id,language)=>({id,name:language==='en'?'Bulbasaur':'Bulbizarre',localId:'037',language:language??'fr'}));expect(image.url).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-037_bulbasaur.webp');expect(image.language).toBe('en');expect(image.isFallback).toBe(true)})
  it('préfère le scan promo MEP réel à la fausse image de dos de l’API anglaise',async()=>{const image=await resolveCatalogueImage({id:'mep-003',name:'Alakazam',localId:'003'},'fr','low',async(id,language)=>({id,name:language==='en'?'Alakazam':'Alakazam',localId:'003',language:language??'fr',fallbackImage:{low:'https://images.pokemontcg.io/mep/3.png',high:'https://images.pokemontcg.io/mep/3_hires.png',source:'Pokémon TCG API'}}));expect(image.url).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-003_alakazam.webp');expect(image.source).toBe('promo-archive')})
  it('uses parent asset folders for subset cards omitted by the API image manifest',async()=>{
