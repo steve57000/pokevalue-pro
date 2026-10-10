@@ -37,14 +37,21 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
  return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
 type ArtworkCandidate={id:string;name:string;image?:string}
-const asianAssetSeries=(setId:string)=>{
+export const asianAssetSeries=(setId:string)=>{
  const id=setId.toLowerCase()
- if(/^m\d/.test(id))return 'me'
+ // Asian set IDs use both short codes (s4a) and full English-era prefixes (swsh4a).
+ if(/^m\\d/.test(id)||id.startsWith('me'))return 'me'
  if(id.startsWith('sv'))return 'sv'
- if(/^s\d/.test(id))return 'swsh'
+ if(id.startsWith('swsh')||/^s\\d/.test(id))return 'swsh'
  if(id.startsWith('sm'))return 'sm'
  if(id.startsWith('xy'))return 'xy'
  if(id.startsWith('bw'))return 'bw'
+ if(/^(base|jungle|fossil|rocket|gym)/.test(id))return 'base'
+ if(id.startsWith('neo'))return 'neo'
+ if(id.startsWith('ecard'))return 'ecard'
+ if(id.startsWith('ex'))return 'ex'
+ if(id.startsWith('dp')||id.startsWith('pl'))return 'dp'
+ if(id.startsWith('hgss'))return 'hgss'
  return undefined
 }
 export function nativeAsianSetImage(card:SetCard,language:string,quality:'low'|'high',rejected:Set<string>=new Set()):ResolvedCardImage|undefined{
