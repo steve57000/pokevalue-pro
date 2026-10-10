@@ -31,14 +31,23 @@ export function chooseAvailableSetId(
       highestOwnedCount = ownedCount
     }
   }
-  // Never silently send someone to an unrelated set just because it is last in the API list.
-  return preferredId || (sameSeries[0]?.id ?? '')
+  // Localized catalogs may not share series IDs; open the first valid localized set as a usable fallback.
+  return preferredId || sameSeries[0]?.id || sets[0]?.id || ''
 }
 const base = (language: string='fr') => `https://api.tcgdex.net/v2/${language}/sets`
 async function fetchSet<T>(url: string): Promise<T> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Catalogue indisponible (${response.status})`)
-  return response.json() as Promise<T>
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 12_000)
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    if (!response.ok) throw new Error(`Catalogue indisponible (${response.status})`)
+    return await response.json() as T
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('Le catalogue met trop de temps à répondre. Réessaie dans un instant.')
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 const rgbMewCards = (set: SetDetail, language: string): SetDetail => {
   if (!set?.id || !Array.isArray(set.cards)) return set
@@ -83,15 +92,27 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
-export const listSeries = (language: string='fr') => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
+export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]> => {
+  try {
+    return await fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
+  } catch {
+    // Rebuild the series index from set summaries if a localized series endpoint fails.
+    const sets = await listSets(language)
+    const families = new Map<string, SeriesSummary>()
+    for (const set of sets) {
+      const id = set.serie?.id
+      if (id && !families.has(id)) families.set(id, { id, name: set.serie?.name ?? id, logo: set.logo, symbol: set.symbol })
+    }
+    if (!families.size) throw new Error(`Les séries du catalogue ${language.toUpperCase()} sont temporairement indisponibles.`)
+    return [...families.values()]
+  }
+}
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
   try {
     const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
     return { ...series, sets: filterLocalizedSets(series.sets ?? [], language) }
   } catch (error) {
-    // Some Asian catalogue endpoints list a series but do not implement its detail route.
-    // The set summaries still include their serie.id, so rebuild this family from the catalogue.
-    if (!(error instanceof Error) || !error.message.includes('(404)')) throw error
+    // Rebuild localized family details from set summaries on any endpoint failure.
     const sets = await listSets(language)
     return { id, name: id, sets: sets.filter(set => set.serie?.id === id) }
   }
