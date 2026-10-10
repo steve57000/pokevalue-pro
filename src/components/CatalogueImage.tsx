@@ -120,6 +120,15 @@ export function japaneseBaseExpansionScan(card:Pick<SetCard,'id'|'localId'>,requ
  const url=`https://den-cards.pokellector.com/311/${slug}.EXP.${number}.${37250+number}.png`
  return{url,language:'ja',quality,source:'local-override',isFallback:false,verified:true}
 }
+export function traditionalChineseSc2dScan(card:Pick<SetCard,'id'|'localId'>,requestedLanguage:string,quality:'low'|'high'='low'):ResolvedCardImage|undefined{
+ if(requestedLanguage!=='zh-tw'||setIdFromCardId(card.id).toLowerCase()!=='sc2d'||!/^\\d{1,3}$/.test(card.localId))return undefined
+ const number=Number(card.localId)
+ if(!Number.isInteger(number)||number<1||number>157)return undefined
+ // Pokémon Taiwan's official SC2D detail records run from 1234 (001/157) to 1390 (157/157).
+ const officialCardId=1233+number
+ const url=`https://asia.pokemon-card.com/tw/card-img/tw${String(officialCardId).padStart(8,'0')}.png`
+ return{url,language:'zh-tw',quality,source:'local-override',isFallback:false,verified:true}
+}
 const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\d+/g,'').replace(/[?&]$/,'')
 const isRejected=(url:string|undefined,rejected:Set<string>)=>!!url&&rejected.has(cleanUrl(url))
 const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[]}>={
@@ -215,6 +224,8 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
  const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
  if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
+ const chineseScan=traditionalChineseSc2dScan(card,requestedLanguage,quality)
+ if(chineseScan?.url&&!isRejected(chineseScan.url,rejectedUrls))return chineseScan
  let englishCandidate:ExternalCard|undefined
  let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
