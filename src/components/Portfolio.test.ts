@@ -38,6 +38,6 @@ describe('series logos',()=>{
  it('keeps a catalogue logo first for a set with a similar name',()=>{
   const logo='https://assets.tcgdex.net/fr/me/me01/logo'
   const urls=setLogoSources('me01','me',logo,undefined,'Mega Evolution','fr')
-  expect(urls[0]).toBe(logo+'.webp')
+  expect(urls[0]).toBe(logo+'.png')
  })
 })

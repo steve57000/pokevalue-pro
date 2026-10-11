@@ -116,7 +116,7 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
   if (englishRequest) {
     const english = await englishRequest
-    if (english && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en'))) {
+    if (english?.id && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en'))) {
       set.logo ??= english.logo
       set.symbol ??= english.symbol
     }
@@ -153,7 +153,7 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
     const sets = filterLocalizedSets(series.sets ?? [], language)
     if (!englishRequest) return { ...series, sets }
     const english = await englishRequest
-    if (!english || english.id.toLocaleLowerCase('en') !== englishArtworkId(id)) return { ...series, sets }
+    if (!english?.id || english.id.toLocaleLowerCase('en') !== englishArtworkId(id)) return { ...series, sets }
     series.logo ??= english.logo
     series.symbol ??= english.symbol
     const englishSets = new Map((english.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(id => [id,set] as const)))
