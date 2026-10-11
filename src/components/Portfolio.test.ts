@@ -12,21 +12,32 @@ describe('collection density',()=>{
 
 describe('series logos',()=>{
  it('uses a dedicated stable logo when the API does not provide one',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
- it('puts the catalogue-supplied asset before derived case and symbol fallbacks',()=>{
+ it('puts the catalogue-supplied logo before its case-normalized path',()=>{
   const exact='https://assets.tcgdex.net/ja/SV/SV5a/logo'
   const urls=setLogoSources('SV5a','SV',exact,'https://assets.tcgdex.net/univ/sv/sv5a/symbol','緋紅薄霧','ja','https://assets.tcgdex.net/en/sv/sv01/logo')
-  expect(urls.slice(0,2)).toEqual([exact+'.webp',exact+'.png'])
-  expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.webp')
-  expect(urls).toContain('https://assets.tcgdex.net/univ/sv/sv5a/symbol.webp')
-  expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.webp')
+  expect(urls.slice(0,2)).toEqual([exact+'.png',exact+'.webp'])
+  expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.png')
+  expect(urls).not.toContain('https://assets.tcgdex.net/univ/sv/sv5a/symbol.png')
+  expect(urls).not.toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
  })
  it.each([['S1H','S','無極力量','zh-tw'],['M6a','ME','30th CELEBRATION','ja']] as const)('does not invent logo paths for catalogue-only set %s',(setId,seriesId,name,language)=>{
-  const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language)
+  const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language,'https://assets.tcgdex.net/en/swsh/swsh1/logo')
   expect(urls).toEqual([])
  })
- it('keeps an explicit translated logo ahead of a curated name match',()=>{
+ it('uses a curated logo only for an explicitly listed French set ID',()=>{
+  expect(setLogoSources('mep','me',undefined,undefined,'Nom libre','fr')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png')
+  expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos','en')).toEqual([])
+  expect(setLogoSources('me01','me',undefined,undefined,'Mega Evolution','fr')).toEqual([])
+ })
+ it('normalizes logo path casing without guessing another series prefix',()=>{
+  const source='https://assets.tcgdex.net/ja/S/S1H/logo'
+  const urls=setLogoSources('S1H','S',source,undefined,'無極力量','ja')
+  expect(urls).toContain('https://assets.tcgdex.net/ja/s/s1h/logo.png')
+  expect(urls.some(url=>url.includes('/ja/swsh/'))).toBe(false)
+ })
+ it('keeps a catalogue logo first for a set with a similar name',()=>{
   const logo='https://assets.tcgdex.net/fr/me/me01/logo'
   const urls=setLogoSources('me01','me',logo,undefined,'Mega Evolution','fr')
-  expect(urls[0]).toBe(logo+'.webp')
+  expect(urls[0]).toBe(logo+'.png')
  })
 })

@@ -88,23 +88,24 @@ describe('localized set catalogue', () => {
   })
 
 
-  it('uses the matching English Base-series logo for Japanese PMCG sets', async () => {
-    const logo = 'https://assets.tcgdex.net/en/base/base1/logo.png'
+  it('uses only a family logo for a Japanese series and does not assign an unrelated English set logo', async () => {
+    const familyLogo = 'https://assets.tcgdex.net/en/base/logo.png'
+    const setLogo = 'https://assets.tcgdex.net/en/base/base1/logo.png'
     const fetchMock = vi.fn(async (url: string) => ({
       ok: true,
       json: async () => url.includes('/ja/')
         ? { id: 'PMCG', name: 'ポケットモンスターカードゲーム', sets: [{ id: 'PMCG1', name: '拡張パック', cardCount: { total: 1, official: 1 } }] }
-        : { id: 'base', name: 'Base', sets: [{ id: 'base1', name: 'Base Set', cardCount: { total: 1, official: 1 }, logo }] },
+        : { id: 'base', name: 'Base', logo: familyLogo, sets: [{ id: 'base1', name: 'Base Set', cardCount: { total: 1, official: 1 }, logo: setLogo }] },
     }) as Response)
     vi.stubGlobal('fetch', fetchMock)
 
     const series = await getSeries('PMCG', 'ja')
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/en/series/base')
-    expect(series.logo).toBe(logo)
-    expect(series.sets[0].logo).toBe(logo)
+    expect(series.logo).toBe(familyLogo)
+    expect(series.sets[0].logo).toBeUndefined()
   })
-  it('keeps a family logo at family level instead of reusing it for unrelated localized set logos', async () => {
+  it('does not promote a set logo to a family or another localized set', async () => {
     const logo = 'https://assets.tcgdex.net/en/swsh/swsh1/logo.png'
     const fetchMock = vi.fn(async (url: string) => ({
       ok: true,
@@ -117,8 +118,51 @@ describe('localized set catalogue', () => {
     const series = await getSeries('S', 'zh-tw')
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/en/series/swsh')
-    expect(series.logo).toBe(logo)
+    expect(series.logo).toBeUndefined()
     expect(series.sets[0].logo).toBeUndefined()
+  })
+
+  it('does not match different localized set logos by guessed series prefixes', async () => {
+    const localized = [{ id: 'M3', name: 'ムニキスゼロ', serie: { id: 'me' }, cardCount: { total: 1, official: 1 } }]
+    const english = [{ id: 'me3', name: 'Mega Evolution 3', logo: 'https://assets.tcgdex.net/en/me/me3/logo.png', cardCount: { total: 1, official: 1 } }]
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/') ? localized : english,
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sets = await listSets('ja')
+
+    expect(sets[0].id).toBe('M3')
+    expect(sets[0].logo).toBeUndefined()
+  })
+
+  it('ignores English set metadata that returns a different set ID', async () => {
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? { id: 'M3', name: 'ムニキスゼロ', cardCount: { total: 1, official: 1 }, cards: [] }
+        : { id: 'me3', name: 'Different expansion', logo: 'https://assets.tcgdex.net/en/me/me3/logo.png', cardCount: { total: 1, official: 1 }, cards: [] },
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const set = await getSet('M3', 'ja')
+
+    expect(set.logo).toBeUndefined()
+  })
+
+  it('ignores an English family response whose ID differs from the explicit series mapping', async () => {
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? { id: 'S', name: '剣と盾', sets: [] }
+        : { id: 'swsh2', name: 'Different series', logo: 'https://assets.tcgdex.net/en/swsh/swsh2/logo.png', sets: [] },
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await getSeries('S', 'ja')
+
+    expect(series.logo).toBeUndefined()
   })
 
   it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
