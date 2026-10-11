@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 const source = await readFile(new URL('../src/data/cardImageOverrides.ts', import.meta.url), 'utf8')
-const entries = [...source.matchAll(/^\s*\{cardId:'(30th-c-\d{3})'([^}]*)\}/gm)]
+const entries = [...source.matchAll(/^\s*\{cardId:'(30th-c-\d{3})'([^\n]*)/gm)]
 const identities = entries.map(([, id]) => id)
 const errors = []
 
