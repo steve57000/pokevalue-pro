@@ -11,15 +11,22 @@ describe('collection density',()=>{
 })
 
 describe('series logos',()=>{
- it('uses a dedicated stable logo first for MEP Black Star Promos',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
- it('normalizes uppercase Japanese and Chinese asset paths and accepts a series logo fallback',()=>{
-  const urls=setLogoSources('SV5a','SV','https://assets.tcgdex.net/ja/SV/SV5a/logo',undefined,'緋紅薄霧','ja','https://assets.tcgdex.net/en/sv/sv01/logo')
-  expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.png')
-  expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
+ it('uses a dedicated stable logo when the API does not provide one',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
+ it('puts the catalogue-supplied asset before derived case and symbol fallbacks',()=>{
+  const exact='https://assets.tcgdex.net/ja/SV/SV5a/logo'
+  const urls=setLogoSources('SV5a','SV',exact,'https://assets.tcgdex.net/univ/sv/sv5a/symbol','緋紅薄霧','ja','https://assets.tcgdex.net/en/sv/sv01/logo')
+  expect(urls.slice(0,2)).toEqual([exact+'.webp',exact+'.png'])
+  expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.webp')
+  expect(urls).toContain('https://assets.tcgdex.net/univ/sv/sv5a/symbol.webp')
+  expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.webp')
  })
- it.each([['S1H','S','無極力量','zh-tw','swsh','s1h'],['M6a','ME','30th CELEBRATION','ja','me','m6a']] as const)('normalizes the localized %s series code for logo assets', (setId,seriesId,name,language,folder,assetSet)=>{
+ it.each([['S1H','S','無極力量','zh-tw'],['M6a','ME','30th CELEBRATION','ja']] as const)('does not invent logo paths for catalogue-only set %s',(setId,seriesId,name,language)=>{
   const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language)
-  expect(urls).toContain(`https://assets.tcgdex.net/${language}/${folder}/${assetSet}/logo.png`)
+  expect(urls).toEqual([])
  })
-
+ it('keeps an explicit translated logo ahead of a curated name match',()=>{
+  const logo='https://assets.tcgdex.net/fr/me/me01/logo'
+  const urls=setLogoSources('me01','me',logo,undefined,'Mega Evolution','fr')
+  expect(urls[0]).toBe(logo+'.webp')
+ })
 })

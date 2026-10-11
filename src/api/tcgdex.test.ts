@@ -18,6 +18,9 @@ describe('buildTcgDexImageUrl', () => {
   })
 })
 
+  it('keeps a complete image URL intact', () => {
+    expect(buildTcgDexImageUrl('https://assets.tcgdex.net/fr/base/base1/4/high.png', 'low')).toBe('https://assets.tcgdex.net/fr/base/base1/4/high.png')
+  })
 describe('buildPokemonTcgImageFallback', () => {
   it('maps dotted TCGdex sets to Pokémon TCG API image identifiers', () => {
     expect(buildPokemonTcgImageFallback('swsh12.5gg-GG70')).toEqual({

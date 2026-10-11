@@ -43,25 +43,27 @@ const curatedSetLogos:Record<string,string>={
 const normalizeSetName=(name:string)=>name.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
 const logoSeriesAliases:Record<string,string>={s:'swsh',m:'me',pcg:'ex',adv:'ex'}
 const logoSeriesId=(id?:string)=>id?logoSeriesAliases[id.toLowerCase()]??id.toLowerCase():''
-export const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:string,name='',language='fr',parentLogo?:string)=>{
- const english=(url?:string)=>url?.replace(/\/(?:fr|ja|zh-tw)\//gi,'/en/')
- const normalizeAssetIds=(url?:string)=>url?.replace(/(assets\.tcgdex\.net\/(?:en|fr|ja|zh-tw)\/)([^/]+)\/([^/]+)\//i,(_match,prefix,serie,set)=>prefix+logoSeriesId(serie)+'/'+set.toLowerCase()+'/')
- const formats=(url?:string)=>url?(/assets\.tcgdex\.net/.test(url)&&!/\.(png|webp|jpg)$/i.test(url)?[url+'.png',url+'.webp',url]:[url]):[]
- const normalized=normalizeSetName(name),serie=logoSeriesId(seriesId),set=setId.toLowerCase()
- const localBase=serie?'https://assets.tcgdex.net/'+language+'/'+serie+'/'+set:''
- const alternateLanguage=language==='ja'?'zh-tw':language==='zh-tw'?'ja':undefined
- const alternateBase=serie&&alternateLanguage?'https://assets.tcgdex.net/'+alternateLanguage+'/'+serie+'/'+set:''
- const englishBase=serie?'https://assets.tcgdex.net/en/'+serie+'/'+set:''
- const guessedLogos=(base:string)=>base?[base+'/logo.png',base+'/logo.webp'] : []
+const tcgdexLogoSources=(url?:string)=>{
+ if(!url)return[]
+ const value=url.trim()
+ if(!value)return[]
+ if(!/assets\.tcgdex\.net\//i.test(value))return[value]
+ const match=value.match(/^([^?#]*)([?#].*)?$/)
+ if(!match)return[value]
+ const path=match[1].replace(/\/+$/,'')
+ const suffix=match[2]??''
+ if(/\.(?:webp|png|jpe?g)$/i.test(path))return[value]
+ return[path+'.webp'+suffix,path+'.png'+suffix]
+}
+const normalizeTcgDexLogoPath=(url?:string)=>{
+ if(!url)return undefined
+ return url.replace(/(assets\.tcgdex\.net\/(?:en|fr|ja|zh-tw)\/)([^/]+)\/([^/]+)\//i,(_match,prefix,serie,set)=>prefix+logoSeriesId(serie)+'/'+set.toLowerCase()+'/')
+}
+export const setLogoSources=(setId:string,_seriesId?:string,logo?:string,symbol?:string,name='',_language='fr',parentLogo?:string)=>{
+ const normalized=normalizeSetName(name)
  const curated=setId==='30th-c'?'https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png':Object.entries(curatedSetLogos).find(([key])=>normalized.includes(key))?.[1]
- return [...new Set([
-  curated,
-  ...guessedLogos(localBase),...guessedLogos(alternateBase),
-  ...formats(logo),...formats(normalizeAssetIds(logo)),...formats(english(logo)),...formats(normalizeAssetIds(english(logo))),
-  ...formats(symbol),...formats(normalizeAssetIds(symbol)),...formats(english(symbol)),...formats(normalizeAssetIds(english(symbol))),
-  ...guessedLogos(englishBase),
-  ...formats(parentLogo),...formats(normalizeAssetIds(parentLogo)),...formats(english(parentLogo)),...formats(normalizeAssetIds(english(parentLogo)))
- ])].filter((url):url is string=>!!url)
+ const paths=[logo,normalizeTcgDexLogoPath(logo),symbol,normalizeTcgDexLogoPath(symbol),curated,parentLogo,normalizeTcgDexLogoPath(parentLogo)]
+ return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
 }
 function LoadingFeedback({children,className=''}:{children:string;className?:string}){
  return <span className={`loading-feedback ${className}`.trim()} role="status" aria-live="polite"><span className="pv-spinner" aria-hidden="true"/><span>{children}</span></span>
@@ -85,7 +87,7 @@ function SetBadge({sources,name,imageClass,fallbackClass}:SetBadgeProps){
  const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
  const src=sources[index]
  const retry=()=>{setLoaded(false);if(index+1<sources.length){setIndex(index+1);return}setFailed(true)}
- useEffect(()=>{if(!nearViewport||!src||failed||loaded)return;const timer=window.setTimeout(()=>{if(index+1<sources.length)setIndex(index+1);else setFailed(true)},6000);return()=>window.clearTimeout(timer)},[nearViewport,src,failed,loaded,index,sources.length])
+ useEffect(()=>{if(!nearViewport||!src||failed||loaded)return;const timer=window.setTimeout(()=>{if(index+1<sources.length)setIndex(index+1);else setFailed(true)},2500);return()=>window.clearTimeout(timer)},[nearViewport,src,failed,loaded,index,sources.length])
  return src&&!failed?<span ref={badgeRef} className="set-badge-wrap"><img className={imageClass} src={src} alt={'Logo '+name} loading={nearViewport?'eager':'lazy'} decoding="async" onLoad={()=>setLoaded(true)} onError={retry}/>{!loaded&&<span className="pv-spinner set-badge-spinner" role="status" aria-label={'Chargement du logo '+name}/>}</span>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
 }
 export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,headerExtra}:Props){

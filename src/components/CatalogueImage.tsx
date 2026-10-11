@@ -154,7 +154,7 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
  if(!mapping||mapping.languages&&!mapping.languages.includes(language)||!card.localId)return undefined
  const localId=encodeURIComponent(card.localId)
  const base='https://assets.tcgdex.net/'+language+'/'+mapping.serie+'/'+mapping.set+'/'+localId+'/'
- const formats=quality==='high'?['high.png','high.webp']:['low.webp','low.png','high.png']
+ const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
  const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejected))
  return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
@@ -183,7 +183,7 @@ export function nativeAsianSetImage(card:SetCard,language:string,quality:'low'|'
  if(!serie)return undefined
  const localId=encodeURIComponent(card.localId)
  const root=`https://assets.tcgdex.net/${language}/${serie}/${setId.toLowerCase()}/${localId}/`
- const formats=quality==='high'?['high.png','high.webp','low.webp','low.png']:['low.webp','low.png','high.webp','high.png']
+ const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
  const url=formats.map(file=>root+file).find(candidate=>!isRejected(candidate,rejected))
  return url?{url,language,quality,source:'TCGdex',isFallback:false,verified:true}:undefined
 }
@@ -266,7 +266,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  if(mepMatch){
   const localId=String(Number(mepMatch[1])).padStart(3,'0')
   const base='https://assets.tcgdex.net/en/me/mep/'+localId+'/'
-  const formats=quality==='high'?['high.png','high.webp']:['low.webp','low.png','high.png']
+  const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
   const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejectedUrls))
   if(url)return{url,language:'en',quality,source:'TCGdex',isFallback:requestedLanguage!=='en',verified:true} satisfies ResolvedCardImage
  }
@@ -313,12 +313,12 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
  const failImage=()=>{
   if(!show)return
   setAssetLoaded(false)
-  if(retryAttempt<2){window.setTimeout(()=>setRetryAttempt(current=>current+1),500*(2**retryAttempt));return}
+  if(retryAttempt<1){window.setTimeout(()=>setRetryAttempt(current=>current+1),300);return}
   const failed=cleanUrl(show)
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},7000);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
+ useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},3500);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
  return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()

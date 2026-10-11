@@ -11,6 +11,7 @@ import {
 import { compareCardImageToCandidates } from '../services/cardVisualMatcher'
 import { getCached, setCached } from '../utils/cache'
 import { normalizeApiDate } from '../utils/dates'
+import { buildCardAssetUrl } from '../domain/image'
 
 const BASE_URL = 'https://api.tcgdex.net/v2'
 const REQUEST_TIMEOUT_MS = 8000
@@ -33,8 +34,7 @@ async function withRequestSlot<T>(request: () => Promise<T>): Promise<T> {
 }
 
 export function buildTcgDexImageUrl(image: string | undefined, quality: 'low' | 'high'): string | undefined {
-  if (!image) return undefined
-  return `${image}/${quality}.webp`
+  return buildCardAssetUrl(image, quality)
 }
 
 const POKEMON_TCG_SET_IDS: Record<string, string> = {

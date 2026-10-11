@@ -11,6 +11,21 @@ export type CardImageIdentity={source:'tcgdex';setId:string;cardId:string;langua
 export type ResolvedCardImage={url?:string;language:string;quality:'low'|'high';source:'local-override'|'TCGdex'|'Pokémon TCG API'|'promo-archive'|'none';isFallback:boolean;verified:boolean}
 export interface CardImageProvider{id:string;resolve(identity:CardImageIdentity,card?:ExternalCard):Promise<ResolvedCardImage|undefined>}
 export const setIdFromCardId=(cardId:string)=>cardId.slice(0,cardId.lastIndexOf('-'))
+export function buildCardAssetUrl(image:string|undefined,quality:'low'|'high'='low'){
+ if(!image)return undefined
+ const value=image.trim()
+ if(!value)return undefined
+ const match=value.match(/^([^?#]*)([?#].*)?$/)
+ if(!match)return value
+ const path=match[1].replace(/\/+$/,'')
+ const suffix=match[2]??''
+ if(/\.(?:avif|gif|jpe?g|png|webp)$/i.test(path))return value
+ return path+'/'+quality+'.webp'+suffix
+}
+const languageFromAssetUrl=(url:string,fallback:string)=>{
+ const match=url.match(/assets\.tcgdex\.net\/(fr|en|ja|jp|zh(?:-tw|[-_]hant)?)(?:\/|$)/i)
+ return match?normalizeImageLanguage(match[1]):normalizeImageLanguage(fallback)
+}
 export function isPokemonCardBackUrl(url?:string){
  if(!url)return false
  const normalized=url.toLowerCase().split(/[?#]/,1)[0].replace(/%2f/g,'/').replace(/\\/g,'/')
@@ -33,8 +48,8 @@ export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:Ex
   if(scan)return frontImage({url:scan,language:'fr',quality,source:'local-override',isFallback:requestedLanguage!=='fr',verified:true})
  }
  if(card.id&&card.image&&!isPokemonCardBackUrl(card.image)){
-  const imageLanguage=normalizeImageLanguage(card.language||requestedLanguage)
-  return frontImage({url:`${card.image}/${quality}.webp`,language:imageLanguage,quality,source:'TCGdex',isFallback:imageLanguage!==requestedLanguage,verified:true})
+  const imageLanguage=languageFromAssetUrl(card.image,card.language||requestedLanguage)
+  return frontImage({url:buildCardAssetUrl(card.image,quality),language:imageLanguage,quality,source:'TCGdex',isFallback:imageLanguage!==requestedLanguage,verified:true})
  }
  const fallback=card.fallbackImage?.[quality]
  return frontImage({url:fallback,language:'en',quality,source:fallback?'Pokémon TCG API':'none',isFallback:Boolean(fallback),verified:Boolean(fallback)})
