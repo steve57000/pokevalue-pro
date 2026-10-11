@@ -1,14 +1,12 @@
 import {describe,expect,it} from 'vitest'
-import {imageFallbackOrder,resolveCatalogueImage,selectRelatedArtwork} from './CatalogueImage'
+import {imageFallbackOrder,resolveCatalogueImage} from './CatalogueImage'
 const card={id:'xy-1',name:'Carte',localId:'1'}
 describe('catalogue image providers',()=>{
- it('normalise JP et ZH et tente l’autre catalogue asiatique avant l’anglais',()=>{expect(imageFallbackOrder('JP')).toEqual(['ja','zh-tw','en']);expect(imageFallbackOrder('ZH')).toEqual(['zh-tw','ja','en'])})
+ it('garde la langue asiatique demandée et utilise uniquement le repli anglais',()=>{expect(imageFallbackOrder('JP')).toEqual(['ja','en']);expect(imageFallbackOrder('ZH')).toEqual(['zh-tw','en']);expect(imageFallbackOrder('FR')).toEqual(['fr','en']);expect(imageFallbackOrder('EN')).toEqual(['en','fr'])})
  it('emploie un TCGdex anglais exact et le signale',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async(id,language)=>({id,name:'Carte',language:language??'fr',image:language==='en'?'https://exact':undefined}));expect(image.url).toBe('https://exact/low.webp');expect(image.isFallback).toBe(true)})
  it('préfère le placeholder à une impression différente',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({id:'xy-2',name:'Autre',language:'en',image:'https://wrong'}));expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
  it('affiche le placeholder plutôt que le dos Pokémon dans la grille',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({...card,language:'fr',image:'/images/pokemon-card-back.jpg'}),new Set(),async()=>[]);expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
- it('uses the native Japanese TCGdex scan instead of an English back placeholder',async()=>{const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',language:language??'ja',fallbackImage:{low:'https://images.pokemontcg.io/sv8a/1.png',high:'https://images.pokemontcg.io/sv8a/1_hires.png',source:'Pokémon TCG API'}}),new Set(),async()=>[]);expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/1/low.webp');expect(image.language).toBe('ja');expect(image.source).toBe('TCGdex')})
- it('resolves native Japanese TCGdex fronts without a per-card API lookup',async()=>{let apiCalls=0;const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'Carte',language:language??'ja',image:'https://assets.tcgdex.net/ja/sv8a/001'}});expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/1/low.webp');expect(image.language).toBe('ja');expect(image.isFallback).toBe(false);expect(apiCalls).toBe(0)})
- it('uses verified Pokellector Japanese Expansion Pack fronts before fallback lookup',async()=>{
+it('uses verified Pokellector Japanese Expansion Pack fronts before fallback lookup',async()=>{
   let apiCalls=0
   const image=await resolveCatalogueImage({id:'PMCG1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'フシギダネ',localId:'001',language:language??'ja'}})
   expect(image.url).toBe('https://den-cards.pokellector.com/311/Bulbasaur.EXP.1.37251.png')
@@ -32,14 +30,7 @@ describe('catalogue image providers',()=>{
   }
   expect(apiCalls).toBe(0)
  })
- it('falls back to the native PMCG Japanese TCGdex scan after an image failure',async()=>{
-  const failed='https://den-cards.pokellector.com/311/Bulbasaur.EXP.1.37251.png'
-  const image=await resolveCatalogueImage({id:'PMCG1-001',name:'フシギダネ',localId:'001'},'ja','low',async(id,language)=>({id,name:'フシギダネ',localId:'001',language:language??'ja'}),new Set([failed]))
-  expect(image.url).toBe('https://assets.tcgdex.net/ja/pmcg/pmcg1/001/low.webp')
-  expect(image.language).toBe('ja')
-  expect(image.source).toBe('TCGdex')
- })
- it('uses exact Japanese Expansion Pack rectos without waiting on missing TCGdex assets',async()=>{
+it('uses exact Japanese Expansion Pack rectos without waiting on missing TCGdex assets',async()=>{
   const cases=[
    ['001','フシギダネ','https://den-cards.pokellector.com/311/Bulbasaur.EXP.1.37251.png'],
    ['063','カモネギ',"https://den-cards.pokellector.com/311/Farfetchd.EXP.63.37313.png"],
@@ -56,36 +47,12 @@ describe('catalogue image providers',()=>{
    expect(apiCalls).toBe(0)
   }
  })
- it('resolves Japanese native scans before requesting per-card metadata',async()=>{
-  let apiCalls=0
-  const image=await resolveCatalogueImage({id:'swsh4a-001',name:'カード',localId:'001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'カード',localId:'001',language:language??'ja'}})
-  expect(image.url).toBe('https://assets.tcgdex.net/ja/swsh/swsh4a/001/low.webp')
-  expect(image.language).toBe('ja')
-  expect(apiCalls).toBe(0)
- })
- it('resolves Traditional Chinese sets using the full swsh prefix',async()=>{
-  const image=await resolveCatalogueImage({id:'swsh4-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw'}))
-  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/swsh/swsh4/001/low.webp')
+it('tries a supported PNG asset when the canonical WebP fails',async()=>{
+  const root='https://assets.tcgdex.net/zh-tw/sv/sv8a/001'
+  const image=await resolveCatalogueImage({...card,id:'sv8a-001',image:root},'zh-tw','low',async()=>{throw new Error('not needed')},new Set([root+'/low.webp']))
+  expect(image.url).toBe(root+'/low.png')
   expect(image.language).toBe('zh-tw')
- })
- it('resolves Japanese Mega set scans omitted from the API image field',async()=>{
-  const image=await resolveCatalogueImage({id:'M3-001',name:'イトマル',localId:'001'},'ja','low',async(id,language)=>({id,name:'イトマル',localId:'001',language:language??'ja'}))
-  expect(image.url).toBe('https://assets.tcgdex.net/ja/me/m3/001/low.webp')
-  expect(image.language).toBe('ja')
- })
- it('resolves Traditional Chinese native scans without a per-card metadata request',async()=>{
-  let apiCalls=0
-  const image=await resolveCatalogueImage({id:'sv8a-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>{apiCalls++;return{id,name:'卡牌',localId:'001',language:language??'zh-tw'}})
-  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/sv/sv8a/001/low.webp')
-  expect(image.language).toBe('zh-tw')
-  expect(apiCalls).toBe(0)
- })
- it('uses the other Asian language asset after the requested Asian scan fails',async()=>{
-  const rejected=new Set(['low.webp','low.png','high.webp','high.png'].map(file=>`https://assets.tcgdex.net/ja/me/m6a/001/${file}`))
-  const image=await resolveCatalogueImage({id:'M6a-001',name:'タマタマ',localId:'001'},'ja','low',async(id,language)=>({id,name:'タマタマ',localId:'001',language:language??'ja'}),rejected)
-  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/me/m6a/001/low.webp')
-  expect(image.language).toBe('zh-tw')
-  expect(image.isFallback).toBe(true)
+  expect(image.isFallback).toBe(false)
  })
 
  it('utilise un scan anglais de secours pour une promo MEP sans image TCGdex',async()=>{const image=await resolveCatalogueImage({id:'mep-037',name:'Bulbizarre',localId:'037'},'fr','low',async(id,language)=>({id,name:language==='en'?'Bulbasaur':'Bulbizarre',localId:'037',language:language??'fr'}));expect(image.url).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-037_bulbasaur.webp');expect(image.language).toBe('en');expect(image.isFallback).toBe(true)})
@@ -128,28 +95,50 @@ describe('catalogue image providers',()=>{
   expect(image.isFallback).toBe(true)
  })
 
-it('uses a same-era front scan for McDonald’s cards when the set has no scan',async()=>{
+it('does not borrow a same-name scan from another printing when the exact card is unavailable',async()=>{
   const card={id:'2023sv-1',name:'Sprigatito',localId:'1'}
-  const image=await resolveCatalogueImage(card,'fr','low',async(id,language)=>({id,name:'Sprigatito',localId:'1',language:language??'fr'}),new Set(),async()=>[
-   {id:'swsh1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/swsh/swsh1/1'},
-   {id:'sv1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv1/1'},
-  ])
-  expect(image.url).toBe('https://assets.tcgdex.net/en/sv/sv1/1/low.webp')
+  const image=await resolveCatalogueImage(card,'fr','low',async(id,language)=>({id,name:'Sprigatito',localId:'1',language:language??'fr'}),new Set())
+  expect(image.url).toBeUndefined()
+  expect(image.source).toBe('none')
+ })
+ it('prefers the selected Japanese asset over an English URL attached to the set summary',async()=>{
+  const card={id:'sv8a-001',name:'カード',localId:'001',image:'https://assets.tcgdex.net/en/sv/sv8a/001'}
+  const image=await resolveCatalogueImage(card,'ja','low',async(id,language)=>({id,name:'カード',localId:'001',language:language??'ja',image:'https://assets.tcgdex.net/ja/sv/sv8a/001'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/001/low.webp')
+  expect(image.language).toBe('ja')
+  expect(image.isFallback).toBe(false)
+ })
+ it('uses the exact image URL returned by the selected Japanese catalogue',async()=>{
+  const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'ja','low',async(id,language)=>({id,name:'Carte',localId:'001',language:language??'ja',image:'https://assets.tcgdex.net/ja/sv/sv8a/001'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/sv/sv8a/001/low.webp')
+  expect(image.language).toBe('ja')
+  expect(image.isFallback).toBe(false)
+ })
+ it('uses the exact image URL returned by the selected Traditional Chinese catalogue',async()=>{
+  const image=await resolveCatalogueImage({...card,id:'sv8a-001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw',image:'https://assets.tcgdex.net/zh-tw/sv/sv8a/001'}))
+  expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/sv/sv8a/001/low.webp')
+  expect(image.language).toBe('zh-tw')
+  expect(image.isFallback).toBe(false)
+ })
+ it('does not infer an Asian image path when the exact catalogue has no scan',async()=>{
+  const requested:string[]=[]
+  const image=await resolveCatalogueImage({id:'M3-001',name:'イトマル',localId:'001'},'ja','low',async(id,language)=>{requested.push(language??'');return{id,name:'イトマル',localId:'001',language:language??'ja'}})
+  expect(requested).toEqual(['ja','en'])
+  expect(image.url).toBeUndefined()
+  expect(image.source).toBe('none')
+ })
+
+ it('uses an English image only for the exact same card ID when its Japanese catalogue has no scan',async()=>{
+  const image=await resolveCatalogueImage({id:'M6a-001',name:'タマタマ',localId:'001'},'ja','low',async(id,language)=>({id,name:'タマタマ',localId:'001',language:language??'ja',image:language==='en'?'https://assets.tcgdex.net/en/me/m6a/001':undefined}))
+  expect(image.url).toBe('https://assets.tcgdex.net/en/me/m6a/001/low.webp')
   expect(image.language).toBe('en')
   expect(image.isFallback).toBe(true)
  })
- it('skips a related scan that already failed',()=>{
-  const image=selectRelatedArtwork([
-   {id:'sv1-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv1/1'},
-   {id:'sv2-1',name:'Sprigatito',image:'https://assets.tcgdex.net/en/sv/sv2/1'},
-  ],'2023sv',new Set(['https://assets.tcgdex.net/en/sv/sv1/1/low.webp']))
-  expect(image?.id).toBe('sv2-1')
+ it('prefers an exact Japanese scan over an English local override',async()=>{
+  const image=await resolveCatalogueImage({id:'M6a-G',name:'ミュウ',localId:'G'},'ja','low',async(id,language)=>({id,name:'ミュウ',localId:'G',language:language??'ja',image:language==='ja'?'https://assets.tcgdex.net/ja/me/m6a/G':undefined}))
+  expect(image.url).toBe('https://assets.tcgdex.net/ja/me/m6a/G/low.webp')
+  expect(image.language).toBe('ja')
+  expect(image.isFallback).toBe(false)
  })
-it('uses a name-matched front scan for other sets with no direct image',async()=>{
-  const image=await resolveCatalogueImage({id:'dp1-1',name:'Bulbizarre',localId:'1'},'fr','low',async(id,language)=>({id,name:'Bulbasaur',localId:'1',language:language??'fr'}),new Set(),async()=>[
-   {id:'base1-1',name:'Bulbasaur',image:'https://assets.tcgdex.net/en/base/base1/1'},
-  ])
-  expect(image.url).toBe('https://assets.tcgdex.net/en/base/base1/1/low.webp')
-  expect(image.isFallback).toBe(true)
- })
+
 })

@@ -11,16 +11,28 @@ export type CardImageIdentity={source:'tcgdex';setId:string;cardId:string;langua
 export type ResolvedCardImage={url?:string;language:string;quality:'low'|'high';source:'local-override'|'TCGdex'|'Pokémon TCG API'|'promo-archive'|'none';isFallback:boolean;verified:boolean}
 export interface CardImageProvider{id:string;resolve(identity:CardImageIdentity,card?:ExternalCard):Promise<ResolvedCardImage|undefined>}
 export const setIdFromCardId=(cardId:string)=>cardId.slice(0,cardId.lastIndexOf('-'))
+export function buildCardAssetCandidates(image:string|undefined,quality:'low'|'high'='low'){
+ if(!image)return[]
+ const value=image.trim()
+ if(!value)return[]
+ const match=value.match(/^([^?#]*)([?#].*)?$/)
+ if(!match)return[value]
+ const path=match[1].replace(/\/+$/,'')
+ const suffix=match[2]??''
+ const assetRoot=path.match(/^(.*)\/(?:low|high)\.(?:webp|png)$/i)?.[1]
+ const formats=quality==='high'?['high.webp','high.png','low.webp','low.png']:['low.webp','low.png','high.webp','high.png']
+ if(assetRoot)return formats.map(file=>assetRoot+'/'+file+suffix)
+ if(/\.(?:avif|gif|jpe?g|png|webp)$/i.test(path))return[value]
+ return formats.map(file=>path+'/'+file+suffix)
+}
 export function buildCardAssetUrl(image:string|undefined,quality:'low'|'high'='low'){
  if(!image)return undefined
  const value=image.trim()
  if(!value)return undefined
  const match=value.match(/^([^?#]*)([?#].*)?$/)
  if(!match)return value
- const path=match[1].replace(/\/+$/,'')
- const suffix=match[2]??''
- if(/\.(?:avif|gif|jpe?g|png|webp)$/i.test(path))return value
- return path+'/'+quality+'.webp'+suffix
+ if(/\.(?:avif|gif|jpe?g|png|webp)$/i.test(match[1]))return value
+ return buildCardAssetCandidates(value,quality)[0]
 }
 const languageFromAssetUrl=(url:string,fallback:string)=>{
  const match=url.match(/assets\.tcgdex\.net\/(fr|en|ja|jp|zh(?:-tw|[-_]hant)?)(?:\/|$)/i)
@@ -32,27 +44,49 @@ export function isPokemonCardBackUrl(url?:string){
  return normalized.endsWith('/images/pokemon-card-back.jpg')||normalized.endsWith('/pokemon-card-back.jpg')||normalized.endsWith('/pokemon-card-back.png')||normalized.includes('images.pokemontcg.io/card-back')
 }
 const frontImage=(image:ResolvedCardImage):ResolvedCardImage=>image.url&&!isPokemonCardBackUrl(image.url)?image:{language:image.language,quality:image.quality,source:'none',isFallback:false,verified:false}
-export function resolveCardImage({card,requestedLanguage,quality='low'}:{card:ExternalCard;requestedLanguage:string;quality?:'low'|'high'}):ResolvedCardImage{
+export function resolveCardImage({card,requestedLanguage,quality='low',rejectedUrls}:{card:ExternalCard;requestedLanguage:string;quality?:'low'|'high';rejectedUrls?:ReadonlySet<string>}):ResolvedCardImage{
  requestedLanguage=normalizeImageLanguage(requestedLanguage)
+ let fallback:ResolvedCardImage|undefined
  const override=cardImageOverrideById.get(card.id)
- if(override?.verified&&override.image)return frontImage({url:override.image.localPath,language:override.image.language,quality,source:'local-override',isFallback:override.image.language!==requestedLanguage,verified:true})
+ if(override?.verified&&override.image&&!rejectedUrls?.has(override.image.localPath)){
+  const image=frontImage({url:override.image.localPath,language:override.image.language,quality,source:'local-override',isFallback:override.image.language!==requestedLanguage,verified:true})
+  if(image.language===requestedLanguage)return image
+  fallback??=image
+ }
  const number=card.localId?.toUpperCase()
  const cardSetId=setIdFromCardId(card.id).toLowerCase()
  const rgbLetter=number?.[0]
  const isRgbMewSet=cardSetId==='30th'||cardSetId==='m6a'
  const rgbMewImage=isRgbMewSet&&rgbLetter&&['R','G','B'].includes(rgbLetter)?rgbMewImageByNumber[rgbLetter]:undefined
- if(rgbMewImage)return frontImage({url:rgbMewImage.url,language:rgbMewImage.language,quality,source:'local-override',isFallback:rgbMewImage.language!==requestedLanguage,verified:true})
+ if(rgbMewImage&&!rejectedUrls?.has(rgbMewImage.url)){
+  const image=frontImage({url:rgbMewImage.url,language:rgbMewImage.language,quality,source:'local-override',isFallback:rgbMewImage.language!==requestedLanguage,verified:true})
+  if(image.language===requestedLanguage)return image
+  fallback??=image
+ }
  if(cardSetId==='mee'){
   const energyNumber=Number.parseInt(card.localId??'',10)
   const scan=megaEvolutionEnergyScans[energyNumber]
-  if(scan)return frontImage({url:scan,language:'fr',quality,source:'local-override',isFallback:requestedLanguage!=='fr',verified:true})
+  if(scan&&!rejectedUrls?.has(scan)){
+   const image=frontImage({url:scan,language:'fr',quality,source:'local-override',isFallback:requestedLanguage!=='fr',verified:true})
+   if(image.language===requestedLanguage)return image
+   fallback??=image
+  }
  }
  if(card.id&&card.image&&!isPokemonCardBackUrl(card.image)){
   const imageLanguage=languageFromAssetUrl(card.image,card.language||requestedLanguage)
-  return frontImage({url:buildCardAssetUrl(card.image,quality),language:imageLanguage,quality,source:'TCGdex',isFallback:imageLanguage!==requestedLanguage,verified:true})
+  const url=buildCardAssetCandidates(card.image,quality).find(candidate=>!rejectedUrls?.has(candidate))
+  if(url){
+   const image=frontImage({url,language:imageLanguage,quality,source:'TCGdex',isFallback:imageLanguage!==requestedLanguage,verified:true})
+   if(image.language===requestedLanguage)return image
+   fallback??=image
+  }
  }
- const fallback=card.fallbackImage?.[quality]
- return frontImage({url:fallback,language:'en',quality,source:fallback?'Pokémon TCG API':'none',isFallback:Boolean(fallback),verified:Boolean(fallback)})
+ const fallbackUrl=card.fallbackImage?.[quality]
+ if(fallbackUrl&&!rejectedUrls?.has(fallbackUrl)){
+  const image=frontImage({url:fallbackUrl,language:'en',quality,source:'Pokémon TCG API',isFallback:true,verified:true})
+  if(image.url)return fallback??image
+ }
+ return fallback??{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false}
 }
 const megaEvolutionEnergyScans:Readonly<Record<number,string>>={
  1:'https://www.pokepedia.fr/images/c/cf/Carte_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base_001.png',

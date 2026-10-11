@@ -6,7 +6,7 @@ import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
-export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);const asianFallback=language==='ja'?'zh-tw':language==='zh-tw'?'ja':undefined;return language==='ja'||language==='zh-tw'?[language,...(asianFallback?[asianFallback]:[]),'en']:[language,...(language==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)}
+export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);return language==='fr'?['fr','en']:language==='en'?['en','fr']:language==='ja'?['ja','en']:['zh-tw','en']}
 const japaneseBaseExpansionNames=([
  'Bulbasaur',
  'Caterpie',
@@ -154,41 +154,10 @@ function subsetImage(card:SetCard,language:string,requestedLanguage:string,quali
  if(!mapping||mapping.languages&&!mapping.languages.includes(language)||!card.localId)return undefined
  const localId=encodeURIComponent(card.localId)
  const base='https://assets.tcgdex.net/'+language+'/'+mapping.serie+'/'+mapping.set+'/'+localId+'/'
- const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
+ const formats=quality==='high'?['high.webp','high.png','low.webp','low.png']:['low.webp','low.png','high.webp','high.png']
  const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejected))
  return url?{url,language,quality,source:'TCGdex',isFallback:language!==requestedLanguage,verified:true}:undefined
 }
-type ArtworkCandidate={id:string;name:string;image?:string}
-export const asianAssetSeries=(setId:string)=>{
- const id=setId.toLowerCase()
- // Asian set IDs use both short codes (s4a) and full English-era prefixes (swsh4a).
- if((id.startsWith('m')&&id.length>1&&id[1]>='0'&&id[1]<='9')||id.startsWith('me'))return 'me'
- if(id.startsWith('sv'))return 'sv'
- if(id.startsWith('swsh')||(id.startsWith('s')&&id.length>1&&id[1]>='0'&&id[1]<='9'))return 'swsh'
- if(id.startsWith('pmcg'))return 'pmcg'
- if(id.startsWith('sm'))return 'sm'
- if(id.startsWith('xy'))return 'xy'
- if(id.startsWith('bw'))return 'bw'
- if(/^(base|jungle|fossil|rocket|gym)/.test(id))return 'base'
- if(id.startsWith('neo'))return 'neo'
- if(id.startsWith('ecard'))return 'ecard'
- if(id.startsWith('ex'))return 'ex'
- if(id.startsWith('dp')||id.startsWith('pl'))return 'dp'
- if(id.startsWith('hgss'))return 'hgss'
- return undefined
-}
-export function nativeAsianSetImage(card:SetCard,language:string,quality:'low'|'high',rejected:Set<string>=new Set()):ResolvedCardImage|undefined{
- if((language!=='ja'&&language!=='zh-tw')||!card.localId)return undefined
- const setId=setIdFromCardId(card.id),serie=asianAssetSeries(setId)
- if(!serie)return undefined
- const localId=encodeURIComponent(card.localId)
- const root=`https://assets.tcgdex.net/${language}/${serie}/${setId.toLowerCase()}/${localId}/`
- const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
- const url=formats.map(file=>root+file).find(candidate=>!isRejected(candidate,rejected))
- return url?{url,language,quality,source:'TCGdex',isFallback:false,verified:true}:undefined
-}
-const mcdArtworkCache=new Map<string,Promise<ArtworkCandidate[]>>()
-const normalizeArtworkName=(name:string)=>name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
 const mcdEra=(setId:string)=>{
  const match=setId.match(/^(20\d{2})(bw|xy|sm|swsh|sv)(?:-fr)?$/i)
  if(!match)return undefined
@@ -200,62 +169,45 @@ const mcdEra=(setId:string)=>{
  if(year>=2023&&year<=2024)return 'sv'
  return undefined
 }
-export function selectRelatedArtwork(candidates:ArtworkCandidate[],mcdSetId:string,rejectedUrls:Set<string>=new Set()){
- const era=mcdEra(mcdSetId)
- const sameEra=candidates.filter(candidate=>candidate.image&&setIdFromCardId(candidate.id).toLowerCase()!==mcdSetId&&(!era||setIdFromCardId(candidate.id).toLowerCase().startsWith(era)))
- const otherEra=candidates.filter(candidate=>candidate.image&&setIdFromCardId(candidate.id).toLowerCase()!==mcdSetId&&!sameEra.includes(candidate))
- return [...sameEra,...otherEra].find(candidate=>candidate.image&&![candidate.image,`${candidate.image}/low.webp`,`${candidate.image}/high.webp`,`${candidate.image}/low.png`,`${candidate.image}/high.png`].some(url=>isRejected(url,rejectedUrls)))
-}
-async function searchRelatedArtwork(name:string){
- const key=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('en')
- let pending=mcdArtworkCache.get(key)
- if(!pending){
-  pending=fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`,{signal:AbortSignal.timeout(8000)})
-   .then(response=>response.ok?response.json() as Promise<ArtworkCandidate[]>:[])
-   .then(cards=>Array.isArray(cards)?cards.filter(card=>card&&typeof card.id==='string'&&typeof card.name==='string'&&typeof card.image==='string'&&normalizeArtworkName(card.name)===key):[])
-   .catch(()=>[])
-  mcdArtworkCache.set(key,pending)
- }
- return pending
-}
-export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set(),relatedSearch=searchRelatedArtwork){
+export async function resolveCatalogueImage(card:SetCard,requestedLanguage:string,quality:'low'|'high'='low',getCard=tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls:Set<string>=new Set()){
  requestedLanguage=normalizeImageLanguage(requestedLanguage)
- const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality})
- if(direct.url&&!isRejected(direct.url,rejectedUrls)&&!isPokemonCardBackUrl(direct.url)&&(direct.source==='local-override'||card.image))return direct
+ const allowedFallbacks=imageFallbackOrder(requestedLanguage)
+ let fallbackImage:ResolvedCardImage|undefined
+ let englishApiFallback:ResolvedCardImage|undefined
+ let englishCandidate:ExternalCard|undefined
+ const keepFallback=(image:ResolvedCardImage)=>{
+  if(image.url&&!isRejected(image.url,rejectedUrls)&&allowedFallbacks.includes(image.language))fallbackImage??={...image,isFallback:true}
+ }
+ const direct=resolveCardImage({card:{...card,language:requestedLanguage},requestedLanguage,quality,rejectedUrls})
+ if(direct.url&&!isRejected(direct.url,rejectedUrls)){
+  if(direct.language===requestedLanguage)return direct
+  keepFallback(direct)
+ }
  const japaneseScan=japaneseBaseExpansionScan(card,requestedLanguage,quality)
  if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
  const chineseScan=traditionalChineseSc2dScan(card,requestedLanguage,quality)
  if(chineseScan?.url&&!isRejected(chineseScan.url,rejectedUrls))return chineseScan
- // Asian card assets can be resolved from their known set path without a card-detail
- // request per card. This keeps whole Japanese/Chinese set grids from queueing hundreds
- // of identical metadata lookups before the first scans appear.
- if(requestedLanguage==='ja'||requestedLanguage==='zh-tw'){
-  const native=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
-  if(native)return native
- }
- let englishCandidate:ExternalCard|undefined
- let englishApiFallback:ResolvedCardImage|undefined
- for(const language of imageFallbackOrder(requestedLanguage)){
+ for(const language of allowedFallbacks){
   try{
    const candidate=await getCard(card.id,language)
    if(candidate.id.toLowerCase()!==card.id.toLowerCase())continue
    const isMcDonalds=Boolean(mcdEra(setIdFromCardId(card.id).toLowerCase()))
    if(language==='en')englishCandidate=candidate
-   const image=resolveCardImage({card:candidate,requestedLanguage,quality})
-   if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return {...image,isFallback:image.isFallback||language!==requestedLanguage}
-   if(image.url&&isRejected(image.url,rejectedUrls)){
-    const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
-    const isMepPromo=/^mep-\d+$/i.test(card.id)
-    if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))englishApiFallback??=alternate
+   const image=resolveCardImage({card:candidate,requestedLanguage,quality,rejectedUrls})
+   if(image.url&&!isRejected(image.url,rejectedUrls)){
+    if(image.language===requestedLanguage)return {...image,isFallback:false}
+    keepFallback(image)
+    if(image.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw')&&!/^mep-\d+$/i.test(card.id)&&!isMcDonalds)englishApiFallback??={...image,isFallback:true}
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
-   if(subset)return subset
-   if(language===requestedLanguage||((requestedLanguage==='ja'||requestedLanguage==='zh-tw')&&(language==='ja'||language==='zh-tw'))){const native=nativeAsianSetImage(card,language,quality,rejectedUrls);if(native)return {...native,isFallback:language!==requestedLanguage}}
-   // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
-   // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
-   const isMepPromo=/^mep-\d+$/i.test(card.id)
-   if(image.url&&!isRejected(image.url,rejectedUrls)){if(image.source==='Pokémon TCG API'){if(!(requestedLanguage==='ja'||requestedLanguage==='zh-tw'||isMepPromo||isMcDonalds))englishApiFallback??=image}else return image}
-  }catch{/* Continue through the other exact-language image sources. */}
+   if(subset){
+    if(subset.language===requestedLanguage)return subset
+    keepFallback(subset)
+   }
+   // Pokémon TCG API only has English scans and can misidentify special Asian sets.
+   const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality,rejectedUrls})
+   if(alternate.url&&!isRejected(alternate.url,rejectedUrls)&&alternate.source==='Pokémon TCG API'&&!(requestedLanguage==='ja'||requestedLanguage==='zh-tw')&&!/^mep-\d+$/i.test(card.id)&&!isMcDonalds)englishApiFallback??={...alternate,isFallback:true}
+  }catch{/* Continue through exact IDs in the allowed fallback order. */}
  }
  if(englishCandidate){
   const promoImage=buildMepPromoImage(englishCandidate)
@@ -265,18 +217,12 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  const mepMatch=card.id.match(/^mep-(\d+)$/i)
  if(mepMatch){
   const localId=String(Number(mepMatch[1])).padStart(3,'0')
-  const base='https://assets.tcgdex.net/en/me/mep/'+localId+'/'
-  const formats=quality==='high'?['high.webp','high.png']:['low.webp','low.png']
-  const url=formats.map(file=>base+file).find(candidate=>!isRejected(candidate,rejectedUrls))
+  const base='https://assets.tcgdex.net/en/me/mep/'+localId
+  const formats=quality==='high'?['high.webp','high.png','low.webp','low.png']:['low.webp','low.png','high.webp','high.png']
+  const url=formats.map(file=>base+'/'+file).find(candidate=>!isRejected(candidate,rejectedUrls))
   if(url)return{url,language:'en',quality,source:'TCGdex',isFallback:requestedLanguage!=='en',verified:true} satisfies ResolvedCardImage
  }
- if(englishCandidate){
-  const related=selectRelatedArtwork(await relatedSearch(englishCandidate.name),setIdFromCardId(card.id).toLowerCase(),rejectedUrls)
-  if(related?.image){
-   const url=quality==='high'?related.image+'/high.webp':related.image+'/low.webp'
-   if(!isRejected(url,rejectedUrls))return{url,language:'en',quality,source:'TCGdex',isFallback:true,verified:true} satisfies ResolvedCardImage
-  }
- }
+ if(fallbackImage)return fallbackImage
  if(englishApiFallback)return englishApiFallback
  return{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage
 }

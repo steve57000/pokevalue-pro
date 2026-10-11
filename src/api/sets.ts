@@ -84,16 +84,16 @@ const addMissingAnniversaryMepPromos=(set:SetDetail,language:string):SetDetail=>
 }
 const englishSeriesAliases = new Map([['s','swsh'],['m','me'],['pmcg','base'],['pcg','ex'],['adv','ex']])
 const englishArtworkId = (id: string) => englishSeriesAliases.get(id.toLocaleLowerCase('en')) ?? id.toLocaleLowerCase('en')
-const englishArtworkIds=(id:string)=>{const normalized=id.toLocaleLowerCase('en'),candidates=[englishArtworkId(id)];if(/^s\d/.test(normalized))candidates.push(`swsh${normalized.slice(1)}`);if(/^m\d/.test(normalized))candidates.push(`me${normalized.slice(1)}`);if(normalized.startsWith('pmcg')&&normalized.length>4)candidates.push(`base${normalized.slice(4)}`);if((normalized.startsWith('pcg')||normalized.startsWith('adv'))&&normalized.length>3)candidates.push(`ex${normalized.slice(3)}`);return [...new Set(candidates)]}
+const exactArtworkIds=(id:string)=>[id.toLocaleLowerCase('en')]
+const englishSeriesArtworkIds=(id:string)=>[englishArtworkId(id)]
 const asianLanguages = new Set(['ja','zh-tw'])
-const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string, englishRequest?: Promise<T[]>): Promise<T[]> => {
+const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string, englishRequest?: Promise<T[]>, artworkIds:(id:string)=>string[]=exactArtworkIds): Promise<T[]> => {
   if (!asianLanguages.has(language)) return items
   try {
     const english = await (englishRequest ?? fetchSet<T[]>(endpoint()))
-    const byId = new Map(english.flatMap(item => englishArtworkIds(item.id).map(id => [id,item] as const)))
+    const byId = new Map(english.flatMap(item => artworkIds(item.id).map(id => [id,item] as const)))
     return items.map(item => {
-      // Asian catalogs can prefix international set IDs (S → SWSH, M → ME).
-      const fallback = englishArtworkIds(item.id).map(id => byId.get(id)).find(Boolean)
+      const fallback = artworkIds(item.id).map(id => byId.get(id)).find(Boolean)
       return { ...item, logo: item.logo ?? fallback?.logo, symbol: item.symbol ?? fallback?.symbol }
     })
   } catch {
@@ -116,7 +116,7 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
   if (englishRequest) {
     const english = await englishRequest
-    if (english) {
+    if (english && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en'))) {
       set.logo ??= english.logo
       set.symbol ??= english.symbol
     }
@@ -137,12 +137,12 @@ export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]
     const families = new Map<string, SeriesSummary>()
     for (const set of sets) {
       const id = set.serie?.id
-      if (id && !families.has(id)) families.set(id, { id, name: set.serie?.name ?? id, logo: set.logo, symbol: set.symbol })
+      if (id && !families.has(id)) families.set(id, { id, name: set.serie?.name ?? id })
     }
     if (!families.size) throw new Error(`Les séries du catalogue ${language.toUpperCase()} sont temporairement indisponibles.`)
     series = [...families.values()]
   }
-  return withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest)
+  return withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest, englishSeriesArtworkIds)
 }
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
   const englishRequest = asianLanguages.has(language)
@@ -153,14 +153,12 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
     const sets = filterLocalizedSets(series.sets ?? [], language)
     if (!englishRequest) return { ...series, sets }
     const english = await englishRequest
-    if (!english) return { ...series, sets }
+    if (!english || english.id.toLocaleLowerCase('en') !== englishArtworkId(id)) return { ...series, sets }
     series.logo ??= english.logo
     series.symbol ??= english.symbol
-    const englishSets = new Map((english.sets ?? []).flatMap(set => englishArtworkIds(set.id).map(id => [id,set] as const)))
-    const familyLogo = english.logo ?? english.sets?.find(set => set.logo)?.logo
-    series.logo ??= familyLogo
+    const englishSets = new Map((english.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(id => [id,set] as const)))
     return { ...series, sets: sets.map(set => {
-      const fallback = englishArtworkIds(set.id).map(id => englishSets.get(id)).find(Boolean)
+      const fallback = exactArtworkIds(set.id).map(id => englishSets.get(id)).find(Boolean)
       return { ...set, logo: set.logo ?? fallback?.logo, symbol: set.symbol ?? fallback?.symbol }
     }) }
   } catch {
