@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronDown, Minus, Plus, SlidersHorizontal } from 'lucide-react'
 import { listSets,getSet,listSeries,getSeries,chooseAvailableSetId,type CatalogLanguage,type SeriesSummary,type SetDetail,type SetSummary,type SetCard } from '../api/sets'
 import { CatalogueImage } from './CatalogueImage'
@@ -61,7 +61,7 @@ export const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:
 function LoadingFeedback({children,className=''}:{children:string;className?:string}){
  return <span className={`loading-feedback ${className}`.trim()} role="status" aria-live="polite"><span className="pv-spinner" aria-hidden="true"/><span>{children}</span></span>
 }
-type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void;isFavorite?:(card:Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>)=>boolean;onFavorite?:(card:FavoriteInput)=>void}
+type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void;isFavorite?:(card:Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>)=>boolean;onFavorite?:(card:FavoriteInput)=>void;headerExtra?:ReactNode}
 type CollectionQuantityStepperProps={entry?:CollectionEntry;cardName:string;flash:boolean;onDecrement:()=>void;onIncrement:()=>void}
 export function CollectionQuantityStepper({entry,cardName,flash,onDecrement,onIncrement}:CollectionQuantityStepperProps){
  if(!entry)return null
@@ -82,7 +82,7 @@ function SetBadge({sources,name,imageClass,fallbackClass}:SetBadgeProps){
  const retry=()=>{setLoaded(false);if(index+1<sources.length){setIndex(index+1);return}if(!retryCycle&&sources.length){setRetryCycle(1);setIndex(0);return}setFailed(true)}
  return src&&!failed?<span className="set-badge-wrap"><img className={imageClass} src={src} alt={'Logo '+name} loading="lazy" decoding="async" onLoad={()=>setLoaded(true)} onError={retry}/>{!loaded&&<span className="pv-spinner set-badge-spinner" role="status" aria-label={'Chargement du logo '+name}/>}</span>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
 }
-export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Props){
+export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,headerExtra}:Props){
  const saved=useRef(read(VIEW_KEY,initial)).current
  const gridRef=useRef<HTMLDivElement>(null),overviewRef=useRef<HTMLElement>(null),resultsRef=useRef<HTMLParagraphElement>(null)
  const [preferredColumns,setPreferredColumns]=useState(()=>{const value=Number(readStoredString(COLUMNS_KEY));return value>=1&&value<=5?value:5}),[maxColumns,setMaxColumns]=useState(5),[minColumns,setMinColumns]=useState(1)
@@ -135,7 +135,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite}:Pr
  const visibleColumns=Math.max(minColumns,Math.min(preferredColumns,maxColumns))
  const gridColumns=displayMode==='list'?1:displayMode==='grid'?maxColumns:visibleColumns
  const collectionGridMax=`${gridColumns*260+Math.max(0,gridColumns-1)*16}px`
- return <section className="portfolio-page"><div className="portfolio-heading"><div><span className="eyebrow">Catalogue et classeur numérique</span><h1>Collection</h1><p>Moins de clics, sans perdre ta position.</p></div><div className="language-tabs" aria-label="Langue">{languages.map(([id,label])=><button className={language===id?'active':''} onClick={()=>setLanguage(id)} key={id}>{label}</button>)}</div></div>
+ return <section className="portfolio-page"><div className="portfolio-heading"><div><span className="eyebrow">Catalogue et classeur numérique</span><h1>Collection</h1><p>Moins de clics, sans perdre ta position.</p></div><div className="language-tabs" aria-label="Langue">{languages.map(([id,label])=><button className={language===id?'active':''} onClick={()=>setLanguage(id)} key={id}>{label}</button>)}</div></div>{headerExtra}
  <div className="language-counts">{languages.map(([id,label])=><span key={id}>Collection {label} <b>{ownedEntries.filter(e=>e.language===id).length}</b></span>)}</div>{(seriesLoading||setsLoading||catalogueLoading)&&<LoadingFeedback className="catalogue-loading-note">{seriesLoading||setsLoading?`Chargement du catalogue ${language.toUpperCase()}…`:'Chargement de l’extension sélectionnée…'}</LoadingFeedback>}<div className="collection-summary"><div><small>Ma collection · {language.toUpperCase()}</small><strong>{ownedEntries.filter(e=>e.language===language).length} cartes différentes</strong><span>{ownedEntries.filter(e=>e.language===language).reduce((s,e)=>s+e.quantity,0)} exemplaires</span></div><div><small>Valeur estimée · EUR</small><strong>{globalSummary.missing?'≈ ':''}{money(globalSummary.value)}</strong><span>{globalSummary.valued} valorisées · {globalSummary.missing} sans prix</span></div><div><small>Extension actuelle</small><strong>{displaySetName(detail?.name)??'Chargement…'}</strong><span>{money(setSummary.value)} · {setEntries.length}/{detail?.cardCount.total??'…'} possédées</span></div></div>
  <CollectionExport entries={ownedEntries}/>
  <div className="series-selector"><div className="series-selector-heading"><div className="series-selector-copy"><span className="eyebrow">Explorer les extensions</span><h2>{displaySetName(detail?.name)??'Choisir une série'}</h2><p>{detail?.serie?.name??`Catalogue ${language.toUpperCase()}`}</p></div></div><button className="series-picker-trigger" aria-expanded={setPickerOpen} aria-controls="series-picker-list" onClick={()=>setSetPickerOpen(x=>!x)}>Changer de série <ChevronDown size={18}/></button>

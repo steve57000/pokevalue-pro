@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck, History,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
-  Library, ArrowUpRight, AlertTriangle, CheckCircle2, Cloud, Menu
+  Library, ArrowUpRight, AlertTriangle, CheckCircle2, Cloud, Menu, Bell
 } from 'lucide-react'
 import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
@@ -29,13 +29,17 @@ import { useFavorites } from './hooks/useFavorites'
 import { FavoriteButton } from './components/FavoriteButton'
 import { CardShowcase } from './components/CardShowcase'
 import { PriceHistoryPage } from './components/PriceHistoryPage'
+import { PriceAlertsPage } from './components/PriceAlertsPage'
+import { SharedChallengePage, WeeklyCollectionChallenge } from './components/WeeklyCollectionChallenge'
 import type { FavoriteCard, FavoriteInput } from './domain/favorites'
+import './feature-additions.css'
 
-type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'grading' | 'estimator' | 'guide' | 'sync'
+type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'alerts' | 'share' | 'grading' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
-const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'grading', 'estimator', 'guide', 'sync']
+const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'alerts', 'grading', 'estimator', 'guide', 'sync']
 const routeView = (): View => {
+  if (window.location.hash.startsWith('#share=')) return 'share'
   const candidate = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) as View : window.location.hash.slice(1) as View
   if (candidate === 'scanner') return 'featured' // legacy links open the market-search tab
   return validViews.includes(candidate) ? candidate : 'collection'
@@ -58,7 +62,7 @@ function readRecentScans(): ScannerCandidate[] {
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => readStoredString('pv-theme') === 'light' ? 'light' : 'dark')
   const [view, setView] = useState<View>(routeView)
-  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,grading:0,estimator:0,guide:0,sync:0})
+  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,alerts:0,share:0,grading:0,estimator:0,guide:0,sync:0})
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -92,7 +96,7 @@ function App() {
   useEffect(() => {
     const titles: Record<View, string> = {
       collection: 'Collection', featured: trendTab==='market'?'Tendances · Recherche marché':'Tendances', scanner: 'Tendances',
-      favorites: 'Favoris', history: 'Statistiques & prix', grading: 'Gradation',
+      favorites: 'Favoris', history: 'Statistiques & prix', alerts: 'Alertes de prix', share: 'Défi partagé', grading: 'Gradation',
       estimator: 'Estimer un lot', guide: 'Guide achat', sync: 'Sauvegarde',
     }
     document.title = `${titles[view]} · PokéValue Pro`
@@ -171,6 +175,7 @@ function App() {
     {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Ma espace'},
     {id:'featured', label:'Tendances', icon:TrendingUp,group:'Marché'},
     {id:'history', label:'Stats', icon:History,group:'Marché'},
+    {id:'alerts', label:'Alertes prix', icon:Bell,group:'Marché'},
     {id:'estimator', label:'Estimer un lot', icon:Calculator,group:'Outils'},
     {id:'guide', label:'Guide achat', icon:BookOpen,group:'Outils'},
     {id:'sync', label:'Sauvegarde', icon:Cloud,group:'Données'},
@@ -212,7 +217,7 @@ function App() {
 
         {storageWarning&&<div className="storage-warning" role="alert"><span>La sauvegarde locale a échoué. Exporte ta collection pour en garder une copie.</span><button onClick={()=>{setStorageWarning(false);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(false)}><X size={18}/></button></div>}
         <div className="content">
-          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>}
+          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<WeeklyCollectionChallenge entries={portfolio.entries}/>}/>}
           {view==='featured' && <>
             <section className="hero">
               <div>
@@ -259,6 +264,8 @@ function App() {
 
           {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
           {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
+          {view==='alerts'&&<PriceAlertsPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
+          {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)}/>}
           {view==='grading'&&<GradingPage entries={portfolio.entries} onPriceHistory={()=>navigate('history')}/> }
 
 
@@ -273,7 +280,7 @@ function App() {
         <button className={['sync','estimator','guide','grading'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['alerts','sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
