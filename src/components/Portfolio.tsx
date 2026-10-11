@@ -58,6 +58,9 @@ export const setLogoSources=(setId:string,seriesId?:string,logo?:string,symbol?:
   ...formats(symbol),...formats(normalizeAssetIds(symbol)),...formats(english(symbol)),...formats(normalizeAssetIds(english(symbol)))
  ])].filter((url):url is string=>!!url)
 }
+function LoadingFeedback({children,className=''}:{children:string;className?:string}){
+ return <span className={`loading-feedback ${className}`.trim()} role="status" aria-live="polite"><span className="pv-spinner" aria-hidden="true"/><span>{children}</span></span>
+}
 type Props={document:CollectionDocument;onChange:(document:CollectionDocument)=>void;isFavorite?:(card:Pick<FavoriteCard,'source'|'cardId'|'language'|'setId'>)=>boolean;onFavorite?:(card:FavoriteInput)=>void}
 type CollectionQuantityStepperProps={entry?:CollectionEntry;cardName:string;flash:boolean;onDecrement:()=>void;onIncrement:()=>void}
 export function CollectionQuantityStepper({entry,cardName,flash,onDecrement,onIncrement}:CollectionQuantityStepperProps){
