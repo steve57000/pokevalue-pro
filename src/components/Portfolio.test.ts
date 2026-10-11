@@ -17,4 +17,9 @@ describe('series logos',()=>{
   expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.png')
   expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
  })
+ it.each([['S1H','S','無極力量','zh-tw','swsh','s1h'],['M6a','ME','30th CELEBRATION','ja','me','m6a']] as const)('normalizes the localized %s series code for logo assets', (setId,seriesId,name,language,folder,assetSet)=>{
+  const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language)
+  expect(urls).toContain(`https://assets.tcgdex.net/${language}/${folder}/${assetSet}/logo.png`)
+ })
+
 })

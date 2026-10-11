@@ -6,7 +6,7 @@ import type {ExternalCard} from '../domain/cards'
 type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
-export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);return language==='ja'||language==='zh-tw'?[language,'en']:[language,...(language==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)}
+export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);const asianFallback=language==='ja'?'zh-tw':language==='zh-tw'?'ja':undefined;return language==='ja'||language==='zh-tw'?[language,...(asianFallback?[asianFallback]:[]),'en']:[language,...(language==='fr'?['en','ja','zh-tw']:['fr','ja','zh-tw'])].filter((x,i,a)=>a.indexOf(x)===i)}
 const japaneseBaseExpansionNames=([
  'Bulbasaur',
  'Caterpie',
@@ -238,11 +238,11 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  for(const language of imageFallbackOrder(requestedLanguage)){
   try{
    const candidate=await getCard(card.id,language)
-   if(candidate.id!==card.id)continue
+   if(candidate.id.toLowerCase()!==card.id.toLowerCase())continue
    const isMcDonalds=Boolean(mcdEra(setIdFromCardId(card.id).toLowerCase()))
    if(language==='en')englishCandidate=candidate
    const image=resolveCardImage({card:candidate,requestedLanguage,quality})
-   if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return image
+   if(image.url&&!isRejected(image.url,rejectedUrls)&&image.source==='TCGdex')return {...image,isFallback:image.isFallback||language!==requestedLanguage}
    if(image.url&&isRejected(image.url,rejectedUrls)){
     const alternate=resolveCardImage({card:{...candidate,image:undefined},requestedLanguage,quality})
     const isMepPromo=/^mep-\d+$/i.test(card.id)
@@ -250,7 +250,7 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
    }
    const subset=subsetImage(card,language,requestedLanguage,quality,rejectedUrls)
    if(subset)return subset
-   if(language===requestedLanguage){const native=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls);if(native)return native}
+   if(language===requestedLanguage||((requestedLanguage==='ja'||requestedLanguage==='zh-tw')&&(language==='ja'||language==='zh-tw'))){const native=nativeAsianSetImage(card,language,quality,rejectedUrls);if(native)return {...native,isFallback:language!==requestedLanguage}}
    // The Pokémon TCG API only has English scans. Its set-id guesses can resolve
    // to a generic card back for Japanese printings, so never use that source for Asian catalogues.
    const isMepPromo=/^mep-\d+$/i.test(card.id)
@@ -318,6 +318,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
+ useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},7000);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
  return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()

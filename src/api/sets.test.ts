@@ -104,7 +104,7 @@ describe('localized set catalogue', () => {
     expect(series.logo).toBe(logo)
     expect(series.sets[0].logo).toBe(logo)
   })
-  it('reuses a series logo for Asian sets whose IDs differ from English IDs', async () => {
+  it('keeps a family logo at family level instead of reusing it for unrelated localized set logos', async () => {
     const logo = 'https://assets.tcgdex.net/en/swsh/swsh1/logo.png'
     const fetchMock = vi.fn(async (url: string) => ({
       ok: true,
@@ -118,8 +118,9 @@ describe('localized set catalogue', () => {
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/en/series/swsh')
     expect(series.logo).toBe(logo)
-    expect(series.sets[0].logo).toBe(logo)
+    expect(series.sets[0].logo).toBeUndefined()
   })
+
   it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
     const summaries = [{id:'CS2a',name:'entrée fantôme'}, {id:'SV8a',name:'extension valide'}]
     expect(filterLocalizedSets(summaries, 'ja').map(set => set.id)).toEqual(['SV8a'])
