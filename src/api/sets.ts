@@ -82,19 +82,44 @@ const addMissingAnniversaryMepPromos=(set:SetDetail,language:string):SetDetail=>
  const cards:SetCard[]=missing.map(promo=>({id:`${set.id}-${promo.localId}`,name:promo.names[language as keyof typeof promo.names]??promo.names.en,localId:promo.localId,rarity:'Promo'}))
  return {...set,cardCount:{...set.cardCount,total:set.cardCount.total+cards.length},cards:[...set.cards,...cards]}
 }
-export const listSets = async (language: string='fr') => filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
+const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string): Promise<T[]> => {
+  if (language !== 'zh-tw') return items
+  try {
+    const english = await fetchSet<T[]>(endpoint())
+    const byId = new Map(english.map(item => [item.id, item]))
+    return items.map(item => {
+      const fallback = byId.get(item.id)
+      return { ...item, logo: item.logo ?? fallback?.logo, symbol: item.symbol ?? fallback?.symbol }
+    })
+  } catch {
+    return items
+  }
+}
+export const listSets = async (language: string='fr') => {
+  const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
+  return withEnglishArtwork(sets, language, () => base('en'))
+}
 export const getSet = async (id: string, language: string='fr'): Promise<SetDetail> => {
   if ((language === 'ja' || language === 'zh-tw') && asianCatalogueGhostIds.has(id)) {
     throw new Error(`L’extension ${id} est une entrée vide du catalogue ${language.toUpperCase()}.`)
   }
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
+  if (language === 'zh-tw') {
+    try {
+      const english = await fetchSet<SetDetail>(`${base('en')}/${encodeURIComponent(id)}`)
+      set.logo ??= english.logo
+      set.symbol ??= english.symbol
+    } catch { /* Keep the localized catalogue usable if English artwork is unavailable. */ }
+  }
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
+const seriesEndpoint = (id?: string) => `https://api.tcgdex.net/v2/en/series${id ? `/${encodeURIComponent(id)}` : ''}`
 export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]> => {
+  let series: SeriesSummary[]
   try {
-    return await fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
+    series = await fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/${language}/series`)
   } catch {
     // Rebuild the series index from set summaries if a localized series endpoint fails.
     const sets = await listSets(language)
@@ -104,14 +129,27 @@ export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]
       if (id && !families.has(id)) families.set(id, { id, name: set.serie?.name ?? id, logo: set.logo, symbol: set.symbol })
     }
     if (!families.size) throw new Error(`Les séries du catalogue ${language.toUpperCase()} sont temporairement indisponibles.`)
-    return [...families.values()]
+    series = [...families.values()]
   }
+  return withEnglishArtwork(series, language, () => seriesEndpoint())
 }
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
   try {
     const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
-    return { ...series, sets: filterLocalizedSets(series.sets ?? [], language) }
-  } catch (error) {
+    const sets = filterLocalizedSets(series.sets ?? [], language)
+    if (language !== 'zh-tw') return { ...series, sets }
+    try {
+      const english = await fetchSet<SeriesDetail>(seriesEndpoint(id))
+      series.logo ??= english.logo
+      series.symbol ??= english.symbol
+      const englishSets = new Map((english.sets ?? []).map(set => [set.id, set]))
+      return { ...series, sets: await Promise.all(sets.map(async set => {
+        const fallback = englishSets.get(set.id)
+        if (!fallback) return set
+        return { ...set, logo: set.logo ?? fallback.logo, symbol: set.symbol ?? fallback.symbol }
+      })) }
+    } catch { return { ...series, sets } }
+  } catch {
     // Rebuild localized family details from set summaries on any endpoint failure.
     const sets = await listSets(language)
     return { id, name: id, sets: sets.filter(set => set.serie?.id === id) }
