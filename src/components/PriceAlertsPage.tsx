@@ -87,7 +87,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
       setMessage('Cette alerte existe déjà.')
       return
     }
-    setAlerts((currentAlerts) => [...currentAlerts, createPriceAlert({ ...selected, direction, targetPrice: price })])
+    setAlerts((currentAlerts) => [...currentAlerts, createPriceAlert({ cardId: selected.id, language: selected.language, name: selected.name, setName: selected.setName, number: selected.number, direction, targetPrice: price })])
     setTargetPrice('')
     setMessage(`Alerte créée pour ${selected.name}.`)
   }
