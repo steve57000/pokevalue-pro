@@ -15,8 +15,25 @@ describe('localized set catalogue', () => {
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       'https://api.tcgdex.net/v2/ja/sets',
       'https://api.tcgdex.net/v2/zh-tw/sets/sv01',
+      'https://api.tcgdex.net/v2/en/sets/sv01',
       'https://api.tcgdex.net/v2/ja/series/sv',
     ])
+  })
+
+  it('uses matching English artwork when the Traditional Chinese set has no logo', async () => {
+    const localized = [{ id: 'SV8a', name: '異度審判', cardCount: { total: 1, official: 1 }, serie: { id: 'SV' } }]
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/zh-tw/')
+        ? localized
+        : [{ ...localized[0], logo: 'https://assets.tcgdex.net/en/sv/SV8a/logo.png' }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sets = await listSets('zh-tw')
+
+    expect(sets[0].name).toBe('異度審判')
+    expect(sets[0].logo).toBe('https://assets.tcgdex.net/en/sv/SV8a/logo.png')
   })
 
   it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
