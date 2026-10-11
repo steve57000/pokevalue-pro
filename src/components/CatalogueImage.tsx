@@ -226,6 +226,13 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
  if(japaneseScan?.url&&!isRejected(japaneseScan.url,rejectedUrls))return japaneseScan
  const chineseScan=traditionalChineseSc2dScan(card,requestedLanguage,quality)
  if(chineseScan?.url&&!isRejected(chineseScan.url,rejectedUrls))return chineseScan
+ // Asian card assets can be resolved from their known set path without a card-detail
+ // request per card. This keeps whole Japanese/Chinese set grids from queueing hundreds
+ // of identical metadata lookups before the first scans appear.
+ if(requestedLanguage==='ja'||requestedLanguage==='zh-tw'){
+  const native=nativeAsianSetImage(card,requestedLanguage,quality,rejectedUrls)
+  if(native)return native
+ }
  let englishCandidate:ExternalCard|undefined
  let englishApiFallback:ResolvedCardImage|undefined
  for(const language of imageFallbackOrder(requestedLanguage)){
@@ -291,9 +298,9 @@ function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejecte
 }
 const retryUrl=(url:string,attempt:number)=>attempt?url+(url.includes('?')?'&':'?')+'pvRetry='+attempt:url
 export function CatalogueImage({card,quality='low',className='',requestedLanguage='fr'}:Props){
- const [image,setImage]=useState<ResolvedCardImage>(),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high'),[rejectedUrls,setRejectedUrls]=useState<string[]>([]),[retryAttempt,setRetryAttempt]=useState(0),[retryNonce,setRetryNonce]=useState(0)
+ const [image,setImage]=useState<ResolvedCardImage>(),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high'),[assetLoaded,setAssetLoaded]=useState(false),[rejectedUrls,setRejectedUrls]=useState<string[]>([]),[retryAttempt,setRetryAttempt]=useState(0),[retryNonce,setRetryNonce]=useState(0)
  useEffect(()=>{if(quality==='high'||typeof IntersectionObserver==='undefined'){setVisible(true);return}const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality])
- useEffect(()=>{let active=true;setImage(undefined);if(!visible)return
+ useEffect(()=>{let active=true;setImage(undefined);setAssetLoaded(false);if(!visible)return
   const rejected=new Set(rejectedUrls)
   cachedResolve(card,requestedLanguage,quality,rejected).then(value=>{if(active){setRetryAttempt(0);setImage(value)}})
   return()=>{active=false}
@@ -302,15 +309,15 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},20_000)
   return()=>window.clearTimeout(timer)
  },[image,card.id])
- const mark=card.name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??card.name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
  const show=image?.url
  const failImage=()=>{
   if(!show)return
+  setAssetLoaded(false)
   if(retryAttempt<2){window.setTimeout(()=>setRetryAttempt(current=>current+1),500*(2**retryAttempt));return}
   const failed=cleanUrl(show)
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- return <div ref={container} className={`catalogue-image ${className}`}>{show?<img src={retryUrl(show,retryAttempt)} alt={`${card.name} ${card.localId}${image.isFallback?` — visuel ${image.language.toUpperCase()}`:''}`} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onError={failImage}/>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{visible&&image?'Visuel indisponible — nouvelle tentative automatique':'Chargement du visuel…'}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
+ return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()

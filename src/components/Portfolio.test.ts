@@ -12,4 +12,9 @@ describe('collection density',()=>{
 
 describe('series logos',()=>{
  it('uses a dedicated stable logo first for MEP Black Star Promos',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
+ it('normalizes uppercase Japanese and Chinese asset paths and accepts a series logo fallback',()=>{
+  const urls=setLogoSources('SV5a','SV','https://assets.tcgdex.net/ja/SV/SV5a/logo',undefined,'緋紅薄霧','ja','https://assets.tcgdex.net/en/sv/sv01/logo')
+  expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.png')
+  expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
+ })
 })

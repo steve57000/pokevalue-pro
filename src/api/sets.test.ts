@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { chooseAvailableSetId, filterLocalizedSets, getSet, getSeries, listSets } from './sets'
+import { chooseAvailableSetId, filterLocalizedSets, getSet, getSeries, listSets, listSeries } from './sets'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -12,12 +12,15 @@ describe('localized set catalogue', () => {
     await getSet('sv01', 'zh-tw')
     await getSeries('sv', 'ja')
 
-    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+    const urls = fetchMock.mock.calls.map(([url]) => url)
+    expect(urls).toEqual(expect.arrayContaining([
       'https://api.tcgdex.net/v2/ja/sets',
+      'https://api.tcgdex.net/v2/en/sets',
       'https://api.tcgdex.net/v2/zh-tw/sets/sv01',
       'https://api.tcgdex.net/v2/en/sets/sv01',
       'https://api.tcgdex.net/v2/ja/series/sv',
-    ])
+      'https://api.tcgdex.net/v2/en/series/sv',
+    ]))
   })
 
   it('uses matching English artwork when the Traditional Chinese set has no logo', async () => {
@@ -26,16 +29,48 @@ describe('localized set catalogue', () => {
       ok: true,
       json: async () => url.includes('/zh-tw/')
         ? localized
-        : [{ ...localized[0], logo: 'https://assets.tcgdex.net/en/sv/SV8a/logo.png' }],
+        : [{ ...localized[0], id: 'sv8a', logo: 'https://assets.tcgdex.net/en/sv/sv8a/logo.png' }],
     }) as Response)
     vi.stubGlobal('fetch', fetchMock)
 
     const sets = await listSets('zh-tw')
 
     expect(sets[0].name).toBe('異度審判')
-    expect(sets[0].logo).toBe('https://assets.tcgdex.net/en/sv/SV8a/logo.png')
+    expect(sets[0].logo).toBe('https://assets.tcgdex.net/en/sv/sv8a/logo.png')
   })
 
+  it('matches Japanese series logos when TCGdex capitalizes the localized ID', async () => {
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? [{ id: 'SV', name: 'スカーレット&バイオレット' }]
+        : [{ id: 'sv', name: 'Scarlet & Violet', logo: 'https://assets.tcgdex.net/en/sv/sv01/logo.png' }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await listSeries('ja')
+
+    expect(series[0].name).toBe('スカーレット&バイオレット')
+    expect(series[0].logo).toBe('https://assets.tcgdex.net/en/sv/sv01/logo.png')
+  })
+
+
+  it.each([['ja', 'SV5a'], ['zh-tw', 'SV8a']] as const)('uses a lowercase English set logo fallback for %s set IDs', async (language, id) => {
+    const logo = `https://assets.tcgdex.net/en/sv/${id.toLowerCase()}/logo.png`
+    const localized = { id, name: 'Extension localisée', cardCount: { total: 0, official: 0 }, serie: { id: 'SV', name: 'Série' }, cards: [] }
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/en/')
+        ? { ...localized, id: id.toLowerCase(), logo }
+        : localized,
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const set = await getSet(id, language)
+
+    expect(set.logo).toBe(logo)
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain(`https://api.tcgdex.net/v2/en/sets/${id.toLowerCase()}`)
+  })
   it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
     const summaries = [{id:'CS2a',name:'entrée fantôme'}, {id:'SV8a',name:'extension valide'}]
     expect(filterLocalizedSets(summaries, 'ja').map(set => set.id)).toEqual(['SV8a'])

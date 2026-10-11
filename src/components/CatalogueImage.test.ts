@@ -56,10 +56,12 @@ describe('catalogue image providers',()=>{
    expect(apiCalls).toBe(0)
   }
  })
- it('resolves Japanese sets using the full swsh prefix',async()=>{
-  const image=await resolveCatalogueImage({id:'swsh4a-001',name:'カード',localId:'001'},'ja','low',async(id,language)=>({id,name:'カード',localId:'001',language:language??'ja'}))
+ it('resolves Japanese native scans before requesting per-card metadata',async()=>{
+  let apiCalls=0
+  const image=await resolveCatalogueImage({id:'swsh4a-001',name:'カード',localId:'001'},'ja','low',async(id,language)=>{apiCalls++;return{id,name:'カード',localId:'001',language:language??'ja'}})
   expect(image.url).toBe('https://assets.tcgdex.net/ja/swsh/swsh4a/001/low.webp')
   expect(image.language).toBe('ja')
+  expect(apiCalls).toBe(0)
  })
  it('resolves Traditional Chinese sets using the full swsh prefix',async()=>{
   const image=await resolveCatalogueImage({id:'swsh4-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw'}))
@@ -71,10 +73,12 @@ describe('catalogue image providers',()=>{
   expect(image.url).toBe('https://assets.tcgdex.net/ja/me/m3/001/low.webp')
   expect(image.language).toBe('ja')
  })
- it('uses native Traditional Chinese scans when the localized API omits its image field',async()=>{
-  const image=await resolveCatalogueImage({id:'sv8a-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>({id,name:'卡牌',localId:'001',language:language??'zh-tw'}))
+ it('resolves Traditional Chinese native scans without a per-card metadata request',async()=>{
+  let apiCalls=0
+  const image=await resolveCatalogueImage({id:'sv8a-001',name:'卡牌',localId:'001'},'zh-tw','low',async(id,language)=>{apiCalls++;return{id,name:'卡牌',localId:'001',language:language??'zh-tw'}})
   expect(image.url).toBe('https://assets.tcgdex.net/zh-tw/sv/sv8a/001/low.webp')
   expect(image.language).toBe('zh-tw')
+  expect(apiCalls).toBe(0)
  })
  it('utilise un scan anglais de secours pour une promo MEP sans image TCGdex',async()=>{const image=await resolveCatalogueImage({id:'mep-037',name:'Bulbizarre',localId:'037'},'fr','low',async(id,language)=>({id,name:language==='en'?'Bulbasaur':'Bulbizarre',localId:'037',language:language??'fr'}));expect(image.url).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-037_bulbasaur.webp');expect(image.language).toBe('en');expect(image.isFallback).toBe(true)})
  it('préfère le scan promo MEP réel à la fausse image de dos de l’API anglaise',async()=>{const image=await resolveCatalogueImage({id:'mep-003',name:'Alakazam',localId:'003'},'fr','low',async(id,language)=>({id,name:language==='en'?'Alakazam':'Alakazam',localId:'003',language:language??'fr',fallbackImage:{low:'https://images.pokemontcg.io/mep/3.png',high:'https://images.pokemontcg.io/mep/3_hires.png',source:'Pokémon TCG API'}}));expect(image.url).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-003_alakazam.webp');expect(image.source).toBe('promo-archive')})
