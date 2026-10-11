@@ -51,19 +51,19 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
   const jaPrices = useCardPrices(idsFor('ja'), 'ja')
   const zhPrices = useCardPrices(idsFor('zh-tw'), 'zh-tw')
   const pricesByLanguage: Record<SupportedLanguage, Record<string, CardPriceState>> = { fr: frPrices, en: enPrices, ja: jaPrices, 'zh-tw': zhPrices }
-  const getPrice = (card: Pick<TrackedCard, 'id' | 'language'>) => pricesByLanguage[normalizeLanguage(card.language)][card.id]
-  const current = selected ? getPrice(selected) : undefined
+  const getPrice = (id: string, language: string) => pricesByLanguage[normalizeLanguage(language)][id]
+  const current = selected ? getPrice(selected.id, selected.language) : undefined
 
   useEffect(() => { writeStoredJson(PRICE_ALERTS_STORAGE_KEY, alerts) }, [alerts])
 
   const observedSignature = alerts.map((alert) => {
-    const state = getPrice(alert)
+    const state = getPrice(alert.cardId, alert.language)
     return `${alert.id}:${state?.status ?? 'missing'}:${state?.price?.value ?? ''}:${state?.checkedAt ?? ''}`
   }).join('|')
   useEffect(() => {
     const values = new Map<string, number>()
     for (const alert of alerts) {
-      const value = getPrice(alert)?.price?.value
+      const value = getPrice(alert.cardId, alert.language)?.price?.value
       if (typeof value === 'number') values.set(priceAlertKey(alert), value)
     }
     setAlerts((currentAlerts) => markReachedPriceAlerts(currentAlerts, values))
@@ -134,7 +134,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
       <div className="price-alert-list">
         <div className="feature-section-heading"><div><span className="eyebrow"><Bell size={14}/> Mon suivi</span><h2>Mes alertes</h2></div><strong>{alerts.length}</strong></div>
         {alerts.length ? alerts.map((alert) => {
-          const state = getPrice(alert), value = state?.price?.value
+          const state = getPrice(alert.cardId, alert.language), value = state?.price?.value
           return <article className={`price-alert-row${alert.triggeredAt ? ' triggered' : ''}`} key={alert.id}>
             <div className="price-alert-icon">{alert.triggeredAt ? <CheckCircle2 size={20}/> : <Bell size={20}/>}</div>
             <div className="price-alert-copy"><strong>{alert.name}</strong><span>{alert.setName}{alert.number ? ` · nº ${alert.number}` : ''} · {languageLabel(alert.language)}</span><small>{alert.direction === 'below' ? 'Alerte sous' : 'Alerte au-dessus de'} {money(alert.targetPrice)} · {value !== undefined ? `actuellement ${money(value)}` : state?.status === 'loading' ? 'prix en chargement' : 'prix indisponible'}</small>{alert.triggeredAt && <b className="price-alert-hit">Objectif atteint à {money(alert.triggeredPrice ?? alert.targetPrice)} · {new Date(alert.triggeredAt).toLocaleString('fr-FR')}</b>}</div>
