@@ -19,7 +19,17 @@ describe('image resolver',()=>{
   expect(image.language).toBe('en')
   expect(image.isFallback).toBe(true)
  })
- it('utilise les scans vérifiés des 30 réimpressions Classic Collection',()=>{expect(cardImageOverrides).toHaveLength(34);for(const override of cardImageOverrides){expect(override.verified).toBe(true);const result=resolveCardImage({card:{id:override.cardId,name:override.name,language:'fr'},requestedLanguage:'fr'});expect(result.source).toBe('local-override');expect(result.language).toBe('en');expect(result.isFallback).toBe(true);expect(result.url).toMatch(/^https:\/\/bills-archive\.nyc3\.cdn\.digitaloceanspaces\.com\/tcgdex_cards\/.+\.webp$/)}})
+ it('ne substitue pas les anciennes impressions aux cartes 30th-c sans scan exact',()=>{
+  const classic=cardImageOverrides.filter(override=>override.setId==='30th-c')
+  expect(classic).toHaveLength(30)
+  for(const override of classic){
+   expect(override.verified).toBe(false)
+   expect(override.image).toBeUndefined()
+   const result=resolveCardImage({card:{id:override.cardId,name:override.name,language:'fr'},requestedLanguage:'fr'})
+   expect(result.url).toBeUndefined()
+   expect(result.source).toBe('none')
+  }
+ })
  it.each([['30th-R','R','red','fr','Mew'],['30th-G','G','green','en','Mew'],['30th-B','B','blue','en','Mew'],['M6a-R','R','red','fr','ミュウ'],['M6a-G','G','green','en','ミュウ'],['M6a-B','B','blue','en','ミュウ']])('résout le visuel réel du Mew RGB %s', (id,localId,color,visualLanguage,name)=>{const result=resolveCardImage({card:{id,localId,name,setName:'30th Celebration',language:'fr'},requestedLanguage:'fr'});expect(result.url).toContain(`rgb-mew-${color}.webp`);expect(result.language).toBe(visualLanguage);expect(result.isFallback).toBe(visualLanguage!=='fr')})
  it('essaie le format suivant du même visuel après un échec de chargement',()=>{
   const root='https://assets.tcgdex.net/zh-tw/sv/sv8a/001'

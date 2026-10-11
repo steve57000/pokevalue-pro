@@ -17,8 +17,8 @@ export const rgbMewImageByNumber: Readonly<Record<string,{url:string;language:st
  B:{url:'https://billsarchive.com/assets/articles/rgb-mew-blue.webp',language:'en'},
 }
 
-// These identities describe the 30th-anniversary reprints. When TCGdex has no scan,
-// use the matching English TCGplayer product image and identify it as an English fallback.
+// The 30th-c identities remain in the collection manifest, but no exact scan is available.
+// Historical scans are not substituted for the anniversary cards.
 const baseCardImageOverrides:readonly CardImageOverride[]=[
   {cardId:'30th-c-001',setId:'30th-c',name:'Dracaufeu',englishName:'Charizard',printedNumber:'4/102',rarity:'Rare Holo',cardmarket:{searchName:'Charizard',searchCode:'30C'},verified:false},
   {cardId:'30th-c-002',setId:'30th-c',name:'Delcatty',englishName:'Delcatty',printedNumber:'5/109',cardmarket:{searchName:'Delcatty',searchCode:'30C'},verified:false},
@@ -57,42 +57,8 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
 
 ]
 
-// These anniversary reprints do not yet have dedicated TCGdex scans. Their artwork is
-// matched to the corresponding original English print using the published checklist.
-// Bill's Archive hosts the verified WebP scans used here; the previous TCGplayer
-// thumbnails were not readable by the app's PDF canvas.
-const classicOriginalScans:Record<string,string>={
- '30th-c-001':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/base1/base1-4_charizard.webp',
- '30th-c-002':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex1/ex1-5_delcatty.webp',
- '30th-c-003':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex11/ex11-11_metagross-%CE%B4.webp',
- '30th-c-004':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/bw10/bw10-11_genesect-ex.webp',
- '30th-c-005':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/gym1/gym1-18_misty.webp',
- '30th-c-006':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex7/ex7-19_dark-tyranitar.webp',
- '30th-c-007':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/neo1/neo1-25_sneasel.webp',
- '30th-c-008':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/sm9/sm9-33_pikachu-zekrom-gx.webp',
- '30th-c-009':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/xy9/xy9-41_greninja-break.webp',
- '30th-c-010':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/dp6/dp6-43_uxie.webp',
- '30th-c-011':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/pl1/pl1-47_crobat-g.webp',
- '30th-c-012':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/swsh4/swsh4-50_raikou.webp',
- '30th-c-013':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/sm4/sm4-57_buzzwole-gx.webp',
- '30th-c-014':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/base1/base1-58_pikachu.webp',
- '30th-c-015':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/gym2/gym2-69_erikas-jigglypuff.webp',
- '30th-c-016':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/bw6/bw6-85_rayquaza-ex.webp',
- '30th-c-017':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/sm1/sm1-89_solgaleo-gx.webp',
- '30th-c-018':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/hgss4/hgss4-94_gengar.webp',
- '30th-c-019':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/hgss4/hgss4-99_darkrai-cresselia-legend.webp',
- '30th-c-020':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/hgss4/hgss4-100_darkrai-cresselia-legend.webp',
- '30th-c-021':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/bw3/bw3-92_n.webp',
- '30th-c-022':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/dp4/dp4-106_palkia.webp',
- '30th-c-023':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/xy5/xy5-106_m-gardevoir-ex.webp',
- '30th-c-024':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/neo4/neo4-106_shining-celebi.webp',
- '30th-c-025':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ex10/ex10-108_scizor-ex.webp',
- '30th-c-026':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/swsh8/swsh8-114_mew-vmax.webp',
- '30th-c-027':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/swsh9/swsh9-123_arceus-vstar.webp',
- '30th-c-028':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/swsh1/swsh1-138_zacian-v.webp',
- '30th-c-029':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/ecard2/ecard2-149_lugia.webp',
- '30th-c-030':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/sv02/sv02-203_magikarp.webp',
-}
+// These four MEP promo entries lack a usable image field in some catalog responses.
+// The URLs are exact English MEP promo scans and remain labeled fallbacks.
 const mepPromoScans:Record<string,string>={
  'mep-096':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-096_moltres.webp',
  'mep-097':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-097_articuno.webp',
@@ -100,7 +66,7 @@ const mepPromoScans:Record<string,string>={
  'mep-101':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-101_nidorina.webp',
 }
 export const cardImageOverrides:readonly CardImageOverride[]=baseCardImageOverrides.map(item=>{
- const url=mepPromoScans[item.cardId]??classicOriginalScans[item.cardId]
+ const url=mepPromoScans[item.cardId]
  if(!url)return item
  return {...item,verified:true,image:{localPath:url,language:'en',source:'Bill’s Archive / TCGdex original scan',verified:true as const}}
 })

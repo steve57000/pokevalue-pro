@@ -33,9 +33,9 @@ entre catalogues; l’application conserve donc la langue, le `setId` et le `car
 cartes et les extensions, elle utilise d’abord l’URL `image` ou `logo` renvoyée par ce catalogue.
 Elle essaie les formats WebP et PNG sur cette même racine d’asset après un échec de chargement.
 
-Les quelques correspondances de série anglaise sont une liste explicite d’alias de familles. Aucun
-préfixe d’extension, nom traduit, numéro de carte ou logo d’une extension voisine ne sert à déduire
-un autre asset. Les images de série utilisent uniquement le champ de logo de la série; les
+Les quelques correspondances de série anglaise sont une liste explicite d’alias de familles. En dehors
+des correspondances limitées à un set précis et vérifiées, aucun préfixe d’extension, nom traduit,
+numéro de carte ou logo d’une extension voisine ne sert à déduire un autre asset. Les images de série utilisent uniquement le champ de logo de la série; les
 symboles d’extension ne sont pas présentés comme des logos. Les replis anglais de logos et
 d’extensions exigent le même identifiant exact, sans copier le logo d’une extension vers sa série.
 
@@ -77,9 +77,9 @@ ni journalisé ni placé dans une URL, et reste en mémoire. Le fichier cible es
 ## Images et dos de carte
 Le dos standard occidental est livré avec le site (`public/images/pokemon-card-back.jpg`), téléchargé depuis https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg. Illustration Pokémon, utilisée pour la visualisation des cartes.
 La galerie essaie les variantes WebP/PNG sur la racine fournie par le catalogue actif. Pour les langues non anglaises, une source d’une autre langue n’est utilisée qu’avec une correspondance exacte de `cardId`, puis indiquée par un badge de langue. Les exceptions locales et les correspondances explicites de sous-extensions restent limitées aux identifiants documentés. Les catalogues japonais et chinois ne se remplacent jamais l’un l’autre.
-Pour les 30 cartes de la sous-série `30th-c`, TCGdex n'avait aucun scan au 1er octobre 2026 ; l'application utilise les images produit TCGplayer correspondant aux réimpressions Classic Collection, recoupées par nom et numéro dans la [galerie TCGJoin](https://tcgjoin.com/en/pokemon-30th-celebration-cards), qui attribue ces images à TCGplayer. Ces scans sont en anglais et portent un badge de source. Si aucune image correspondante n'est disponible, l'application le signale explicitement.
+Pour la sous-série `30th-c`, TCGdex ne fournit pas de scan exact. L’application ne réutilise ni les images d’anciennes impressions ni les correspondances par nom; elle affiche un visuel indisponible jusqu’à ce qu’un scan vérifiable de la réimpression soit disponible.
 `node scripts/audit-images.mjs` produit l'audit des métadonnées de toutes les extensions françaises ; ajouter `--check-urls` pour contrôler également chaque URL. Les requêtes échouées sont signalées comme non vérifiées dans `docs/image-audit.json`.
-Au 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` fournit 30 cartes sans image dans TCGdex, en français comme en anglais. Les remplacements `30th-c` utilisent les visuels anglais des réimpressions correspondantes, jamais ceux des anciennes cartes d'origine.
+Au 29/09/2026, `30th` fournit 158 URLs d'image ; `30th-c` expose 30 identités sans scan exact dans TCGdex. L’application n’affiche pas les anciennes impressions comme substituts.
 
 ## Manifeste Collection Classique 30e
 
@@ -90,19 +90,16 @@ imprimé vérifiés. Aucun rapprochement par nom ou numéro approchant n'est per
 
 Les futurs fichiers applicatifs vérifiés seront servis localement depuis `public/card-images/30th-c/`.
 Le synchroniseur refuse désormais de reconstruire la série à partir des impressions historiques.
-`npm run audit:images` exige 30 identités et contrôle strictement tout asset local déclaré.
+`npm run audit:images` exige les 30 identités et échoue si un scan d’une ancienne impression est déclaré pour `30th-c`.
 
 ### Correction d’intégrité des visuels `30th-c` (1er octobre 2026)
 
-Les 30 SVG précédemment présents étaient des placeholders générés et avaient été attribués à tort à
-Pokémon. Ils ont été supprimés. Les URL `pokemontcg.io` pointaient vers les impressions historiques,
-pas vers les réimpressions 30e : le synchroniseur ne les utilise donc plus. Les API TCGdex française
-et anglaise et le catalogue public accessible dans cet environnement ont été contrôlés, sans asset
-exact redistribuable disponible. Le manifeste conserve les 30 identités et numéros imprimés, mais ne
-déclare aucune image `verified` : l’interface affiche « Visuel temporairement indisponible » plutôt
-que de tromper l’utilisateur. L’audit refuse les SVG, les fichiers de moins de 50 Ko et les doublons
-SHA-256 dès qu’un asset local est déclaré. Une image ne pourra être ajoutée qu’après vérification de
-l’impression 30e exacte et de sa source.
+Les SVG placeholders et les URL d’anciennes impressions ne représentent pas les réimpressions 30e;
+ils ne sont pas utilisés. TCGdex ne fournit pas de scan exact dans les catalogues testés. Le manifeste
+conserve les 30 identités et leurs numéros imprimés, sans image déclarée comme vérifiée, et
+l’interface affiche « Visuel temporairement indisponible ». L’audit confirme les 30 identités et
+refuse toute carte historique présentée comme asset `30th-c`. Un scan ne pourra être ajouté
+qu’après vérification de la réimpression exacte et de sa source.
 
 Les liens Cardmarket passent tous par `buildCardmarketUrl` : URL produit vérifiée en priorité, puis
 identité courte du manifeste (nom anglais, numéro historique et code `30C`), enfin nom et numéro de
