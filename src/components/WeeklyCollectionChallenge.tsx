@@ -60,9 +60,9 @@ export function WeeklyCollectionChallenge({ entries }: { entries: CollectionEntr
   </section>
 }
 
-export function SharedChallengePage({ token }: { token: string }) {
+export function SharedChallengePage({ token, onCreateChallenge }: { token: string; onCreateChallenge: () => void }) {
   const snapshot = decodeSharedChallenge(token)
-  if (!snapshot) return <section className="shared-challenge-card"><div className="brand-mark">PV</div><span className="eyebrow">Défi PokéValue</span><h1>Ce lien de progression n’est pas valide.</h1><p>Demande à ton ami de partager son défi à nouveau.</p><a className="feature-primary" href={`${window.location.pathname}${window.location.search}#/collection`}>Découvrir PokéValue</a></section>
+  if (!snapshot) return <section className="shared-challenge-card"><div className="brand-mark">PV</div><span className="eyebrow">Défi PokéValue</span><h1>Ce lien de progression n’est pas valide.</h1><p>Demande à ton ami de partager son défi à nouveau.</p><button type="button" className="feature-primary" onClick={onCreateChallenge}>Découvrir PokéValue</button></section>
 
   const percentage = Math.min(100, Math.round(snapshot.added / snapshot.goal * 100))
   return <section className="shared-challenge-card">
@@ -72,7 +72,7 @@ export function SharedChallengePage({ token }: { token: string }) {
     <div className="shared-challenge-track" role="progressbar" aria-label="Progression partagée" aria-valuemin={0} aria-valuemax={snapshot.goal} aria-valuenow={Math.min(snapshot.added, snapshot.goal)}><i style={{ width: `${percentage}%` }}/></div>
     <div className="shared-challenge-stats"><span>Progression<strong>{percentage} %</strong></span><span>Classeur<strong>{snapshot.total} cartes différentes</strong></span></div>
     <small className="challenge-privacy">Lien créé le {new Date(snapshot.sharedAt).toLocaleDateString('fr-FR')}. Il montre uniquement cette progression agrégée.</small>
-    <a className="feature-primary" href={`${window.location.pathname}${window.location.search}#/collection`}>Créer mon défi <Sparkles size={16}/></a>
+    <button type="button" className="feature-primary" onClick={onCreateChallenge}>Créer mon défi <Sparkles size={16}/></button>
   </section>
 }
 

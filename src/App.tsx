@@ -265,7 +265,7 @@ function App() {
           {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
           {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
           {view==='alerts'&&<PriceAlertsPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
-          {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)}/>}
+          {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)} onCreateChallenge={()=>navigate('collection')}/>}
           {view==='grading'&&<GradingPage entries={portfolio.entries} onPriceHistory={()=>navigate('history')}/> }
 
 
