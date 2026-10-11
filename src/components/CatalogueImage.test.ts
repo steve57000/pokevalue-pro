@@ -90,7 +90,7 @@ it('tries a supported PNG asset when the canonical WebP fails',async()=>{
 
  it('falls back to the English print when a TCGdex front URL is broken',async()=>{
   const failed='https://assets.tcgdex.net/fr/swsh/swsh3/1/low.webp'
-  const image=await resolveCatalogueImage({id:'swsh3-1',name:'Carte',localId:'1'},'fr','low',async(id,language)=>({id,name:'Carte',language:language??'fr',image:'https://assets.tcgdex.net/fr/swsh/swsh3/1',fallbackImage:{low:'https://images.pokemontcg.io/swsh3/1.png',high:'https://images.pokemontcg.io/swsh3/1_hires.png',source:'Pokémon TCG API'}}),new Set([failed,failed.replace('/low.webp','/low.png'),failed.replace('/low.webp','/high.webp'),failed.replace('/low.webp','/high.png')])
+  const image=await resolveCatalogueImage({id:'swsh3-1',name:'Carte',localId:'1'},'fr','low',async(id,language)=>({id,name:'Carte',language:language??'fr',image:'https://assets.tcgdex.net/fr/swsh/swsh3/1',fallbackImage:{low:'https://images.pokemontcg.io/swsh3/1.png',high:'https://images.pokemontcg.io/swsh3/1_hires.png',source:'Pokémon TCG API'}}),new Set([failed,failed.replace('/low.webp','/low.png'),failed.replace('/low.webp','/high.webp'),failed.replace('/low.webp','/high.png')]))
   expect(image.url).toBe('https://images.pokemontcg.io/swsh3/1.png')
   expect(image.isFallback).toBe(true)
  })
