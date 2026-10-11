@@ -71,6 +71,55 @@ describe('localized set catalogue', () => {
     expect(set.logo).toBe(logo)
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain(`https://api.tcgdex.net/v2/en/sets/${id.toLowerCase()}`)
   })
+
+  it('maps Asian Sword & Shield series IDs to the international logo', async () => {
+    const logo = 'https://assets.tcgdex.net/en/swsh/swsh1/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? [{ id: 'S', name: '剣と盾' }]
+        : [{ id: 'swsh', name: 'Sword & Shield', logo }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await listSeries('ja')
+
+    expect(series[0].logo).toBe(logo)
+  })
+
+
+  it('uses the matching English Base-series logo for Japanese PMCG sets', async () => {
+    const logo = 'https://assets.tcgdex.net/en/base/base1/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? { id: 'PMCG', name: 'ポケットモンスターカードゲーム', sets: [{ id: 'PMCG1', name: '拡張パック', cardCount: { total: 1, official: 1 } }] }
+        : { id: 'base', name: 'Base', sets: [{ id: 'base1', name: 'Base Set', cardCount: { total: 1, official: 1 }, logo }] },
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await getSeries('PMCG', 'ja')
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/en/series/base')
+    expect(series.logo).toBe(logo)
+    expect(series.sets[0].logo).toBe(logo)
+  })
+  it('reuses a series logo for Asian sets whose IDs differ from English IDs', async () => {
+    const logo = 'https://assets.tcgdex.net/en/swsh/swsh1/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/zh-tw/')
+        ? { id: 'S', name: '劍＆盾', sets: [{ id: 'S1H', name: '無極力量', cardCount: { total: 1, official: 1 } }] }
+        : { id: 'swsh', name: 'Sword & Shield', sets: [{ id: 'swsh1', name: 'Darkness Ablaze', cardCount: { total: 1, official: 1 }, logo }] },
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await getSeries('S', 'zh-tw')
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/en/series/swsh')
+    expect(series.logo).toBe(logo)
+    expect(series.sets[0].logo).toBe(logo)
+  })
   it('removes only the known empty CS catalogue records from Japanese and Traditional Chinese', () => {
     const summaries = [{id:'CS2a',name:'entrée fantôme'}, {id:'SV8a',name:'extension valide'}]
     expect(filterLocalizedSets(summaries, 'ja').map(set => set.id)).toEqual(['SV8a'])

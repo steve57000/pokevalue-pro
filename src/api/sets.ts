@@ -82,15 +82,17 @@ const addMissingAnniversaryMepPromos=(set:SetDetail,language:string):SetDetail=>
  const cards:SetCard[]=missing.map(promo=>({id:`${set.id}-${promo.localId}`,name:promo.names[language as keyof typeof promo.names]??promo.names.en,localId:promo.localId,rarity:'Promo'}))
  return {...set,cardCount:{...set.cardCount,total:set.cardCount.total+cards.length},cards:[...set.cards,...cards]}
 }
+const englishSeriesAliases = new Map([['s','swsh'],['m','me'],['pmcg','base'],['pcg','ex'],['adv','ex']])
+const englishArtworkId = (id: string) => englishSeriesAliases.get(id.toLocaleLowerCase('en')) ?? id.toLocaleLowerCase('en')
 const asianLanguages = new Set(['ja','zh-tw'])
 const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string, englishRequest?: Promise<T[]>): Promise<T[]> => {
   if (!asianLanguages.has(language)) return items
   try {
     const english = await (englishRequest ?? fetchSet<T[]>(endpoint()))
-    const byId = new Map(english.map(item => [item.id.toLocaleLowerCase('en'), item]))
+    const byId = new Map(english.map(item => [englishArtworkId(item.id), item]))
     return items.map(item => {
       // Asian catalogue IDs are uppercase while their matching international IDs are lowercase.
-      const fallback = byId.get(item.id.toLocaleLowerCase('en'))
+      const fallback = byId.get(englishArtworkId(item.id))
       return { ...item, logo: item.logo ?? fallback?.logo, symbol: item.symbol ?? fallback?.symbol }
     })
   } catch {
@@ -143,7 +145,7 @@ export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]
 }
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
   const englishRequest = asianLanguages.has(language)
-    ? fetchSet<SeriesDetail>(seriesEndpoint(id.toLocaleLowerCase('en'))).catch(() => undefined)
+    ? fetchSet<SeriesDetail>(seriesEndpoint(englishArtworkId(id))).catch(() => undefined)
     : undefined
   try {
     const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
@@ -153,11 +155,12 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
     if (!english) return { ...series, sets }
     series.logo ??= english.logo
     series.symbol ??= english.symbol
-    const englishSets = new Map((english.sets ?? []).map(set => [set.id.toLocaleLowerCase('en'), set]))
+    const englishSets = new Map((english.sets ?? []).map(set => [englishArtworkId(set.id), set]))
+    const familyLogo = english.logo ?? english.sets?.find(set => set.logo)?.logo
+    series.logo ??= familyLogo
     return { ...series, sets: sets.map(set => {
-      const fallback = englishSets.get(set.id.toLocaleLowerCase('en'))
-      if (!fallback) return set
-      return { ...set, logo: set.logo ?? fallback.logo, symbol: set.symbol ?? fallback.symbol }
+      const fallback = englishSets.get(englishArtworkId(set.id))
+      return { ...set, logo: set.logo ?? fallback?.logo ?? familyLogo, symbol: set.symbol ?? fallback?.symbol }
     }) }
   } catch {
     // Rebuild localized family details from set summaries on any endpoint failure.
