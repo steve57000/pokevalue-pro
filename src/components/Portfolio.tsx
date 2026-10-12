@@ -28,9 +28,17 @@ export const minCollectionColumns=(width:number)=>width>=900?3:width>=640?2:1
 export const maxCollectionColumns=(width:number)=>width>=1200?5:width>=900?4:width>=640?3:width>=340?2:1
 export const effectiveCollectionColumns=(preferred:number,width:number)=>Math.min(maxCollectionColumns(width),Math.max(minCollectionColumns(width),Math.min(5,preferred)))
 const displaySetName=(name?:string)=>name?.replace(/Collection Classique\s*30[ᵉe]?\s*Anniversaire/i,'Collection Classique · 30e Anniversaire')
-const curatedSetLogosById:Record<string,string>={
- mep:'https://data.eyevo.app/eyevo/logos/sets/mep.png',
- '30th-c':'https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png',
+const anniversaryLogo='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'
+const curatedSetLogosById:Record<string,string[]>={
+ mep:['https://data.eyevo.app/eyevo/logos/sets/mep.png'],
+ me01:['https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'],
+ me02:['https://www.pokepedia.fr/images/thumb/1/18/Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png/800px-Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png'],
+ 'me02.5':['https://www.pokepedia.fr/images/thumb/4/4c/Logo_Méga-%C3%89volution_Héros_Transcendants_JCC.png/800px-Logo_Méga-%C3%89volution_Héros_Transcendants_JCC.png'],
+ me03:['https://www.pokepedia.fr/images/thumb/c/c6/Logo_Méga-%C3%89volution_Équilibre_Parfait_JCC.png/800px-Logo_Méga-%C3%89volution_Équilibre_Parfait_JCC.png'],
+ me04:['https://www.pokepedia.fr/images/thumb/2/2a/Logo_Méga-%C3%89volution_Chaos_Ascendant_JCC.png/800px-Logo_Méga-%C3%89volution_Chaos_Ascendant_JCC.png'],
+ me05:['https://www.pokepedia.fr/images/thumb/6/67/Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png/800px-Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png'],
+ '30th':[anniversaryLogo],
+ '30th-c':['https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png',anniversaryLogo],
 }
 const tcgdexLogoSources=(url?:string)=>{
  if(!url)return[]
@@ -53,17 +61,18 @@ const normalizeTcgDexLogoPath=(url?:string)=>{
  if(!url)return undefined
  return url.replace(/(assets\.tcgdex\.net\/(?:en|fr|ja|zh-tw)\/)([^/]+)\/([^/]+)\//i,(_match,prefix,serie,set)=>prefix+serie.toLowerCase()+'/'+set.toLowerCase()+'/')
 }
-const curatedSeriesLogosById:Record<string,string>={
- '30th':'https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png',
+const curatedSeriesLogosById:Record<string,string[]>={
+ me:['https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'],
+ '30th':[anniversaryLogo],
 }
 export const seriesLogoSources=(seriesId:string,logo?:string,language='fr')=>{
- const curated=language==='fr'?curatedSeriesLogosById[seriesId.toLowerCase()]:undefined
- const paths=[logo,normalizeTcgDexLogoPath(logo),curated]
+ const curated=language==='fr'?curatedSeriesLogosById[seriesId.toLowerCase()]??[]:[]
+ const paths=[logo,normalizeTcgDexLogoPath(logo),...curated]
  return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
 }
 export const setLogoSources=(setId:string,_seriesId?:string,logo?:string,_symbol?:string,_name='',language='fr',_parentLogo?:string)=>{
- const curated=language==='fr'?curatedSetLogosById[setId.toLowerCase()]:undefined
- const paths=[logo,normalizeTcgDexLogoPath(logo),curated]
+ const curated=language==='fr'?curatedSetLogosById[setId.toLowerCase()]??[]:[]
+ const paths=[logo,normalizeTcgDexLogoPath(logo),...curated]
  return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
 }
 function LoadingFeedback({children,className=''}:{children:string;className?:string}){
