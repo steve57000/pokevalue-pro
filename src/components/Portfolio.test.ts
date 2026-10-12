@@ -14,7 +14,8 @@ describe('series logos',()=>{
  it('restores known French expansion logos by stable catalogue IDs',()=>{
   expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('${thumb('night')}')
   expect(setLogoSources('30th','30th',undefined,undefined,'Nom quelconque','fr')[0]).toBe(anniversaryLogo)
-  expect(setLogoSources('30th-c','30th',undefined,undefined,'Collection Classique','fr').at(-1)).toBe(anniversaryLogo)
+  const classicSources=setLogoSources('30th-c','30th',undefined,undefined,'Collection Classique','fr')
+  expect(classicSources[classicSources.length-1]).toBe(anniversaryLogo)
   expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','zh-tw')).toEqual([])
  })
  it('restores the French 30th anniversary series logo by stable series ID',()=>{
