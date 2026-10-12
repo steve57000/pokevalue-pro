@@ -40,7 +40,7 @@ describe('series logos',()=>{
   expect(urls.slice(0,2)).toEqual([exact+'.png',exact+'.webp'])
   expect(urls).toContain('https://assets.tcgdex.net/ja/sv/sv5a/logo.png')
   expect(urls).not.toContain('https://assets.tcgdex.net/univ/sv/sv5a/symbol.png')
-  expect(urls).not.toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
+  expect(urls).toContain('https://assets.tcgdex.net/en/sv/sv01/logo.png')
  })
  it.each([['S1H','S','無極力量','zh-tw'],['M6a','ME','30th CELEBRATION','ja']] as const)('does not invent logo paths for catalogue-only set %s',(setId,seriesId,name,language)=>{
   const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language)
