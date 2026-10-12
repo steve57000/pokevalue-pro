@@ -57,9 +57,15 @@ describe('series logos',()=>{
   expect(urls).toContain('https://assets.tcgdex.net/ja/s/s1h/logo.png')
   expect(urls.some(url=>url.includes('/ja/swsh/'))).toBe(false)
  })
- it('keeps a catalogue logo first for a set with a similar name',()=>{
-  const logo='https://assets.tcgdex.net/fr/me/me01/logo'
-  const urls=setLogoSources('me01','me',logo,undefined,'Mega Evolution','fr')
-  expect(urls[0]).toBe(logo+'.png')
+ it('prioritizes curated French logos over catalogue metadata for exact set IDs',()=>{
+  const anniversary='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'
+  const apiLogo='https://assets.tcgdex.net/fr/me/30th/logo'
+  expect(setLogoSources('30th','me',apiLogo,undefined,'30e Anniversaire','fr')[0]).toBe(anniversary)
+
+  const mega='https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'
+  expect(setLogoSources('me01','me','https://assets.tcgdex.net/fr/me/me01/logo',undefined,'Mega Evolution','fr')[0]).toBe(mega)
+
+  const uncurated='https://assets.tcgdex.net/fr/swsh/swsh1/logo'
+  expect(setLogoSources('swsh1','swsh',uncurated,undefined,'Épée et Bouclier','fr')[0]).toBe(uncurated+'.png')
  })
 })
