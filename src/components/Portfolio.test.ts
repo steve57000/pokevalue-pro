@@ -40,7 +40,7 @@ describe('series logos',()=>{
  it('uses a curated logo only for an explicitly listed French set ID',()=>{
   expect(setLogoSources('mep','me',undefined,undefined,'Nom libre','fr')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png')
   expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos','en')).toEqual([])
-  expect(setLogoSources('me01','me',undefined,undefined,'Mega Evolution','fr')).toEqual([])
+  expect(setLogoSources('me01','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png')
  })
  it('normalizes logo path casing without guessing another series prefix',()=>{
   const source='https://assets.tcgdex.net/ja/S/S1H/logo'
