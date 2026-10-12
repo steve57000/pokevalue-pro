@@ -76,10 +76,12 @@ export const setLogoSources=(setId:string,_seriesId?:string,logo?:string,_symbol
  const asian=asianLogoFallback(language)
  const allowFrenchFallback=language==='fr'||asian
  const curated=allowFrenchFallback?curatedSetLogosById[setId.toLowerCase()]??[]:[]
- // Preserve an Asian catalog's own logo first. If it has none, a known exact-ID
- // French logo is safer than borrowing the family mark; use the English family
- // mark only as the final Asian fallback.
- const paths=[logo,normalizeTcgDexLogoPath(logo),...curated,...(asian?[parentLogo,normalizeTcgDexLogoPath(parentLogo)]:[])]
+ // Prefer an exact-ID asset already curated by the app over stale catalogue metadata
+ // in French. Asian catalogs keep their own logo first, then use the same exact-ID
+ // French fallback and finally the English family mark.
+ const paths=asian
+  ? [logo,normalizeTcgDexLogoPath(logo),...curated,parentLogo,normalizeTcgDexLogoPath(parentLogo)]
+  : [...curated,logo,normalizeTcgDexLogoPath(logo)]
  return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
 }
 function LoadingFeedback({children,className=''}:{children:string;className?:string}){
