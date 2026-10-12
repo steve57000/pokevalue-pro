@@ -11,9 +11,16 @@ describe('collection density',()=>{
 })
 
 describe('series logos',()=>{
+ it('restores known French expansion logos by stable catalogue IDs',()=>{
+  expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('${thumb('night')}')
+  expect(setLogoSources('30th','30th',undefined,undefined,'Nom quelconque','fr')[0]).toBe(anniversaryLogo)
+  expect(setLogoSources('30th-c','30th',undefined,undefined,'Collection Classique','fr').at(-1)).toBe(anniversaryLogo)
+  expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','zh-tw')).toEqual([])
+ })
  it('restores the French 30th anniversary series logo by stable series ID',()=>{
   expect(seriesLogoSources('30th',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
   expect(seriesLogoSources('30th',undefined,'ja')).toEqual([])
+  expect(seriesLogoSources('me',undefined,'fr')[0]).toBe('${thumb('mega')}')
   expect(seriesLogoSources('other-series',undefined,'fr')).toEqual([])
  })
  it('uses a dedicated stable logo when the API does not provide one',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
