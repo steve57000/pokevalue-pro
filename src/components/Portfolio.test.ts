@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest'
 import {createElement} from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
-import {CollectionQuantityStepper,effectiveCollectionColumns,maxCollectionColumns,minCollectionColumns,setLogoSources} from './Portfolio'
+import {CollectionQuantityStepper,effectiveCollectionColumns,maxCollectionColumns,minCollectionColumns,seriesLogoSources,setLogoSources} from './Portfolio'
 describe('collection density',()=>{
  it.each([[339,1],[340,2],[639,2],[640,3],[899,3],[900,4],[1199,4],[1200,5],[1920,5]])('limits %ipx to %i columns',(width,columns)=>expect(maxCollectionColumns(width)).toBe(columns))
  it.each([[1,339],[1,340],[1,639],[2,640],[2,899],[3,900],[3,1199],[3,1200]])('requires at least %i columns at %ipx',(columns,width)=>expect(minCollectionColumns(width)).toBe(columns))
@@ -11,6 +11,11 @@ describe('collection density',()=>{
 })
 
 describe('series logos',()=>{
+ it('restores the French 30th anniversary series logo by stable series ID',()=>{
+  expect(seriesLogoSources('30th',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
+  expect(seriesLogoSources('30th',undefined,'ja')).toEqual([])
+  expect(seriesLogoSources('other-series',undefined,'fr')).toEqual([])
+ })
  it('uses a dedicated stable logo when the API does not provide one',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
  it('puts the catalogue-supplied logo before its case-normalized path',()=>{
   const exact='https://assets.tcgdex.net/ja/SV/SV5a/logo'
