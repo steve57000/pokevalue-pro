@@ -11,9 +11,17 @@ describe('collection density',()=>{
 })
 
 describe('series logos',()=>{
+ it('restores known French expansion logos by stable catalogue IDs',()=>{
+  expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/6/67/Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png/800px-Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png')
+  expect(setLogoSources('30th','30th',undefined,undefined,'Nom quelconque','fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
+  const classicSources=setLogoSources('30th-c','30th',undefined,undefined,'Collection Classique','fr')
+  expect(classicSources[classicSources.length-1]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
+  expect(setLogoSources('me05','me',undefined,undefined,'Nom quelconque','zh-tw')).toEqual([])
+ })
  it('restores the French 30th anniversary series logo by stable series ID',()=>{
   expect(seriesLogoSources('30th',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
   expect(seriesLogoSources('30th',undefined,'ja')).toEqual([])
+  expect(seriesLogoSources('me',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png')
   expect(seriesLogoSources('other-series',undefined,'fr')).toEqual([])
  })
  it('uses a dedicated stable logo when the API does not provide one',()=>expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png'))
@@ -32,7 +40,7 @@ describe('series logos',()=>{
  it('uses a curated logo only for an explicitly listed French set ID',()=>{
   expect(setLogoSources('mep','me',undefined,undefined,'Nom libre','fr')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png')
   expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos','en')).toEqual([])
-  expect(setLogoSources('me01','me',undefined,undefined,'Mega Evolution','fr')).toEqual([])
+  expect(setLogoSources('me01','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png')
  })
  it('normalizes logo path casing without guessing another series prefix',()=>{
   const source='https://assets.tcgdex.net/ja/S/S1H/logo'
