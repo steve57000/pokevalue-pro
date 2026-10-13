@@ -60,6 +60,11 @@ describe('series logos',()=>{
   expect(urls).toContain('https://assets.tcgdex.net/ja/s/s1h/logo.png')
   expect(urls.some(url=>url.includes('/ja/swsh/'))).toBe(false)
  })
+ it('prefers a native English logo before the exact-ID French fallback',()=>{
+  const native='https://assets.tcgdex.net/en/me/30th/logo.png'
+  expect(setLogoSources('30th','me',native,undefined,'30th Celebration','en')[0]).toBe(native)
+  expect(setLogoSources('30th-c','me',undefined,undefined,'30th Classic Collection','en')[0]).toBe('https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png')
+ })
  it('prioritizes curated French logos over catalogue metadata for exact set IDs',()=>{
   const anniversary='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'
   const apiLogo='https://assets.tcgdex.net/fr/me/30th/logo'
