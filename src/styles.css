@@ -831,7 +831,10 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .collection-summary.has-tcgplayer{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:900px){.collection-summary.has-tcgplayer{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){
-  .binder-grid.view-cards .binder-price,.binder-grid.view-list .binder-price{gap:5px;padding:4px 0}
+  .binder-grid.view-cards .binder-price,.binder-grid.view-list .binder-price{gap:0;min-height:24px;padding:2px 0}
+  .binder-grid.view-cards .binder-price-info,.binder-grid.view-list .binder-price-info{display:none}
+  .binder-price .binder-price-compact-row{justify-content:flex-start;color:var(--text);font-size:12px;line-height:1.2}
+  .binder-price .binder-price-compact-row strong{font-size:12px;font-weight:800;white-space:nowrap}
   .binder-price .binder-price-provider strong{font-size:10px}
   .binder-price .binder-price-provider small,.binder-price .binder-price-note{font-size:8px}
   .binder-price .binder-price-quote{padding:4px 6px;font-size:10px}

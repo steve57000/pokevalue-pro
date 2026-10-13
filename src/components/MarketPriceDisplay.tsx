@@ -43,13 +43,18 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: 
 
   const cardmarketProvider = asian ? 'Référence Cardmarket' : 'Cardmarket'
   const tcgplayerContext = `Amérique du Nord · USD · ${basisLabel(tcgplayer?.basis)} · impression et état non renseignés${tcgplayer ? ` · ${tcgplayer.label}` : ''}`
-  const summary = (provider: string, value: number | undefined, currency: 'EUR' | 'USD' = 'EUR') => <span className="binder-price-compact-row">
-    <span>{provider}</span><strong>{value === undefined ? status === 'loading' ? '…' : 'Indisponible' : money(value, currency)}</strong>
-  </span>
+  // Keep the card tile focused on one actionable figure. English cards prefer
+  // their North American reference when it exists; otherwise Cardmarket is a
+  // clearly European fallback inside the detailed information panel.
+  const primaryValue = asian ? undefined : language === 'en' && tcgplayer?.value !== undefined
+    ? { value: tcgplayer.value, currency: 'USD' as const }
+    : cardmarket?.value !== undefined ? { value: cardmarket.value, currency: 'EUR' as const } : undefined
+  const compactAmount = primaryValue
+    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: primaryValue.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(primaryValue.value)
+    : status === 'loading' ? '…' : '—'
 
   return <div className={`binder-price${asian ? ' has-local-market-gap' : ''}`} aria-label="Prix par marché">
-    {summary(cardmarketProvider, cardmarket?.value)}
-    {language === 'en' && summary('TCGplayer', tcgplayer?.value, 'USD')}
+    <span className="binder-price-compact-row" aria-label={primaryValue ? `Prix indicatif ${compactAmount}` : 'Prix indisponible'}><strong>{compactAmount}</strong></span>
     <details className="binder-price-info">
       <summary aria-label="Afficher les informations sur les prix" title="Informations sur les prix"><Info size={15}/><span>Informations</span></summary>
       <div className="binder-price-info-content">

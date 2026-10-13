@@ -14,6 +14,7 @@ describe('market price display by catalogue language', () => {
     expect(html).toContain('Cardmarket')
     expect(html).toContain('Europe · EUR · guide · impression et état non renseignés')
     expect(html).toContain('12')
+    expect(html).toContain('8,00 $US')
     expect(html).toContain('TCGplayer')
     expect(html).toContain('Amérique du Nord · USD · guide · impression et état non renseignés · Marché TCGplayer')
     expect(html).toContain('8')
@@ -28,6 +29,7 @@ describe('market price display by catalogue language', () => {
       cardmarket: { value: 12, currency: 'EUR', label: 'Tendance Cardmarket', provider: 'cardmarket' },
     }))
     expect(html).toContain('langue et impression non filtrées : pas une cote française')
+    expect(html).toContain('12,00 €')
     expect(html).not.toContain('TCGplayer')
   })
 
