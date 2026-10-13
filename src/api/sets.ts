@@ -87,6 +87,26 @@ const englishArtworkId = (id: string) => englishSeriesAliases.get(id.toLocaleLow
 const exactArtworkIds=(id:string)=>[id.toLocaleLowerCase('en')]
 const englishSeriesArtworkIds=(id:string)=>[englishArtworkId(id)]
 const asianLanguages = new Set(['ja','zh-tw'])
+const withFrenchArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(
+  items: T[],
+  language: string,
+  frenchRequest: () => Promise<T[]>,
+  artworkIds: (id: string) => string[] = exactArtworkIds,
+): Promise<T[]> => {
+  if (!asianLanguages.has(language) || !items.some(item => !item.logo)) return items
+  try {
+    const french = await frenchRequest()
+    const byId = new Map(french.flatMap(item => artworkIds(item.id).map(id => [id, item] as const)))
+    return items.map(item => {
+      if (item.logo) return item
+      const fallback = artworkIds(item.id).map(id => byId.get(id)).find(Boolean)
+      return { ...item, logo: fallback?.logo, symbol: item.symbol ?? fallback?.symbol }
+    })
+  } catch {
+    return items
+  }
+}
+
 const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string, englishRequest?: Promise<T[]>, artworkIds:(id:string)=>string[]=exactArtworkIds): Promise<T[]> => {
   if (!asianLanguages.has(language)) return items
   try {
@@ -104,7 +124,8 @@ export const listSets = async (language: string='fr') => {
   if (!asianLanguages.has(language)) return filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
   const englishRequest = fetchSet<SetSummary[]>(base('en')).catch(() => [])
   const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
-  return withEnglishArtwork(sets, language, () => base('en'), englishRequest)
+  const withEnglish = await withEnglishArtwork(sets, language, () => base('en'), englishRequest)
+  return withFrenchArtwork(withEnglish, language, () => fetchSet<SetSummary[]>(base('fr')))
 }
 export const getSet = async (id: string, language: string='fr'): Promise<SetDetail> => {
   if (asianLanguages.has(language) && asianCatalogueGhostIds.has(id)) {
@@ -115,11 +136,12 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
     : undefined
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
   if (englishRequest) {
-    const english = await englishRequest
-    if (english?.id && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en'))) {
-      set.logo ??= english.logo
-      set.symbol ??= english.symbol
-    }
+    const frenchRequest = set.logo ? undefined : fetchSet<SetDetail>(`${base('fr')}/${encodeURIComponent(id.toLocaleLowerCase('en'))}`).catch(() => undefined)
+    const [english, french] = await Promise.all([englishRequest, frenchRequest])
+    const exactEnglish = english?.id && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en')) ? english : undefined
+    const exactFrench = french?.id && exactArtworkIds(french.id).includes(id.toLocaleLowerCase('en')) ? french : undefined
+    set.logo ??= exactEnglish?.logo ?? exactFrench?.logo
+    set.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
   }
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
@@ -142,7 +164,8 @@ export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]
     if (!families.size) throw new Error(`Les séries du catalogue ${language.toUpperCase()} sont temporairement indisponibles.`)
     series = [...families.values()]
   }
-  return withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest, englishSeriesArtworkIds)
+  const withEnglish = await withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest, englishSeriesArtworkIds)
+  return withFrenchArtwork(withEnglish, language, () => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/fr/series`), englishSeriesArtworkIds)
 }
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
   const englishRequest = asianLanguages.has(language)
