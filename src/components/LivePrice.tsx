@@ -7,7 +7,7 @@ export function LivePrice({ live, compact = false }: { live?: ExternalCard; comp
   const reference = selectCardmarketPrice(live?.pricing)
   const englishQuote = live?.language === 'en' ? selectTcgplayerPrice(live.pricing) : undefined
   const isAsianCatalog = live?.language === 'ja' || live?.language === 'zh-tw'
-  if (!reference && !englishQuote) return <div className="live-price unavailable"><small>Prix de marché</small><strong>Prix indisponible</strong><span>Sources Cardmarket Europe et TCGplayer Amérique du Nord</span></div>
+  if (!reference && !englishQuote) return <div className="live-price unavailable"><small>Prix de marché</small><strong>Prix indisponible</strong><span>{isAsianCatalog ? 'Aucune source de prix local asiatique n’est connectée.' : 'Sources Cardmarket Europe et TCGplayer Amérique du Nord'}</span></div>
   return <div className={`live-price ${compact ? 'compact' : ''}`}>
     {reference && <>
       <small>Cardmarket · Europe · toutes langues</small>
