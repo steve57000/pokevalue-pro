@@ -20,24 +20,49 @@ export type ExternalCard = {
   fromStaleCache?: boolean
 }
 
+export type TcgPlayerVariantPricing = {
+  productId?: number | null
+  lowPrice?: number | null
+  midPrice?: number | null
+  highPrice?: number | null
+  marketPrice?: number | null
+  directLowPrice?: number | null
+}
+
 export type TcgDexPricing = {
   cardmarket?: {
     updatedAt?: string | null
+    updated?: string | number | null
+    unit?: string | null
     trend?: number | null
     avg30?: number | null
     avg7?: number | null
     avg?: number | null
     low?: number | null
     avg1?: number | null
+    'trend-holo'?: number | null
+    'avg-holo'?: number | null
+    'avg1-holo'?: number | null
+    'avg7-holo'?: number | null
+    'avg30-holo'?: number | null
+    'low-holo'?: number | null
     reverseHoloTrend?: number | null
     reverseHoloAvg30?: number | null
   } | null
   tcgplayer?: {
     updatedAt?: string | null
+    updated?: string | number | null
+    unit?: string | null
+    normal?: TcgPlayerVariantPricing | null
+    holofoil?: TcgPlayerVariantPricing | null
+    'reverse-holofoil'?: TcgPlayerVariantPricing | null
+    reverse?: TcgPlayerVariantPricing | null
+    // Older cached responses used a flat object; keep reading them during cache expiry.
     lowPrice?: number | null
     midPrice?: number | null
     highPrice?: number | null
     marketPrice?: number | null
+    directLowPrice?: number | null
   } | null
 }
 
