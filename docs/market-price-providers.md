@@ -14,8 +14,8 @@ Les statistiques Cardmarket sont à plat pour le non-foil et utilisent des clés
 
 ## Vérification des options locales (13 octobre 2026)
 
-- La v2 de JustTCG sait représenter plusieurs régions, mais sa documentation indique que seule l’Amérique du Nord renvoie actuellement des prix; les régions UK, UE et Japon restent en attente de données locales.
-- pokemontcgapi.com référence bien une grande base japonaise et des lignes EUR/USD; sa page de couverture indique toutefois qu’un échantillon de cartes chinoises simplifiées ne renvoie aucune ligne de prix. Cela ne constitue donc pas une couverture confirmée des cartes chinoises traditionnelles de PokéValue, ni un prix local japonais en JPY.
+- La v2 de JustTCG sait représenter plusieurs régions, mais sa [documentation](https://www.justtcg.com/docs/api/cards-v2) indique que seule l’Amérique du Nord renvoie actuellement des prix; les régions UK, UE et Japon restent en attente de données locales.
+- pokemontcgapi.com référence bien une grande base japonaise et des lignes EUR/USD; sa [page de couverture](https://pokemontcgapi.com/coverage) indique toutefois qu’un échantillon de cartes chinoises simplifiées ne renvoie aucune ligne de prix. Cela ne constitue donc pas une couverture confirmée des cartes chinoises traditionnelles de PokéValue, ni un prix local japonais en JPY.
 - Aucune source examinée ne permet, sans approximation, de remplir à la fois les prix locaux JP et ZH-TW demandés. Le choix d’un fournisseur doit attendre une vérification de la couverture exacte des impressions, des devises et des droits d’affichage.
 
 ## Ajouter une source de prix asiatique
