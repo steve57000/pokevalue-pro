@@ -7,7 +7,8 @@ describe('30th Classic Collection scans', () => {
     expect(cards).toHaveLength(30)
     expect(cards.every(card =>
       card.verified
-      && card.image?.verified
+      && card.image !== undefined
+      && card.image.verified
       && card.image.language === 'en'
       && card.image.source === 'PokemonCard.io / English ME55C front scan'
       && card.image.localPath.startsWith('https://images.pokemoncard.io/images/me55c/me55c-')
