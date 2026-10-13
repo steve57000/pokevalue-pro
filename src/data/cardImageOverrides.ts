@@ -57,8 +57,6 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
 
 ]
 
-// These four MEP promo entries lack a usable image field in some catalog responses.
-// The URLs are exact English MEP promo scans and remain labeled fallbacks.
 // Exact English-front scans for the 30th Classic Collection (ME55C).
 // Provider IDs are explicit because several cards share a printed number.
 const classicCollectionCardIds:Record<string,string>={
@@ -97,6 +95,8 @@ const classicCollectionImageFor=(cardId:string)=>{
  const englishCardId=classicCollectionCardIds[cardId]
  return englishCardId?'https://images.pokemoncard.io/images/me55c/'+englishCardId+'.png':undefined
 }
+// These four MEP promo entries lack a usable image field in some catalog responses.
+// The URLs are exact English MEP promo scans and remain labeled fallbacks.
 const mepPromoScans:Record<string,string>={
  'mep-096':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-096_moltres.webp',
  'mep-097':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-097_articuno.webp',
