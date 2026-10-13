@@ -179,7 +179,7 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
     const sets = filterLocalizedSets(series.sets ?? [], language)
     if (!isAsian || !englishRequest) return { ...series, sets }
 
-    const frenchRequest = series.logo ? undefined : fetchSet<SeriesDetail>(seriesEndpointFor('fr', englishId)).catch(() => undefined)
+    const frenchRequest = series.logo && sets.every(set => set.logo) ? undefined : fetchSet<SeriesDetail>(seriesEndpointFor('fr', englishId)).catch(() => undefined)
     const [english, french] = await Promise.all([englishRequest, frenchRequest])
     const exactEnglish = english?.id?.toLocaleLowerCase('en') === englishId ? english : undefined
     const exactFrench = french && englishArtworkId(french.id) === englishId ? french : undefined
