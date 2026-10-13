@@ -37,6 +37,7 @@ import './feature-additions.css'
 type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'alerts' | 'share' | 'grading' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
+const PORTFOLIO_STORAGE_KEY = 'pv-portfolio-v1'
 const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'alerts', 'grading', 'estimator', 'guide', 'sync']
 const routeView = (): View => {
   if (window.location.hash.startsWith('#share=')) return 'share'
@@ -72,7 +73,7 @@ function App() {
   const [showcase, setShowcase] = useState<Card|null>(null)
   const [showcaseFavorite, setShowcaseFavorite] = useState<FavoriteInput|null>(null)
   const [portfolio, setPortfolio] = useState<CollectionDocument>(() => {
-    try { return parseCollection(readStoredJson<unknown>('pv-portfolio-v1', emptyCollection())) } catch { return emptyCollection() }
+    try { return parseCollection(readStoredJson<unknown>(PORTFOLIO_STORAGE_KEY, emptyCollection())) } catch { return emptyCollection() }
   })
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -83,7 +84,10 @@ function App() {
   const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
 
   useEffect(() => {
-    const warn = () => setStorageWarning(true)
+    const warn = (event: Event) => {
+      const key = (event as CustomEvent<{ key?: string }>).detail?.key
+      if (key === PORTFOLIO_STORAGE_KEY) setStorageWarning(true)
+    }
     window.addEventListener(STORAGE_WARNING_EVENT, warn)
     return () => window.removeEventListener(STORAGE_WARNING_EVENT, warn)
   }, [])
@@ -91,7 +95,7 @@ function App() {
     document.documentElement.dataset.theme = theme
     writeStoredString('pv-theme', theme)
   }, [theme])
-  useEffect(() => { writeStoredJson('pv-portfolio-v1', portfolio) }, [portfolio])
+  useEffect(() => { writeStoredJson(PORTFOLIO_STORAGE_KEY, portfolio) }, [portfolio])
   useEffect(() => { writeStoredJson(SCANNED_CARDS_STORAGE_KEY, recentScans) }, [recentScans])
   useEffect(() => {
     const titles: Record<View, string> = {

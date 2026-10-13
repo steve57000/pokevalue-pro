@@ -1,5 +1,47 @@
 export const STORAGE_WARNING_EVENT = 'pv-storage-warning'
 type StorageArea = 'local' | 'session'
+const OPTIONAL_CACHE_PREFIX = 'pokevalue:'
+
+function isQuotaExceeded(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as { name?: string; code?: number }
+  return candidate.name === 'QuotaExceededError'
+    || candidate.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    || candidate.code === 22
+    || candidate.code === 1014
+}
+
+function removeOptionalCache(storage: Storage): boolean {
+  let removed = false
+  try {
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index)
+      if (key?.startsWith(OPTIONAL_CACHE_PREFIX)) {
+        storage.removeItem(key)
+        removed = true
+      }
+    }
+  } catch {
+    return false
+  }
+  return removed
+}
+
+function setStoredValue(storage: Storage, key: string, value: string, area: StorageArea): void {
+  try {
+    storage.setItem(key, value)
+  } catch (error) {
+    // Catalogue responses are disposable. Free their space before giving up on user data.
+    if (area !== 'local' || key.startsWith(OPTIONAL_CACHE_PREFIX) || !isQuotaExceeded(error) || !removeOptionalCache(storage)) throw error
+    storage.setItem(key, value)
+  }
+}
+
+function notifyStorageFailure(key: string, area: StorageArea): void {
+  if (area === 'local' && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(STORAGE_WARNING_EVENT, { detail: { key } }))
+  }
+}
 
 function storageFor(area: StorageArea): Storage | undefined {
   try {
@@ -26,10 +68,10 @@ export function writeStoredString(key: string, value: string, area: StorageArea 
   try {
     const storage = storageFor(area)
     if (!storage) throw new Error('Storage unavailable')
-    storage.setItem(key, value)
+    setStoredValue(storage, key, value, area)
     return true
   } catch {
-    if (notifyFailure && area === 'local' && typeof window !== 'undefined') window.dispatchEvent(new Event(STORAGE_WARNING_EVENT))
+    if (notifyFailure) notifyStorageFailure(key, area)
     return false
   }
 }
@@ -41,7 +83,7 @@ export function removeStoredValue(key: string): boolean {
     storage.removeItem(key)
     return true
   } catch {
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event(STORAGE_WARNING_EVENT))
+    notifyStorageFailure(key, 'local')
     return false
   }
 }
@@ -52,7 +94,7 @@ export function writeStoredJson(key: string, value: unknown, area: StorageArea =
     if (serialized === undefined) throw new Error('Value is not serializable')
     return writeStoredString(key, serialized, area, notifyFailure)
   } catch {
-    if (notifyFailure && area === 'local' && typeof window !== 'undefined') window.dispatchEvent(new Event(STORAGE_WARNING_EVENT))
+    if (notifyFailure) notifyStorageFailure(key, area)
     return false
   }
 }
