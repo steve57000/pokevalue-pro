@@ -55,7 +55,20 @@ function SetBadge({sources,name,imageClass,fallbackClass}:SetBadgeProps){
  const src=sources[index]
  const retry=()=>{setLoaded(false);if(index+1<sources.length){setIndex(index+1);return}setFailed(true)}
  useEffect(()=>{if(!nearViewport||!src||failed||loaded)return;const timer=window.setTimeout(()=>{if(index+1<sources.length)setIndex(index+1);else setFailed(true)},6000);return()=>window.clearTimeout(timer)},[nearViewport,src,failed,loaded,index,sources.length])
- return src&&!failed?<span ref={badgeRef} className="set-badge-wrap"><img className={imageClass} src={src} alt={'Logo '+name} loading={nearViewport?'eager':'lazy'} decoding="async" onLoad={()=>setLoaded(true)} onError={retry}/>{!loaded&&<span className="pv-spinner set-badge-spinner" role="status" aria-label={'Chargement du logo '+name}/>}</span>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
+ return (
+  <span
+   ref={badgeRef}
+   className={src&&!failed?'set-badge-wrap':fallbackClass}
+   aria-label={src&&!failed?undefined:'Repère '+name}
+  >
+   {src&&!failed?(
+    <>
+     <img className={imageClass} src={src} alt={'Logo '+name} loading={nearViewport?'eager':'lazy'} decoding="async" onLoad={()=>setLoaded(true)} onError={retry}/>
+     {!loaded&&<span className="pv-spinner set-badge-spinner" role="status" aria-label={'Chargement du logo '+name}/>}
+    </>
+   ):mark}
+  </span>
+ )
 }
 export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,headerExtra}:Props){
  const saved=useRef(read(VIEW_KEY,initial)).current
