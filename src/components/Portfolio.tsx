@@ -2,6 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, ty
 import { ChevronDown, Minus, Plus, SlidersHorizontal } from 'lucide-react'
 import { listSets,getSet,listSeries,getSeries,chooseAvailableSetId,type CatalogLanguage,type SeriesSummary,type SetDetail,type SetSummary,type SetCard } from '../api/sets'
 import { CatalogueImage } from './CatalogueImage'
+import { seriesLogoSources,setLogoSources } from '../domain/catalogueLogos'
 import type { CollectionDocument,CollectionEntry } from '../domain/collection'
 import { collectionUnitPrice,printingKey,upsertEntry } from '../domain/collection'
 import { CardEditor } from './CardEditor'
@@ -28,62 +29,6 @@ export const minCollectionColumns=(width:number)=>width>=900?3:width>=640?2:1
 export const maxCollectionColumns=(width:number)=>width>=1200?5:width>=900?4:width>=640?3:width>=340?2:1
 export const effectiveCollectionColumns=(preferred:number,width:number)=>Math.min(maxCollectionColumns(width),Math.max(minCollectionColumns(width),Math.min(5,preferred)))
 const displaySetName=(name?:string)=>name?.replace(/Collection Classique\s*30[ᵉe]?\s*Anniversaire/i,'Collection Classique · 30e Anniversaire')
-const anniversaryLogo='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'
-const curatedSetLogosById:Record<string,string[]>={
- mep:['https://data.eyevo.app/eyevo/logos/sets/mep.png'],
- me01:['https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'],
- me02:['https://www.pokepedia.fr/images/thumb/1/18/Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png/800px-Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png'],
- 'me02.5':['https://www.pokepedia.fr/images/thumb/4/4c/Logo_Méga-%C3%89volution_Héros_Transcendants_JCC.png/800px-Logo_Méga-%C3%89volution_Héros_Transcendants_JCC.png'],
- me03:['https://www.pokepedia.fr/images/thumb/c/c6/Logo_Méga-%C3%89volution_Équilibre_Parfait_JCC.png/800px-Logo_Méga-%C3%89volution_Équilibre_Parfait_JCC.png'],
- me04:['https://www.pokepedia.fr/images/thumb/2/2a/Logo_Méga-%C3%89volution_Chaos_Ascendant_JCC.png/800px-Logo_Méga-%C3%89volution_Chaos_Ascendant_JCC.png'],
- me05:['https://www.pokepedia.fr/images/thumb/6/67/Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png/800px-Logo_Méga-%C3%89volution_Nuit_Noire_JCC.png'],
- '30th':[anniversaryLogo],
- '30th-c':['https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png',anniversaryLogo],
-}
-const tcgdexLogoSources=(url?:string)=>{
- if(!url)return[]
- const value=url.trim()
- if(!value)return[]
- if(!/assets\.tcgdex\.net\//i.test(value))return[value]
- const match=value.match(/^([^?#]*)([?#].*)?$/)
- if(!match)return[value]
- const path=match[1].replace(/\/+$/,'')
- const suffix=match[2]??''
- const extension=path.match(/\.(webp|png|jpe?g)$/i)?.[1]?.toLowerCase()
- if(extension){
-  const stem=path.slice(0,-extension.length-1)
-  const alternates=extension==='png'?['webp']:extension==='webp'?['png']:[]
-  return [...new Set([value,...alternates.map(format=>stem+'.'+format+suffix)])]
- }
- return[path+'.png'+suffix,path+'.webp'+suffix]
-}
-const normalizeTcgDexLogoPath=(url?:string)=>{
- if(!url)return undefined
- return url.replace(/(assets\.tcgdex\.net\/(?:en|fr|ja|zh-tw)\/)([^/]+)\/([^/]+)\//i,(_match,prefix,serie,set)=>prefix+serie.toLowerCase()+'/'+set.toLowerCase()+'/')
-}
-const curatedSeriesLogosById:Record<string,string[]>={
- me:['https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'],
- '30th':[anniversaryLogo],
-}
-const asianLogoFallback=(language:string)=>language==='ja'||language==='zh-tw'
-export const seriesLogoSources=(seriesId:string,logo?:string,language='fr')=>{
- const allowFrenchFallback=language==='fr'||asianLogoFallback(language)
- const curated=allowFrenchFallback?curatedSeriesLogosById[seriesId.toLowerCase()]??[]:[]
- const paths=[logo,normalizeTcgDexLogoPath(logo),...curated]
- return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
-}
-export const setLogoSources=(setId:string,_seriesId?:string,logo?:string,_symbol?:string,_name='',language='fr',parentLogo?:string)=>{
- const asian=asianLogoFallback(language)
- const allowFrenchFallback=language==='fr'||asian
- const curated=allowFrenchFallback?curatedSetLogosById[setId.toLowerCase()]??[]:[]
- // Prefer an exact-ID asset already curated by the app over stale catalogue metadata
- // in French. Asian catalogs keep their own logo first, then use the same exact-ID
- // French fallback and finally the English family mark.
- const paths=asian
-  ? [logo,normalizeTcgDexLogoPath(logo),...curated,parentLogo,normalizeTcgDexLogoPath(parentLogo)]
-  : [...curated,logo,normalizeTcgDexLogoPath(logo)]
- return [...new Set(paths.flatMap(tcgdexLogoSources).filter(Boolean))]
-}
 function LoadingFeedback({children,className=''}:{children:string;className?:string}){
  return <span className={`loading-feedback ${className}`.trim()} role="status" aria-live="polite"><span className="pv-spinner" aria-hidden="true"/><span>{children}</span></span>
 }
@@ -102,11 +47,11 @@ function SetBadge({sources,name,imageClass,fallbackClass}:SetBadgeProps){
  const [index,setIndex]=useState(0),[failed,setFailed]=useState(false),[loaded,setLoaded]=useState(false),[nearViewport,setNearViewport]=useState(false)
  const badgeRef=useRef<HTMLSpanElement>(null)
  const sourceKey=sources.join('|')
- useEffect(()=>{setIndex(0);setFailed(false);setLoaded(false);setNearViewport(false);const node=badgeRef.current;if(!node)return;if(typeof IntersectionObserver==='undefined'){setNearViewport(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setNearViewport(true);observer.disconnect()}},{rootMargin:'200px'});observer.observe(node);return()=>observer.disconnect()},[sourceKey])
+ useEffect(()=>{setIndex(0);setFailed(false);setLoaded(false);setNearViewport(false);const node=badgeRef.current;if(!node)return;if(typeof IntersectionObserver==='undefined'){setNearViewport(true);return}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setNearViewport(true);observer.disconnect()}},{rootMargin:'500px'});observer.observe(node);return()=>observer.disconnect()},[sourceKey])
  const mark=name.match(/30|[A-ZÀ-Þ]{2}/i)?.[0]??name.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()
  const src=sources[index]
  const retry=()=>{setLoaded(false);if(index+1<sources.length){setIndex(index+1);return}setFailed(true)}
- useEffect(()=>{if(!nearViewport||!src||failed||loaded)return;const timer=window.setTimeout(()=>{if(index+1<sources.length)setIndex(index+1);else setFailed(true)},2500);return()=>window.clearTimeout(timer)},[nearViewport,src,failed,loaded,index,sources.length])
+ useEffect(()=>{if(!nearViewport||!src||failed||loaded)return;const timer=window.setTimeout(()=>{if(index+1<sources.length)setIndex(index+1);else setFailed(true)},6000);return()=>window.clearTimeout(timer)},[nearViewport,src,failed,loaded,index,sources.length])
  return src&&!failed?<span ref={badgeRef} className="set-badge-wrap"><img className={imageClass} src={src} alt={'Logo '+name} loading={nearViewport?'eager':'lazy'} decoding="async" onLoad={()=>setLoaded(true)} onError={retry}/>{!loaded&&<span className="pv-spinner set-badge-spinner" role="status" aria-label={'Chargement du logo '+name}/>}</span>:<span className={fallbackClass} aria-label={'Repère '+name}>{mark}</span>
 }
 export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,headerExtra}:Props){
@@ -184,7 +129,7 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,hea
     {getGradingInterest({rawPrice:prices[card.id]?.price?.value,rarity:card.rarity,...prices[card.id]?.cardmarket}).level==='high'&&<span className="tile-grading-badge" title="Potentiel à étudier — estimation basée sur prix, rareté et tendance">★ Potentiel gradation</span>}
     <strong className="binder-title">{card.name}</strong>
     <span className="binder-meta">{card.localId}/{detail?.cardCount.official??detail?.cardCount.total} · {selectedSet==='30th-c'?'Classique 30e':displaySetName(detail?.name)}</span>
-    <div className="binder-price"><small>Référence Cardmarket · langue non filtrée</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}</div>
+    <div className="binder-price"><small>Cardmarket · Europe · toutes langues</small>{prices[card.id]?.price?<strong>{money(prices[card.id].price!.value)}</strong>:<span>Prix indisponible</span>}{language==='en'&&prices[card.id]?.tcgplayer?.market!==undefined&&<span className="binder-market-secondary">TCGplayer · Amérique du Nord: {money(prices[card.id]!.tcgplayer!.market!,'USD')}</span>}{(language==='ja'||language==='zh-tw')&&<span className="binder-market-secondary">Pas de cotation locale asiatique</span>}</div>
     <div className={`card-quick-actions ${has?'is-owned':'is-missing'}`}>
      {entry?<CollectionQuantityStepper entry={entry} cardName={card.name} flash={quantityFlash===card.id} onDecrement={()=>changeQuantity(Math.max(0,entry.quantity-1))} onIncrement={()=>{changeQuantity(entry.quantity+1);setQuantityFlash(card.id);setTimeout(()=>setQuantityFlash(null),450)}}/>:<button className="add-card-action" aria-label={`Ajouter ${card.name} à ma collection`} onClick={()=>setEditing(card)}><Plus size={15}/> <span>Ajouter à ma collection</span></button>}
      {utilities}

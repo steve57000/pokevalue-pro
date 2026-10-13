@@ -87,6 +87,26 @@ const englishArtworkId = (id: string) => englishSeriesAliases.get(id.toLocaleLow
 const exactArtworkIds=(id:string)=>[id.toLocaleLowerCase('en')]
 const englishSeriesArtworkIds=(id:string)=>[englishArtworkId(id)]
 const asianLanguages = new Set(['ja','zh-tw'])
+const withFrenchArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(
+  items: T[],
+  language: string,
+  frenchRequest: () => Promise<T[]>,
+  artworkIds: (id: string) => string[] = exactArtworkIds,
+): Promise<T[]> => {
+  if ((!asianLanguages.has(language) && language !== 'en') || !items.some(item => !item.logo)) return items
+  try {
+    const french = await frenchRequest()
+    const byId = new Map(french.flatMap(item => artworkIds(item.id).map(id => [id, item] as const)))
+    return items.map(item => {
+      if (item.logo) return item
+      const fallback = artworkIds(item.id).map(id => byId.get(id)).find(Boolean)
+      return { ...item, logo: fallback?.logo, symbol: item.symbol ?? fallback?.symbol }
+    })
+  } catch {
+    return items
+  }
+}
+
 const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?: string }>(items: T[], language: string, endpoint: (id?: string) => string, englishRequest?: Promise<T[]>, artworkIds:(id:string)=>string[]=exactArtworkIds): Promise<T[]> => {
   if (!asianLanguages.has(language)) return items
   try {
@@ -101,31 +121,40 @@ const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?
   }
 }
 export const listSets = async (language: string='fr') => {
+  if (language === 'en') {
+    const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
+    return withFrenchArtwork(sets, language, () => fetchSet<SetSummary[]>(base('fr')))
+  }
   if (!asianLanguages.has(language)) return filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
   const englishRequest = fetchSet<SetSummary[]>(base('en')).catch(() => [])
   const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
-  return withEnglishArtwork(sets, language, () => base('en'), englishRequest)
+  const withEnglish = await withEnglishArtwork(sets, language, () => base('en'), englishRequest)
+  return withFrenchArtwork(withEnglish, language, () => fetchSet<SetSummary[]>(base('fr')))
 }
 export const getSet = async (id: string, language: string='fr'): Promise<SetDetail> => {
   if (asianLanguages.has(language) && asianCatalogueGhostIds.has(id)) {
     throw new Error(`L’extension ${id} est une entrée vide du catalogue ${language.toUpperCase()}.`)
   }
-  const englishRequest = asianLanguages.has(language)
-    ? fetchSet<SetDetail>(`${base('en')}/${encodeURIComponent(id.toLocaleLowerCase('en'))}`).catch(() => undefined)
+  const isAsian = asianLanguages.has(language)
+  const normalizedId = id.toLocaleLowerCase('en')
+  const englishRequest = isAsian
+    ? fetchSet<SetDetail>(`${base('en')}/${encodeURIComponent(normalizedId)}`).catch(() => undefined)
     : undefined
   const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
-  if (englishRequest) {
-    const english = await englishRequest
-    if (english?.id && exactArtworkIds(english.id).includes(id.toLocaleLowerCase('en'))) {
-      set.logo ??= english.logo
-      set.symbol ??= english.symbol
-    }
+  if (isAsian || (language === 'en' && !set.logo)) {
+    const frenchRequest = set.logo ? undefined : fetchSet<SetDetail>(`${base('fr')}/${encodeURIComponent(normalizedId)}`).catch(() => undefined)
+    const [english, french] = await Promise.all([englishRequest ?? Promise.resolve(undefined), frenchRequest])
+    const exactEnglish = english?.id && exactArtworkIds(english.id).includes(normalizedId) ? english : undefined
+    const exactFrench = french?.id && exactArtworkIds(french.id).includes(normalizedId) ? french : undefined
+    set.logo ??= exactEnglish?.logo ?? exactFrench?.logo
+    set.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
   }
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
-const seriesEndpoint = (id?: string) => `https://api.tcgdex.net/v2/en/series${id ? `/${encodeURIComponent(id)}` : ''}`
+const seriesEndpointFor = (language: string, id?: string) => `https://api.tcgdex.net/v2/${language}/series${id ? `/${encodeURIComponent(id)}` : ''}`
+const seriesEndpoint = (id?: string) => seriesEndpointFor('en', id)
 export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]> => {
   const englishRequest = asianLanguages.has(language) ? fetchSet<SeriesSummary[]>(seriesEndpoint()).catch(() => []) : undefined
   let series: SeriesSummary[]
@@ -142,23 +171,32 @@ export const listSeries = async (language: string='fr'): Promise<SeriesSummary[]
     if (!families.size) throw new Error(`Les séries du catalogue ${language.toUpperCase()} sont temporairement indisponibles.`)
     series = [...families.values()]
   }
-  return withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest, englishSeriesArtworkIds)
+  const withEnglish = await withEnglishArtwork(series, language, () => seriesEndpoint(), englishRequest, englishSeriesArtworkIds)
+  return withFrenchArtwork(withEnglish, language, () => fetchSet<SeriesSummary[]>(`https://api.tcgdex.net/v2/fr/series`), englishSeriesArtworkIds)
 }
 export const getSeries = async (id: string, language: string='fr'): Promise<SeriesDetail> => {
-  const englishRequest = asianLanguages.has(language)
-    ? fetchSet<SeriesDetail>(seriesEndpoint(englishArtworkId(id))).catch(() => undefined)
+  const isAsian = asianLanguages.has(language)
+  const needsFallback = isAsian || language === 'en'
+  const englishId = englishArtworkId(id)
+  const englishRequest = isAsian
+    ? fetchSet<SeriesDetail>(seriesEndpoint(englishId)).catch(() => undefined)
     : undefined
   try {
     const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
     const sets = filterLocalizedSets(series.sets ?? [], language)
-    if (!englishRequest) return { ...series, sets }
-    const english = await englishRequest
-    if (!english?.id || english.id.toLocaleLowerCase('en') !== englishArtworkId(id)) return { ...series, sets }
-    series.logo ??= english.logo
-    series.symbol ??= english.symbol
-    const englishSets = new Map((english.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(id => [id,set] as const)))
+    if (!needsFallback) return { ...series, sets }
+
+    const frenchRequest = series.logo && sets.every(set => set.logo) ? undefined : fetchSet<SeriesDetail>(seriesEndpointFor('fr', englishId)).catch(() => undefined)
+    const [english, french] = await Promise.all([englishRequest ?? Promise.resolve(undefined), frenchRequest])
+    const exactEnglish = english?.id?.toLocaleLowerCase('en') === englishId ? english : undefined
+    const exactFrench = french && englishArtworkId(french.id) === englishId ? french : undefined
+    series.logo ??= exactEnglish?.logo ?? exactFrench?.logo
+    series.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
+    const englishSets = new Map((exactEnglish?.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(setId => [setId,set] as const)))
+    const frenchSets = new Map((exactFrench?.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(setId => [setId,set] as const)))
     return { ...series, sets: sets.map(set => {
-      const fallback = exactArtworkIds(set.id).map(id => englishSets.get(id)).find(Boolean)
+      const matchingId = exactArtworkIds(set.id)[0]
+      const fallback = englishSets.get(matchingId) ?? frenchSets.get(matchingId)
       return { ...set, logo: set.logo ?? fallback?.logo, symbol: set.symbol ?? fallback?.symbol }
     }) }
   } catch {

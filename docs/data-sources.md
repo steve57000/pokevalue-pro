@@ -12,9 +12,8 @@ numéros, raretés, images et éventuels prix restent attribués à la réponse 
 
 - Les images TCGdex utilisent des URL canoniques sans extension, servies en WebP ou PNG selon l’asset. Pokémon TCG API n'est utilisée que comme repli
   d'image pour quelques identifiants compatibles, avec attribution explicite.
-- Les données Cardmarket exposées par TCGdex peuvent contenir `trend`, `avg`, `avg7`, `avg30` et
-  `low`, en EUR, ainsi qu'une date de mise à jour. L'interface les décrit comme indicateurs agrégés,
-  jamais comme prix garanti d'une carte française ou d'un état donné.
+- Les prix TCGdex couvrent Cardmarket Europe (EUR, quotidien) et TCGplayer Amérique du Nord (USD, horaire ou quotidien), pas les marchés locaux japonais/chinois. Cardmarket expose les indicateurs non-foil à plat (trend, avg7, avg30, low) et les prix holo via des clés à tiret (trend-holo, avg-holo, etc.). TCGplayer est imbriqué par finition (normal, holofoil, reverse-holofoil). L'application conserve ces variantes séparément.
+- Une cotation Cardmarket reste une référence européenne non filtrée par langue. Pour le catalogue anglais, TCGplayer apparaît comme repère nord-américain séparé en USD; il n'est ni converti ni additionné à la valeur du portfolio en EUR. Pour les catalogues japonais et chinois, aucune cote locale n'est disponible; l'application ne présente pas une valeur européenne ou américaine comme prix asiatique.
 - Le client met les fiches en cache 24 heures, limite sa concurrence à six requêtes et réutilise le
   cache périmé en cas d'indisponibilité. Aucune actualisation serveur n'est ajoutée : sans contrat
   fournisseur garantissant la fréquence et les droits de redistribution, promettre une mise à jour
@@ -63,9 +62,7 @@ promotions et sous-ensembles fournis par la source. Le modèle accepte ces disti
 ## Prix et valeur du portfolio
 
 Une valeur n'est additionnée que lorsqu'un prix fournisseur valide existe pour l'impression.
-Chaque affichage précise fournisseur, indicateur, devise et date. À défaut, l'application affiche
-« prix indisponible » ou une estimation éditoriale clairement distincte. L'état, la langue, une
-reverse/holo et la gradation peuvent changer le prix : un agrégat Cardmarket ne les garantit pas.
+Chaque affichage précise fournisseur, marché, indicateur, devise et date quand la source les expose. Cardmarket Europe est le seul prix utilisé pour valoriser et additionner le portfolio, en EUR; sa langue n'est pas vérifiée. Le repère TCGplayer USD est réservé à l'affichage séparé du catalogue anglais. Les prix holo/reverse TCGplayer restent distincts des prix normaux. Aucun fournisseur de marché asiatique n'est branché : une vraie cote japonaise ou chinoise nécessite une source locale autorisée, un rapprochement fiable d'impression et un relais serveur si la clé n'est pas publique. À défaut, l'application indique que le prix local est indisponible.
 
 ## GitHub
 

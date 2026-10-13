@@ -39,6 +39,40 @@ describe('localized set catalogue', () => {
     expect(sets[0].logo).toBe('https://assets.tcgdex.net/en/sv/sv8a/logo.png')
   })
 
+  it('uses an exact-ID French logo when an English set has no native logo', async () => {
+    const english = [{ id: 'sv8a', name: '30th Celebration', cardCount: { total: 1, official: 1 } }]
+    const frenchLogo = 'https://assets.tcgdex.net/fr/sv/sv8a/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/en/')
+        ? english
+        : [{ id: 'sv8a', name: '30e Anniversaire', logo: frenchLogo }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sets = await listSets('en')
+
+    expect(sets[0].logo).toBe(frenchLogo)
+  })
+
+  it('uses an exact-ID French logo when the Asian and English catalogs have none', async () => {
+    const local = [{ id: 'SV8a', name: '異度審判', cardCount: { total: 1, official: 1 }, serie: { id: 'SV' } }]
+    const frenchLogo = 'https://assets.tcgdex.net/fr/sv/sv8a/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/zh-tw/')
+        ? local
+        : url.includes('/en/')
+          ? [{ id: 'other-set', name: 'Different expansion', logo: 'https://assets.tcgdex.net/en/sv/other-set/logo.png' }]
+          : [{ id: 'sv8a', name: 'Autre traduction', logo: frenchLogo }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sets = await listSets('zh-tw')
+
+    expect(sets[0].logo).toBe(frenchLogo)
+  })
+
   it('matches Japanese series logos when TCGdex capitalizes the localized ID', async () => {
     const fetchMock = vi.fn(async (url: string) => ({
       ok: true,
@@ -87,6 +121,25 @@ describe('localized set catalogue', () => {
     expect(series[0].logo).toBe(logo)
   })
 
+
+  it('uses exact-ID French artwork when an Asian family still has missing logos', async () => {
+    const familyLogo = 'https://assets.tcgdex.net/fr/sv/logo.png'
+    const setLogo = 'https://assets.tcgdex.net/fr/sv/sv8a/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/ja/')
+        ? { id: 'SV', name: 'スカーレット&バイオレット', sets: [{ id: 'SV8a', name: '拡張パック', cardCount: { total: 1, official: 1 } }] }
+        : url.includes('/en/')
+          ? { id: 'sv', name: 'Scarlet & Violet', sets: [{ id: 'other', name: 'Different expansion', cardCount: { total: 1, official: 1 }, logo: 'https://assets.tcgdex.net/en/sv/other/logo.png' }] }
+          : { id: 'sv', name: 'Écarlate et Violet', logo: familyLogo, sets: [{ id: 'sv8a', name: 'Extension', cardCount: { total: 1, official: 1 }, logo: setLogo }] },
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const series = await getSeries('SV', 'ja')
+
+    expect(series.logo).toBe(familyLogo)
+    expect(series.sets[0].logo).toBe(setLogo)
+  })
 
   it('uses only a family logo for a Japanese series and does not assign an unrelated English set logo', async () => {
     const familyLogo = 'https://assets.tcgdex.net/en/base/logo.png'

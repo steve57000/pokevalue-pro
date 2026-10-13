@@ -1,7 +1,8 @@
 import {describe,expect,it} from 'vitest'
 import {createElement} from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
-import {CollectionQuantityStepper,effectiveCollectionColumns,maxCollectionColumns,minCollectionColumns,seriesLogoSources,setLogoSources} from './Portfolio'
+import {CollectionQuantityStepper,effectiveCollectionColumns,maxCollectionColumns,minCollectionColumns} from './Portfolio'
+import {seriesLogoSources,setLogoSources} from '../domain/catalogueLogos'
 describe('collection density',()=>{
  it.each([[339,1],[340,2],[639,2],[640,3],[899,3],[900,4],[1199,4],[1200,5],[1920,5]])('limits %ipx to %i columns',(width,columns)=>expect(maxCollectionColumns(width)).toBe(columns))
  it.each([[1,339],[1,340],[1,639],[2,640],[2,899],[3,900],[3,1199],[3,1200]])('requires at least %i columns at %ipx',(columns,width)=>expect(minCollectionColumns(width)).toBe(columns))
@@ -21,6 +22,7 @@ describe('series logos',()=>{
  it('restores the French 30th anniversary series logo by stable series ID',()=>{
   expect(seriesLogoSources('30th',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
   expect(seriesLogoSources('30th',undefined,'ja')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
+  expect(seriesLogoSources('30th',undefined,'en')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
   expect(seriesLogoSources('me',undefined,'fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png')
   expect(seriesLogoSources('other-series',undefined,'fr')).toEqual([])
  })
@@ -46,16 +48,22 @@ describe('series logos',()=>{
   const urls=setLogoSources(setId,seriesId,undefined,undefined,name,language)
   expect(urls).toEqual([])
  })
- it('uses a curated logo only for an explicitly listed French set ID',()=>{
+ it('uses curated exact-ID logos as a fallback in English catalogs',()=>{
   expect(setLogoSources('mep','me',undefined,undefined,'Nom libre','fr')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png')
-  expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos','en')).toEqual([])
+  expect(setLogoSources('mep','me',undefined,undefined,'MEP Black Star Promos','en')[0]).toBe('https://data.eyevo.app/eyevo/logos/sets/mep.png')
   expect(setLogoSources('me01','me',undefined,undefined,'Nom quelconque','fr')[0]).toBe('https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png')
+  expect(setLogoSources('30th','me',undefined,undefined,'30th Celebration','en')[0]).toBe('https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png')
  })
  it('normalizes logo path casing without guessing another series prefix',()=>{
   const source='https://assets.tcgdex.net/ja/S/S1H/logo'
   const urls=setLogoSources('S1H','S',source,undefined,'無極力量','ja')
   expect(urls).toContain('https://assets.tcgdex.net/ja/s/s1h/logo.png')
   expect(urls.some(url=>url.includes('/ja/swsh/'))).toBe(false)
+ })
+ it('prefers a native English logo before the exact-ID French fallback',()=>{
+  const native='https://assets.tcgdex.net/en/me/30th/logo.png'
+  expect(setLogoSources('30th','me',native,undefined,'30th Celebration','en')[0]).toBe(native)
+  expect(setLogoSources('30th-c','me',undefined,undefined,'30th Classic Collection','en')[0]).toBe('https://assets.binderdex.com/tcg/sets/pkmn/30th-celebration-classic-collection/logo.png')
  })
  it('prioritizes curated French logos over catalogue metadata for exact set IDs',()=>{
   const anniversary='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'

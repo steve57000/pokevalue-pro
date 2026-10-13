@@ -1,4 +1,4 @@
-export const money = (value: number, currency: 'EUR' = 'EUR') => {
+export const money = (value: number, currency: 'EUR' | 'USD' = 'EUR') => {
   // Normalize to cents first so floating point sums such as 0.1 + 0.2
   // still render as a clean currency amount.
   const rounded = Math.round((value + Math.sign(value) * Number.EPSILON) * 100) / 100
