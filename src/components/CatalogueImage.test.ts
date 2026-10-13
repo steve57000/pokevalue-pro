@@ -1,7 +1,24 @@
 import {describe,expect,it} from 'vitest'
 import {imageFallbackOrder,resolveCatalogueImage} from './CatalogueImage'
+import {cardImageOverrideById} from '../data/cardImageOverrides'
 const card={id:'xy-1',name:'Carte',localId:'1'}
 describe('catalogue image providers',()=>{
+ it('n’affiche pas le dos générique pour les 30 cartes Classic Collection',async()=>{
+  const classic=[...cardImageOverrideById.values()].filter(override=>override.setId==='30th-c')
+  expect(classic).toHaveLength(30)
+  for(const override of classic){
+   const image=await resolveCatalogueImage({
+    id:override.cardId,
+    name:override.name,
+    localId:override.cardId.slice(-3),
+    image:'/images/pokemon-card-back.jpg',
+   },'fr','low',async(id,language)=>({id,name:override.name,localId:override.cardId.slice(-3),language:language??'fr',image:'/images/pokemon-card-back.jpg'}))
+   expect(image.url).toBe(override.image?.localPath)
+   expect(image.language).toBe('en')
+   expect(image.isFallback).toBe(true)
+   expect(image.source).toBe('local-override')
+  }
+ })
  it('garde la langue asiatique demandée et utilise uniquement le repli anglais',()=>{expect(imageFallbackOrder('JP')).toEqual(['ja','en']);expect(imageFallbackOrder('ZH')).toEqual(['zh-tw','en']);expect(imageFallbackOrder('FR')).toEqual(['fr','en']);expect(imageFallbackOrder('EN')).toEqual(['en','fr'])})
  it('emploie un TCGdex anglais exact et le signale',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async(id,language)=>({id,name:'Carte',language:language??'fr',image:language==='en'?'https://exact':undefined}));expect(image.url).toBe('https://exact/low.webp');expect(image.isFallback).toBe(true)})
  it('préfère le placeholder à une impression différente',async()=>{const image=await resolveCatalogueImage(card,'fr','low',async()=>({id:'xy-2',name:'Autre',language:'en',image:'https://wrong'}));expect(image.url).toBeUndefined();expect(image.source).toBe('none')})
