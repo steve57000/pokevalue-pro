@@ -63,3 +63,4 @@ describe('TCGdex market pricing shapes', () => {
     expect(selectTcgplayerPrice({ tcgplayer: { marketPrice: 3 } } as never)?.value).toBe(3)
   })
 })
+
