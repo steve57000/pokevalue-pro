@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getPriceStats, selectCardmarketPrice, selectTcgplayerPrice } from './pricing'
+import sample from '../data/priceProviderSample.json'
+import { collectMarketPriceQuotes, getPriceStats, selectCardmarketPrice, selectTcgplayerPrice } from './pricing'
 
 describe('selectCardmarketPrice', () => {
   it('uses the Cardmarket trend as the European reference', () => {
@@ -7,14 +8,15 @@ describe('selectCardmarketPrice', () => {
   })
 
   it('falls back to the most recent available average before the low price', () => {
-    expect(selectCardmarketPrice({ cardmarket: { avg7: 7, avg30: 9, low: 5 } })).toMatchObject({ value: 7, label: 'Moyenne 7 jours' })
-    expect(selectCardmarketPrice({ cardmarket: { avg30: 9, avg: 8, low: 5 } })).toMatchObject({ value: 9, label: 'Moyenne 30 jours' })
-    expect(selectCardmarketPrice({ cardmarket: { avg: 8, low: 5 } })).toMatchObject({ value: 8, label: 'Prix moyen' })
-    expect(selectCardmarketPrice({ cardmarket: { low: 5 } })).toMatchObject({ value: 5, label: 'Prix bas Cardmarket' })
+    expect(selectCardmarketPrice({ cardmarket: { avg7: 7, avg30: 9, low: 5 } })).toMatchObject({ value: 7, label: 'Moyenne des ventes 7 jours', basis: 'completed-sale' })
+    expect(selectCardmarketPrice({ cardmarket: { avg30: 9, avg: 8, low: 5 } })).toMatchObject({ value: 9, label: 'Moyenne des ventes 30 jours', basis: 'completed-sale' })
+    expect(selectCardmarketPrice({ cardmarket: { avg1: 7, low: 5 } })).toMatchObject({ value: 7, label: 'Moyenne des ventes 1 jour', basis: 'completed-sale' })
+    expect(selectCardmarketPrice({ cardmarket: { avg: 8, low: 5 } })).toMatchObject({ value: 8, label: 'Prix de vente moyen Cardmarket', basis: 'completed-sale' })
+    expect(selectCardmarketPrice({ cardmarket: { low: 5 } })).toMatchObject({ value: 5, label: 'Annonce la moins chère Cardmarket', basis: 'listing' })
   })
 
   it('ignores null, zero, or invalid values', () => {
-    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg7: 0, avg30: -1, avg: Number.NaN, low: 3 } })).toMatchObject({ value: 3, label: 'Prix bas Cardmarket' })
+    expect(selectCardmarketPrice({ cardmarket: { trend: null, avg7: 0, avg30: -1, avg: Number.NaN, low: 3 } })).toMatchObject({ value: 3, label: 'Annonce la moins chère Cardmarket', basis: 'listing' })
   })
 
   it('returns undefined when no usable price exists', () => {
@@ -65,8 +67,46 @@ describe('TCGdex market pricing shapes', () => {
 
   it('uses the median then the low price when TCGplayer has no market field', () => {
     expect(selectTcgplayerPrice({ tcgplayer: { midPrice: 4.25, lowPrice: 3.5 } } as never)).toMatchObject({ value: 4.25, label: 'Prix intermédiaire TCGplayer', currency: 'USD' })
-    expect(selectTcgplayerPrice({ tcgplayer: { lowPrice: 3.5 } } as never)).toMatchObject({ value: 3.5, label: 'Prix bas TCGplayer', currency: 'USD' })
+    expect(selectTcgplayerPrice({ tcgplayer: { lowPrice: 3.5 } } as never)).toMatchObject({ value: 3.5, label: 'Prix bas TCGplayer', currency: 'USD', basis: 'listing' })
     expect(selectTcgplayerPrice({ tcgplayer: { marketPrice: 0, midPrice: Number.NaN, lowPrice: -2 } } as never)).toBeUndefined()
+  })
+})
+
+describe('fixed four-language provider validation sample', () => {
+  it('keeps the known shared upstream product mappings visible', () => {
+    const rows = sample.cards
+    expect(rows.map(row => [row.catalogLanguage, row.cardId])).toEqual([
+      ['fr', 'sv03.5-025'], ['en', 'sv03.5-025'], ['ja', 'SV2a-025'], ['zh-tw', 'SV2a-025'],
+    ])
+    expect(rows[0].cardmarketProductId).toBe(rows[1].cardmarketProductId)
+    expect(rows[2].cardmarketProductId).toBe(rows[3].cardmarketProductId)
+  })
+
+  it('records every sampled market reference with date, basis, and explicit unknowns', () => {
+    for (const row of sample.cards) {
+      const pricing = {
+      cardmarket: { idProduct: row.cardmarketProductId, unit: 'EUR', updated: '2026-10-12T12:00:00.000Z', trend: 1.25, avg: 1.1, avg1: 1.2, avg7: 1.15, avg30: 1.05, low: 0.8, 'trend-holo': 4.5, 'avg-holo': 4.2, 'avg1-holo': 4.4, 'avg7-holo': 4.3, 'avg30-holo': 4.1, 'low-holo': 3.8 },
+        ...(row.tcgplayerProductId ? { tcgplayer: { unit: 'USD', updated: '2026-10-12T12:00:00.000Z', normal: { productId: row.tcgplayerProductId, marketPrice: 2.5 } } } : {}),
+      }
+      const quotes = collectMarketPriceQuotes(pricing, row.catalogLanguage, '2026-10-13T08:00:00.000Z')
+      expect(quotes.length).toBe(row.tcgplayerProductId ? 13 : 12)
+      expect(quotes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          source: 'cardmarket', aggregator: 'tcgdex', market: 'cardmarket-europe', currency: 'EUR',
+          catalogLanguage: row.catalogLanguage, printingLanguage: 'unknown', variant: 'normal', condition: 'unknown',
+          basis: 'guide', externalProductId: row.cardmarketProductId, sourceUpdatedAt: '2026-10-12T12:00:00.000Z',
+          observedAt: '2026-10-13T08:00:00.000Z',
+        }),
+      ]))
+      if (row.tcgplayerProductId) {
+        expect(quotes).toEqual(expect.arrayContaining([
+          expect.objectContaining({ source: 'tcgplayer', market: 'tcgplayer-north-america', currency: 'USD', externalProductId: row.tcgplayerProductId, basis: 'guide' }),
+        ]))
+      }
+      expect(quotes.find(quote => quote.metric === 'average')?.basis).toBe('completed-sale')
+      expect(quotes.find(quote => quote.metric === 'average-holo')?.basis).toBe('completed-sale')
+      expect(quotes.find(quote => quote.metric === 'low-holo')?.basis).toBe('listing')
+    }
   })
 })
 

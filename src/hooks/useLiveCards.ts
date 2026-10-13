@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { tcgDexProvider } from '../api/tcgdex'
 import type { ExternalCard } from '../domain/cards'
 import type { Card } from '../types'
-import { recordPriceSnapshot, todayPriceDate } from '../domain/priceHistory'
-import { selectCardmarketPrice } from '../domain/pricing'
+import { recordPriceSnapshots, snapshotsFromQuotes } from '../domain/priceHistory'
+import { collectMarketPriceQuotes } from '../domain/pricing'
 
 export type LiveEntry = { status: 'idle' | 'loading' | 'success' | 'error'; data?: ExternalCard; error?: string }
 
@@ -36,8 +36,14 @@ export function useLiveCards(cards: Card[]) {
     Promise.allSettled(mappedCards.map((card) =>
       tcgDexProvider
         .getCard(card.tcgdexId!, tcgDexLanguageForCard(card))
-        .then((data) => {const price=selectCardmarketPrice(data.pricing);if(price)recordPriceSnapshot({cardId:data.id,language:tcgDexLanguageForCard(card),date:todayPriceDate(),value:price.value,source:price.provider});return{id:card.id,data}}),
+        .then((data) => ({id:card.id,data})),
     )).then((results) => {
+      const snapshots=results.flatMap((result,index)=>{
+        if(result.status!=='fulfilled'||result.value.data.fromStaleCache)return[]
+        const language=tcgDexLanguageForCard(mappedCards[index])
+        return snapshotsFromQuotes(result.value.data.id,collectMarketPriceQuotes(result.value.data.pricing,language))
+      })
+      if(snapshots.length){try{recordPriceSnapshots(snapshots)}catch(error){console.error('Échec de sauvegarde de l’historique de prix',error)}}
       if (!active) return
       setEntries((current) => {
         const next = { ...current }

@@ -1,0 +1,36 @@
+{
+  "sampledAt": "2026-10-13",
+  "selection": "Pikachu 025 de Pokémon Card 151, une entrée fixe pour chacun des quatre catalogues",
+  "cards": [
+    {
+      "catalogLanguage": "fr",
+      "cardId": "sv03.5-025",
+      "name": "Pikachu",
+      "upstreamCardFile": "tcgdex/cards-database/data/Scarlet & Violet/151/025.ts",
+      "cardmarketProductId": "733620",
+      "tcgplayerProductId": "517033"
+    },
+    {
+      "catalogLanguage": "en",
+      "cardId": "sv03.5-025",
+      "name": "Pikachu",
+      "upstreamCardFile": "tcgdex/cards-database/data/Scarlet & Violet/151/025.ts",
+      "cardmarketProductId": "733620",
+      "tcgplayerProductId": "517033"
+    },
+    {
+      "catalogLanguage": "ja",
+      "cardId": "SV2a-025",
+      "name": "ピカチュウ",
+      "upstreamCardFile": "tcgdex/cards-database/data-asia/SV/SV2a/025.ts",
+      "cardmarketProductId": "719467"
+    },
+    {
+      "catalogLanguage": "zh-tw",
+      "cardId": "SV2a-025",
+      "name": "皮卡丘",
+      "upstreamCardFile": "tcgdex/cards-database/data-asia/SV/SV2a/025.ts",
+      "cardmarketProductId": "719467"
+    }
+  ]
+}

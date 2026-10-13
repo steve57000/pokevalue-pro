@@ -12,12 +12,13 @@ describe('market price display by catalogue language', () => {
       tcgplayer: { value: 8, currency: 'USD', label: 'Marché TCGplayer', provider: 'tcgplayer', region: 'Amérique du Nord' },
     }))
     expect(html).toContain('Cardmarket')
-    expect(html).toContain('Europe · EUR')
+    expect(html).toContain('Europe · EUR · guide · impression et état non renseignés')
     expect(html).toContain('12')
     expect(html).toContain('TCGplayer')
-    expect(html).toContain('Amérique du Nord · USD · Marché TCGplayer')
+    expect(html).toContain('Amérique du Nord · USD · guide · impression et état non renseignés · Marché TCGplayer')
     expect(html).toContain('8')
     expect(html).toContain('pas le Royaume-Uni')
+    expect(html).toContain('Les moyennes de ventes sont agrégées par période')
   })
 
   it('shows when a French card uses an unfiltered European reference', () => {

@@ -1,5 +1,5 @@
 import type { CatalogLanguage } from '../api/sets'
-import type { PriceReference, TcgPlayerQuote } from '../domain/pricing'
+import type { PriceBasis, PriceReference, TcgPlayerQuote } from '../domain/pricing'
 import { money } from '../utils/money'
 
 type Props = {
@@ -18,6 +18,10 @@ type QuoteRowProps = {
   updatedAt?: string
 }
 
+const basisLabel = (basis?: PriceBasis) => basis === 'listing' ? 'annonce / offre agrégée'
+  : basis === 'completed-sale' ? 'ventes conclues agrégées'
+    : basis === 'unknown' ? 'base non précisée' : 'guide'
+
 function QuoteRow({ provider, context, value, currency = 'EUR', status, updatedAt }: QuoteRowProps) {
   const amount = value === undefined ? status === 'loading' ? 'Chargement…' : 'Indisponible' : money(value, currency)
   const updated = updatedAt ? `Dernière mise à jour : ${new Date(updatedAt).toLocaleDateString('fr-FR')}` : undefined
@@ -29,7 +33,7 @@ function QuoteRow({ provider, context, value, currency = 'EUR', status, updatedA
 
 export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: Props) {
   const asian = language === 'ja' || language === 'zh-tw'
-  const cardmarketContext = `Europe · EUR · ${cardmarket?.label ?? 'toutes langues'}`
+  const cardmarketContext = `Europe · EUR · ${basisLabel(cardmarket?.basis)} · impression et état non renseignés${cardmarket ? ` · ${cardmarket.label}` : ''}`
   const note = language === 'fr'
     ? 'Cardmarket Europe · langue et impression non filtrées : pas une cote française.'
     : language === 'en'
@@ -48,12 +52,12 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: 
     />}
     {language === 'en' && <QuoteRow
       provider="TCGplayer"
-      context={`Amérique du Nord · USD${tcgplayer ? ` · ${tcgplayer.label}` : ''}`}
+      context={`Amérique du Nord · USD · ${basisLabel(tcgplayer?.basis)} · impression et état non renseignés${tcgplayer ? ` · ${tcgplayer.label}` : ''}`}
       value={tcgplayer?.value}
       currency="USD"
       status={status}
       updatedAt={tcgplayer?.updatedAt}
     />}
-    <small className="binder-price-note">{note}</small>
+    <small className="binder-price-note">{note} Les moyennes de ventes sont agrégées par période, pas des transactions individuelles.</small>
   </div>
 }

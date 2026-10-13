@@ -34,7 +34,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   const candidates = owned.map(entry => {
     const priceState = priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]
     const asian = isAsianCatalogLanguage(entry.language)
-    const marketPrice = asian ? undefined : priceState?.price?.value
+    const marketPrice = asian || priceState?.price?.basis !== 'guide' ? undefined : priceState?.price?.value
     const unitPrice = collectionUnitPrice(entry, marketPrice)
     const interest = getGradingInterest({
       rawPrice: unitPrice,
@@ -158,7 +158,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 function analyze(entry: CollectionEntry, prices: Record<string, Record<string, CardPriceState>>) {
   const price = prices[entry.language]?.[entry.cardId]
   const asian = isAsianCatalogLanguage(entry.language)
-  return getGradingInterest({ rawPrice: collectionUnitPrice(entry, asian ? undefined : price?.price?.value), rarity: entry.rarity, ...(asian ? {} : { trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low }) })
+  return getGradingInterest({ rawPrice: collectionUnitPrice(entry, asian || price?.price?.basis !== 'guide' ? undefined : price?.price?.value), rarity: entry.rarity, ...(asian ? {} : { trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low }) })
 }
 
 function conditionLabel(value: CollectionEntry['condition']) {

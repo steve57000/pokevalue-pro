@@ -105,7 +105,7 @@ export async function readRemotePriceHistory(connection: GitHubConnection): Prom
 
 export async function writeRemotePriceHistory(connection: GitHubConnection, snapshots: PriceSnapshot[], sha?: string) {
   const document: PriceHistoryDocument = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     updatedAt: new Date().toISOString(),
     snapshots: mergePriceHistory(snapshots),
   }

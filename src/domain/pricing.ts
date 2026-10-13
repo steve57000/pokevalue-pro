@@ -1,10 +1,36 @@
 import type { TcgDexPricing, TcgPlayerVariantPricing } from './cards'
 
+export type PriceBasis = 'listing' | 'guide' | 'completed-sale' | 'unknown'
+export type QuoteAggregation = 'single' | 'aggregate' | 'unknown'
+export type QuoteVariant = 'normal' | 'holofoil' | 'reverse-holofoil' | 'unknown'
+export type PrintingLanguage = 'fr' | 'en' | 'ja' | 'zh-tw' | 'unknown'
+
+/** A provider observation. Catalog language is kept separate from the card's actual print language. */
+export type MarketPriceQuote = {
+  value: number
+  source: 'cardmarket' | 'tcgplayer'
+  aggregator: 'tcgdex'
+  market: 'cardmarket-europe' | 'tcgplayer-north-america'
+  currency: string
+  catalogLanguage: string
+  printingLanguage: PrintingLanguage
+  variant: QuoteVariant
+  condition: 'unknown'
+  basis: PriceBasis
+  aggregation: QuoteAggregation
+  metric: string
+  primary: boolean
+  externalProductId?: string
+  sourceUpdatedAt?: string
+  observedAt: string
+}
+
 export type PriceReference = {
   value: number
   currency: 'EUR'
-  label: 'Prix bas Cardmarket' | 'Tendance Cardmarket' | 'Moyenne 30 jours' | 'Moyenne 7 jours' | 'Prix moyen'
+  label: 'Annonce la moins chère Cardmarket' | 'Tendance Cardmarket' | 'Moyenne des ventes 30 jours' | 'Moyenne des ventes 7 jours' | 'Moyenne des ventes 1 jour' | 'Prix de vente moyen Cardmarket'
   provider: 'cardmarket'
+  basis?: PriceBasis
   updatedAt?: string
 }
 
@@ -14,15 +40,17 @@ export type TcgPlayerQuote = {
   label: 'Marché TCGplayer' | 'Prix intermédiaire TCGplayer' | 'Prix bas TCGplayer'
   provider: 'tcgplayer'
   region: 'Amérique du Nord'
+  basis?: PriceBasis
   updatedAt?: string
 }
 
-const priorities: Array<[keyof NonNullable<TcgDexPricing['cardmarket']>, PriceReference['label']]> = [
-  ['trend', 'Tendance Cardmarket'],
-  ['avg7', 'Moyenne 7 jours'],
-  ['avg30', 'Moyenne 30 jours'],
-  ['avg', 'Prix moyen'],
-  ['low', 'Prix bas Cardmarket'],
+const priorities: Array<[keyof NonNullable<TcgDexPricing['cardmarket']>, PriceReference['label'], PriceBasis]> = [
+  ['trend', 'Tendance Cardmarket', 'guide'],
+  ['avg7', 'Moyenne des ventes 7 jours', 'completed-sale'],
+  ['avg30', 'Moyenne des ventes 30 jours', 'completed-sale'],
+  ['avg1', 'Moyenne des ventes 1 jour', 'completed-sale'],
+  ['avg', 'Prix de vente moyen Cardmarket', 'completed-sale'],
+  ['low', 'Annonce la moins chère Cardmarket', 'listing'],
 ]
 
 export const isAsianCatalogLanguage = (language: string) => language === 'ja' || language === 'zh-tw'
@@ -45,7 +73,7 @@ export function selectCardmarketPrice(pricing?: TcgDexPricing | null): PriceRefe
   const cardmarket = pricing?.cardmarket
   if (!cardmarket) return undefined
 
-  for (const [field, label] of priorities) {
+  for (const [field, label, basis] of priorities) {
     const value = cardmarket[field]
     if (isValidMarketPrice(value)) {
       return {
@@ -53,6 +81,7 @@ export function selectCardmarketPrice(pricing?: TcgDexPricing | null): PriceRefe
         currency: 'EUR',
         label,
         provider: 'cardmarket',
+        basis,
         updatedAt: pricingDate(cardmarket.updatedAt ?? cardmarket.updated),
       }
     }
@@ -69,21 +98,155 @@ export function selectTcgplayerPrice(pricing?: TcgDexPricing | null, variant: 'n
     : variant === 'holofoil'
       ? tcgplayer.holofoil ?? undefined
       : tcgplayer['reverse-holofoil'] ?? tcgplayer.reverse ?? undefined
-  const candidates = [
-    { value: variantData?.marketPrice, label: 'Marché TCGplayer' as const },
-    { value: variantData?.midPrice, label: 'Prix intermédiaire TCGplayer' as const },
-    { value: variantData?.lowPrice, label: 'Prix bas TCGplayer' as const },
-  ]
-  const selected = candidates.find(candidate => isValidMarketPrice(candidate.value))
+  const selected = selectTcgplayerMetric(variantData)
   if (!selected || !isValidMarketPrice(selected.value)) return undefined
   return {
     value: selected.value,
-    currency: 'USD',
+    currency: currencyCode(tcgplayer.unit, 'USD') as 'USD',
     label: selected.label,
     provider: 'tcgplayer',
     region: 'Amérique du Nord',
+    basis: selected.basis,
     updatedAt: pricingDate(tcgplayer.updatedAt ?? tcgplayer.updated),
   }
+}
+
+type TcgPlayerMetric = { value: number; metric: 'marketPrice' | 'midPrice' | 'lowPrice'; label: TcgPlayerQuote['label']; basis: PriceBasis }
+function selectTcgplayerMetric(prices?: TcgPlayerVariantPricing | null): TcgPlayerMetric | undefined {
+  const candidates: Array<{ value?: number | null; metric: TcgPlayerMetric['metric']; label: TcgPlayerQuote['label']; basis: PriceBasis }> = [
+    { value: prices?.marketPrice, metric: 'marketPrice', label: 'Marché TCGplayer', basis: 'guide' },
+    { value: prices?.midPrice, metric: 'midPrice', label: 'Prix intermédiaire TCGplayer', basis: 'guide' },
+    { value: prices?.lowPrice, metric: 'lowPrice', label: 'Prix bas TCGplayer', basis: 'listing' },
+  ]
+  const selected = candidates.find(candidate => isValidMarketPrice(candidate.value))
+  return selected && isValidMarketPrice(selected.value)
+    ? { value: selected.value, metric: selected.metric, label: selected.label, basis: selected.basis }
+    : undefined
+}
+
+function currencyCode(value: string | null | undefined, fallback: string): string {
+  return value && /^[A-Z]{3}$/.test(value) ? value : fallback
+}
+
+function externalProductId(value: number | string | null | undefined): string | undefined {
+  return value === undefined || value === null || value === '' ? undefined : String(value)
+}
+
+function selectCardmarketMetrics(
+  cardmarket: NonNullable<TcgDexPricing['cardmarket']> | null | undefined,
+  fields: Array<{ field: string; metric: string }>,
+): Array<{ value: number; metric: string }> {
+  if (!cardmarket) return []
+  const values: Array<{ value: number; metric: string }> = []
+  for (const candidate of fields) {
+    const value = (cardmarket as Record<string, unknown>)[candidate.field]
+    if (isValidMarketPrice(value)) values.push({ value, metric: candidate.metric })
+  }
+  return values
+}
+
+function cardmarketMetricBasis(metric: string): PriceBasis {
+  if (metric.startsWith('avg') || metric.startsWith('average') || metric === 'reverse-holo-average-30d') return 'completed-sale'
+  if (metric === 'low' || metric === 'low-holo') return 'listing'
+  return 'guide'
+}
+
+/**
+ * Returns every numeric provider metric for each available finish. TCGdex
+ * supplies summary fields, not individual listing or transaction rows. Current
+ * offer summaries, sale-window averages, and guides retain distinct bases.
+ */
+export function collectMarketPriceQuotes(
+  pricing: TcgDexPricing | null | undefined,
+  catalogLanguage: string,
+  observedAt = new Date().toISOString(),
+): MarketPriceQuote[] {
+  if (!pricing) return []
+  const quotes: MarketPriceQuote[] = []
+  const cardmarket = pricing.cardmarket
+  const cardmarketVariants: Array<{
+    variant: QuoteVariant
+    fields: Array<{ field: string; metric: string }>
+  }> = [
+    { variant: 'normal', fields: [
+      { field: 'trend', metric: 'trend' }, { field: 'avg7', metric: 'avg7' },
+      { field: 'avg30', metric: 'avg30' }, { field: 'avg1', metric: 'avg1' },
+      { field: 'avg', metric: 'average' }, { field: 'low', metric: 'low' },
+    ] },
+    { variant: 'holofoil', fields: [
+      { field: 'trend-holo', metric: 'trend-holo' }, { field: 'avg7-holo', metric: 'avg7-holo' },
+      { field: 'avg30-holo', metric: 'avg30-holo' }, { field: 'avg1-holo', metric: 'avg1-holo' },
+      { field: 'avg-holo', metric: 'average-holo' }, { field: 'low-holo', metric: 'low-holo' },
+    ] },
+    { variant: 'reverse-holofoil', fields: [
+      { field: 'reverseHoloTrend', metric: 'reverse-holo-trend' },
+      { field: 'reverseHoloAvg30', metric: 'reverse-holo-average-30d' },
+    ] },
+  ]
+  for (const { variant, fields } of cardmarketVariants) {
+    const metrics = selectCardmarketMetrics(cardmarket, fields)
+    metrics.forEach((metric, index) => quotes.push({
+      value: metric.value,
+      source: 'cardmarket',
+      aggregator: 'tcgdex',
+      market: 'cardmarket-europe',
+      currency: currencyCode(cardmarket?.unit, 'EUR'),
+      catalogLanguage,
+      printingLanguage: 'unknown',
+      variant,
+      condition: 'unknown',
+      basis: cardmarketMetricBasis(metric.metric),
+      aggregation: 'aggregate',
+      metric: metric.metric,
+      primary: index === 0,
+      externalProductId: externalProductId(cardmarket?.idProduct),
+      sourceUpdatedAt: pricingDate(cardmarket?.updatedAt ?? cardmarket?.updated),
+      observedAt,
+    }))
+  }
+
+  const tcgplayer = pricing.tcgplayer
+  if (tcgplayer) {
+    const variantDefinitions: Array<{ name: QuoteVariant; data?: TcgPlayerVariantPricing | null }> = [
+      { name: 'normal', data: tcgplayer.normal ?? tcgplayer },
+      { name: 'holofoil', data: tcgplayer.holofoil },
+      { name: 'reverse-holofoil', data: tcgplayer['reverse-holofoil'] ?? tcgplayer.reverse },
+    ]
+    for (const { name, data } of variantDefinitions) {
+      if (!data) continue
+      const primaryMetric = selectTcgplayerMetric(data)?.metric
+      const productId = data?.productId ?? tcgplayer.productId
+      const candidateMetrics: Array<{ metric: string; value?: number | null; basis: PriceBasis }> = [
+        { metric: 'marketPrice', value: data.marketPrice, basis: 'guide' },
+        { metric: 'midPrice', value: data.midPrice, basis: 'guide' },
+        { metric: 'lowPrice', value: data.lowPrice, basis: 'listing' },
+        { metric: 'highPrice', value: data.highPrice, basis: 'listing' },
+        { metric: 'directLowPrice', value: data.directLowPrice, basis: 'listing' },
+      ]
+      candidateMetrics.filter(metric => isValidMarketPrice(metric.value)).forEach(metric => {
+        if (!isValidMarketPrice(metric.value)) return
+        quotes.push({
+          value: metric.value,
+          source: 'tcgplayer',
+          aggregator: 'tcgdex',
+          market: 'tcgplayer-north-america',
+          currency: currencyCode(tcgplayer.unit, 'USD'),
+          catalogLanguage,
+          printingLanguage: 'unknown',
+          variant: name,
+          condition: 'unknown',
+          basis: metric.basis,
+          aggregation: 'aggregate',
+          metric: metric.metric,
+          primary: metric.metric === primaryMetric,
+          externalProductId: externalProductId(productId),
+          sourceUpdatedAt: pricingDate(tcgplayer.updatedAt ?? tcgplayer.updated),
+          observedAt,
+        })
+      })
+    }
+  }
+  return quotes
 }
 
 export function getInternalTrend(pricing?: TcgDexPricing | null): 'up' | 'stable' | 'down' | undefined {

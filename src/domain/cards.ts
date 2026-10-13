@@ -21,7 +21,7 @@ export type ExternalCard = {
 }
 
 export type TcgPlayerVariantPricing = {
-  productId?: number | null
+  productId?: number | string | null
   lowPrice?: number | null
   midPrice?: number | null
   highPrice?: number | null
@@ -31,6 +31,7 @@ export type TcgPlayerVariantPricing = {
 
 export type TcgDexPricing = {
   cardmarket?: {
+    idProduct?: number | string | null
     updatedAt?: string | null
     updated?: string | number | null
     unit?: string | null
@@ -50,6 +51,7 @@ export type TcgDexPricing = {
     reverseHoloAvg30?: number | null
   } | null
   tcgplayer?: {
+    productId?: number | string | null
     updatedAt?: string | null
     updated?: string | number | null
     unit?: string | null

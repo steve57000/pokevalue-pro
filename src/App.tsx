@@ -21,6 +21,7 @@ import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
 import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT } from './utils/storage'
+import { PRICE_HISTORY_STORAGE_KEY } from './domain/priceHistory'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
@@ -86,7 +87,7 @@ function App() {
   useEffect(() => {
     const warn = (event: Event) => {
       const key = (event as CustomEvent<{ key?: string }>).detail?.key
-      if (key === PORTFOLIO_STORAGE_KEY) setStorageWarning(true)
+      if (key === PORTFOLIO_STORAGE_KEY || key === PRICE_HISTORY_STORAGE_KEY) setStorageWarning(true)
     }
     window.addEventListener(STORAGE_WARNING_EVENT, warn)
     return () => window.removeEventListener(STORAGE_WARNING_EVENT, warn)
@@ -219,7 +220,7 @@ function App() {
           <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
-        {storageWarning&&<div className="storage-warning" role="alert"><span>La sauvegarde locale a échoué. Exporte ta collection pour en garder une copie.</span><button onClick={()=>{setStorageWarning(false);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(false)}><X size={18}/></button></div>}
+        {storageWarning&&<div className="storage-warning" role="alert"><span>Une donnée locale n’a pas pu être sauvegardée. Vérifie ta collection et ton historique de prix.</span><button onClick={()=>{setStorageWarning(false);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(false)}><X size={18}/></button></div>}
         <div className="content">
           {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<WeeklyCollectionChallenge entries={portfolio.entries}/>}/>}
           {view==='featured' && <>
