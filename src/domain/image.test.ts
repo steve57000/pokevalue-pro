@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest'
-import {cardImageOverrides,cardImageOverrideById} from '../data/cardImageOverrides'
+import {cardImageOverrideById} from '../data/cardImageOverrides'
 import {buildCardAssetCandidates,buildCardAssetUrl,buildMepPromoImage,isPokemonCardBackUrl,isSamePrinting,normalizeImageLanguage,resolveCardImage} from './image'
 describe('image resolver',()=>{
  it('normalise les codes de langue de l’interface avant de résoudre les images',()=>{expect(normalizeImageLanguage('JP')).toBe('ja');expect(normalizeImageLanguage('JA')).toBe('ja');expect(normalizeImageLanguage('ZH')).toBe('zh-tw');expect(normalizeImageLanguage('zh-TW')).toBe('zh-tw');expect(normalizeImageLanguage('EN')).toBe('en');expect(normalizeImageLanguage('FR')).toBe('fr')})
@@ -19,16 +19,24 @@ describe('image resolver',()=>{
   expect(image.language).toBe('en')
   expect(image.isFallback).toBe(true)
  })
- it('ne substitue pas les anciennes impressions aux cartes 30th-c sans scan exact',()=>{
-  const classic=cardImageOverrides.filter(override=>override.setId==='30th-c')
+ it('résout le recto anglais exact des 30 cartes Classic Collection',()=>{
+  const classic=[...cardImageOverrideById.values()].filter(override=>override.setId==='30th-c')
   expect(classic).toHaveLength(30)
+  const urls=new Set<string>()
   for(const override of classic){
-   expect(override.verified).toBe(false)
-   expect(override.image).toBeUndefined()
+   expect(override.verified).toBe(true)
+   expect(override.image?.verified).toBe(true)
+   expect(override.image?.language).toBe('en')
+   expect(override.image?.source).toBe('PokemonCard.io / English ME55C front scan')
    const result=resolveCardImage({card:{id:override.cardId,name:override.name,language:'fr'},requestedLanguage:'fr'})
-   expect(result.url).toBeUndefined()
-   expect(result.source).toBe('none')
+   expect(result.url).toBe(override.image?.localPath)
+   expect(result.language).toBe('en')
+   expect(result.isFallback).toBe(true)
+   expect(result.source).toBe('local-override')
+   expect(isPokemonCardBackUrl(result.url)).toBe(false)
+   if(result.url)urls.add(result.url)
   }
+  expect(urls.size).toBe(30)
  })
  it.each([['30th-R','R','red','fr','Mew'],['30th-G','G','green','en','Mew'],['30th-B','B','blue','en','Mew'],['M6a-R','R','red','fr','ミュウ'],['M6a-G','G','green','en','ミュウ'],['M6a-B','B','blue','en','ミュウ']])('résout le visuel réel du Mew RGB %s', (id,localId,color,visualLanguage,name)=>{const result=resolveCardImage({card:{id,localId,name,setName:'30th Celebration',language:'fr'},requestedLanguage:'fr'});expect(result.url).toContain(`rgb-mew-${color}.webp`);expect(result.language).toBe(visualLanguage);expect(result.isFallback).toBe(visualLanguage!=='fr')})
  it('essaie le format suivant du même visuel après un échec de chargement',()=>{
