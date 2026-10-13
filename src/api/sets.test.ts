@@ -39,6 +39,22 @@ describe('localized set catalogue', () => {
     expect(sets[0].logo).toBe('https://assets.tcgdex.net/en/sv/sv8a/logo.png')
   })
 
+  it('uses an exact-ID French logo when an English set has no native logo', async () => {
+    const english = [{ id: 'sv8a', name: '30th Celebration', cardCount: { total: 1, official: 1 } }]
+    const frenchLogo = 'https://assets.tcgdex.net/fr/sv/sv8a/logo.png'
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/en/')
+        ? english
+        : [{ id: 'sv8a', name: '30e Anniversaire', logo: frenchLogo }],
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const sets = await listSets('en')
+
+    expect(sets[0].logo).toBe(frenchLogo)
+  })
+
   it('uses an exact-ID French logo when the Asian and English catalogs have none', async () => {
     const local = [{ id: 'SV8a', name: '異度審判', cardCount: { total: 1, official: 1 }, serie: { id: 'SV' } }]
     const frenchLogo = 'https://assets.tcgdex.net/fr/sv/sv8a/logo.png'
