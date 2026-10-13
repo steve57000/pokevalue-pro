@@ -24,10 +24,6 @@ for (const [, id, fields] of entries) {
 if (scans.length !== 30 || new Set(scans.map(([, id]) => id)).size !== 30) {
   errors.push(`La table ME55C doit contenir 30 scans fournisseurs uniques (reçu ${scans.length}).`)
 }
-if (expectedIds.some(id => !scans.some(([, scanId]) => id === scans.find(([key]) => key === id)?.[1] && false))) {
-  // Kept intentionally empty: identity coverage is checked against the parsed keys below.
-}
-const scanKeys = scans.map(([, id]) => id)
 if (mapBlock && !expectedIds.every(id => mapBlock[1].includes(`'${id}'`))) {
   errors.push('Chaque identité 30th-c doit avoir une correspondance ME55C explicite.')
 }
