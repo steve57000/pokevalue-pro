@@ -59,6 +59,44 @@ const baseCardImageOverrides:readonly CardImageOverride[]=[
 
 // These four MEP promo entries lack a usable image field in some catalog responses.
 // The URLs are exact English MEP promo scans and remain labeled fallbacks.
+// Exact English-front scans for the 30th Classic Collection (ME55C).
+// Provider IDs are explicit because several cards share a printed number.
+const classicCollectionCardIds:Record<string,string>={
+ '30th-c-001':'me55c-4',
+ '30th-c-002':'me55c-5',
+ '30th-c-003':'me55c-11',
+ '30th-c-004':'me55c-11g',
+ '30th-c-005':'me55c-18',
+ '30th-c-006':'me55c-19',
+ '30th-c-007':'me55c-25',
+ '30th-c-008':'me55c-33',
+ '30th-c-009':'me55c-41',
+ '30th-c-010':'me55c-43',
+ '30th-c-011':'me55c-47',
+ '30th-c-012':'me55c-50',
+ '30th-c-013':'me55c-57',
+ '30th-c-014':'me55c-58',
+ '30th-c-015':'me55c-69',
+ '30th-c-016':'me55c-85',
+ '30th-c-017':'me55c-89',
+ '30th-c-018':'me55c-94',
+ '30th-c-019':'me55c-99',
+ '30th-c-020':'me55c-100',
+ '30th-c-021':'me55c-101',
+ '30th-c-022':'me55c-106p',
+ '30th-c-023':'me55c-106m',
+ '30th-c-024':'me55c-106',
+ '30th-c-025':'me55c-108',
+ '30th-c-026':'me55c-114',
+ '30th-c-027':'me55c-123',
+ '30th-c-028':'me55c-138',
+ '30th-c-029':'me55c-149',
+ '30th-c-030':'me55c-203',
+}
+const classicCollectionImageFor=(cardId:string)=>{
+ const englishCardId=classicCollectionCardIds[cardId]
+ return englishCardId?'https://images.pokemoncard.io/images/me55c/'+englishCardId+'.png':undefined
+}
 const mepPromoScans:Record<string,string>={
  'mep-096':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-096_moltres.webp',
  'mep-097':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-097_articuno.webp',
@@ -66,8 +104,10 @@ const mepPromoScans:Record<string,string>={
  'mep-101':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-101_nidorina.webp',
 }
 export const cardImageOverrides:readonly CardImageOverride[]=baseCardImageOverrides.map(item=>{
- const url=mepPromoScans[item.cardId]
+ const promoImage=mepPromoScans[item.cardId]
+ const classicImage=classicCollectionImageFor(item.cardId)
+ const url=promoImage??classicImage
  if(!url)return item
- return {...item,verified:true,image:{localPath:url,language:'en',source:'Bill’s Archive / TCGdex original scan',verified:true as const}}
+ return {...item,verified:true,image:{localPath:url,language:'en',source:promoImage?'Bill’s Archive / TCGdex original scan':'PokemonCard.io / English ME55C front scan',verified:true as const}}
 })
 export const cardImageOverrideById=new Map(cardImageOverrides.map(item=>[item.cardId,item]))
