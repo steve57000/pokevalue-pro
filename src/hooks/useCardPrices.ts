@@ -3,7 +3,7 @@ import { tcgDexProvider } from '../api/tcgdex'
 import { recordPriceSnapshot, todayPriceDate } from '../domain/priceHistory'
 import { getPriceStats, selectCardmarketPrice, type CardMarketStats, type PriceReference, type TcgPlayerStats } from '../domain/pricing'
 
-export type CardPriceState={status:'loading'|'success'|'error';price?:PriceReference|null;cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;language:string;checkedAt?:number}
+export type CardPriceState={status:'loading'|'success'|'error';price?:PriceReference|null;cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;tcgplayerHolo?:TcgPlayerStats;tcgplayerReverse?:TcgPlayerStats;language:string;checkedAt?:number}
 const PRICE_REFRESH_INTERVAL_MS=24*60*60*1000
 const cache=new Map<string,CardPriceState>(),listeners=new Set<()=>void>(),queue:{id:string;language:string;force:boolean}[]=[],queued=new Set<string>();let running=0
 const CONCURRENCY=7, keyOf=(id:string,language:string)=>`price:${language}:${id}`
