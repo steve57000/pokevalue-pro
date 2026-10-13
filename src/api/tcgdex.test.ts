@@ -42,6 +42,10 @@ describe('buildPokemonTcgImageFallback', () => {
   it('rejects an invalid TCGdex id', () => {
     expect(buildPokemonTcgImageFallback('invalid')).toBeUndefined()
   })
+
+  it('does not build a generic card-back URL for the 30th Classic Collection', () => {
+    expect(buildPokemonTcgImageFallback('30th-c-001')).toBeUndefined()
+  })
 })
 
 import { TcgDexProvider } from './tcgdex'

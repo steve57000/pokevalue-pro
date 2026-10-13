@@ -51,6 +51,8 @@ export function buildPokemonTcgImageFallback(id: string): ExternalCard['fallback
 
   const tcgDexSetId = id.slice(0, separator)
   const rawLocalId = id.slice(separator + 1)
+  // TCGdex's 30th-c IDs are not Pokémon TCG API IDs; the generic image path can return a card back.
+  if (tcgDexSetId.toLocaleLowerCase('en') === '30th-c') return undefined
   const setId = POKEMON_TCG_SET_IDS[tcgDexSetId]
     ?? tcgDexSetId.replace(/^sv0+(\d+)$/, 'sv$1')
   const localId = /^\d+$/.test(rawLocalId) ? String(Number(rawLocalId)) : rawLocalId
