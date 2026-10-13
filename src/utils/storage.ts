@@ -1,6 +1,27 @@
 export const STORAGE_WARNING_EVENT = 'pv-storage-warning'
+export const STORAGE_RECOVERED_EVENT = 'pv-storage-recovered'
 type StorageArea = 'local' | 'session'
 const OPTIONAL_CACHE_PREFIX = 'pokevalue:'
+const PRICE_HISTORY_KEY = 'price-history-v1'
+
+/** Price history is derived data; retain recent points when a device is near its quota. */
+function compactPriceHistory(storage: Storage, incomingValue?: string, maxSnapshots = 500): string | undefined {
+  try {
+    const raw = incomingValue ?? storage.getItem(PRICE_HISTORY_KEY) ?? undefined
+    if (!raw) return undefined
+    const parsed = JSON.parse(raw) as unknown
+    const compacted = Array.isArray(parsed)
+      ? parsed.slice(-maxSnapshots)
+      : parsed && typeof parsed === 'object' && Array.isArray((parsed as { snapshots?: unknown }).snapshots)
+        ? { ...parsed, snapshots: (parsed as { snapshots: unknown[] }).snapshots.slice(-maxSnapshots) }
+        : undefined
+    if (compacted === undefined) return undefined
+    const serialized = JSON.stringify(compacted)
+    if (incomingValue !== undefined) return serialized
+    storage.setItem(PRICE_HISTORY_KEY, serialized)
+    return serialized
+  } catch { return undefined }
+}
 
 function isQuotaExceeded(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
@@ -28,18 +49,34 @@ function removeOptionalCache(storage: Storage): boolean {
 }
 
 function setStoredValue(storage: Storage, key: string, value: string, area: StorageArea): void {
+  let valueToWrite = value
   try {
-    storage.setItem(key, value)
+    storage.setItem(key, valueToWrite)
   } catch (error) {
     // Catalogue responses are disposable. Free their space before giving up on user data.
-    if (area !== 'local' || key.startsWith(OPTIONAL_CACHE_PREFIX) || !isQuotaExceeded(error) || !removeOptionalCache(storage)) throw error
-    storage.setItem(key, value)
+    if (area !== 'local' || key.startsWith(OPTIONAL_CACHE_PREFIX) || !isQuotaExceeded(error)) throw error
+    removeOptionalCache(storage)
+    if (key === PRICE_HISTORY_KEY) valueToWrite = compactPriceHistory(storage, value) ?? value
+    else compactPriceHistory(storage)
+    try { storage.setItem(key, valueToWrite) } catch (retryError) {
+      if (!isQuotaExceeded(retryError)) throw retryError
+      // A compact recent history still leaves the collection the best chance to save.
+      if (key === PRICE_HISTORY_KEY) valueToWrite = compactPriceHistory(storage, valueToWrite, 100) ?? valueToWrite
+      else compactPriceHistory(storage, undefined, 100)
+      storage.setItem(key, valueToWrite)
+    }
   }
 }
 
 function notifyStorageFailure(key: string, area: StorageArea): void {
   if (area === 'local' && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(STORAGE_WARNING_EVENT, { detail: { key } }))
+  }
+}
+
+function notifyStorageRecovered(key: string, area: StorageArea): void {
+  if (area === 'local' && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(STORAGE_RECOVERED_EVENT, { detail: { key } }))
   }
 }
 
@@ -69,6 +106,7 @@ export function writeStoredString(key: string, value: string, area: StorageArea 
     const storage = storageFor(area)
     if (!storage) throw new Error('Storage unavailable')
     setStoredValue(storage, key, value, area)
+    notifyStorageRecovered(key, area)
     return true
   } catch {
     if (notifyFailure) notifyStorageFailure(key, area)
@@ -81,6 +119,7 @@ export function removeStoredValue(key: string): boolean {
     const storage = storageFor('local')
     if (!storage) throw new Error('Storage unavailable')
     storage.removeItem(key)
+    notifyStorageRecovered(key, 'local')
     return true
   } catch {
     notifyStorageFailure(key, 'local')

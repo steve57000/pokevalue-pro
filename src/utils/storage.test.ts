@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { STORAGE_WARNING_EVENT, writeStoredJson } from './storage'
+import { STORAGE_RECOVERED_EVENT, STORAGE_WARNING_EVENT, writeStoredJson } from './storage'
 
 function quotaError() {
   const error = new Error('Storage quota exceeded')
@@ -42,7 +42,7 @@ describe('local storage recovery', () => {
     expect(JSON.parse(values.get('pv-portfolio-v1')!)).toEqual(document)
     expect(values.has('pokevalue:3:sv-01')).toBe(false)
     expect(values.get('pv-favorites-v2')).toBe('["pikachu"]')
-    expect(dispatchEvent).not.toHaveBeenCalled()
+    expect(dispatchEvent.mock.calls.map(([event]) => (event as CustomEvent).type)).toEqual([STORAGE_RECOVERED_EVENT])
   })
 
   it('reports the key when a durable save still fails after cache eviction', () => {
@@ -57,5 +57,21 @@ describe('local storage recovery', () => {
     const event = dispatchEvent.mock.calls[0][0] as CustomEvent<{ key: string }>
     expect(event.type).toBe(STORAGE_WARNING_EVENT)
     expect(event.detail.key).toBe('pv-portfolio-v1')
+  })
+
+  it('compacts derived price history before failing a collection save', () => {
+    const { storage, values } = createStorage((key, current) => {
+      if (key !== 'pv-portfolio-v1') return false
+      const history = JSON.parse(current.get('price-history-v1') ?? '[]') as unknown[]
+      return history.length > 500
+    })
+    values.set('price-history-v1', JSON.stringify(Array.from({ length: 800 }, (_, index) => ({ index }))))
+    const dispatchEvent = vi.fn()
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: storage, dispatchEvent } })
+
+    expect(writeStoredJson('pv-portfolio-v1', { schemaVersion: 1, entries: [{ manualPrice: 12.5 }] })).toBe(true)
+    expect(JSON.parse(values.get('price-history-v1')!)).toHaveLength(500)
+    expect(JSON.parse(values.get('price-history-v1')!)[499]).toEqual({ index: 799 })
+    expect(dispatchEvent.mock.calls.map(([event]) => (event as CustomEvent).type)).toEqual([STORAGE_RECOVERED_EVENT])
   })
 })

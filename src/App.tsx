@@ -20,7 +20,7 @@ import { normalizeImageLanguage } from './domain/image'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
 import { money } from './utils/money'
-import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT } from './utils/storage'
+import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT, STORAGE_RECOVERED_EVENT } from './utils/storage'
 import { PRICE_HISTORY_STORAGE_KEY } from './domain/priceHistory'
 import type { Card } from './types'
 import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
@@ -79,7 +79,7 @@ function App() {
   const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [trendTab,setTrendTab]=useState<'popular'|'market'>(()=>window.location.hash.includes('scanner')?'market':'popular')
-  const [storageWarning, setStorageWarning] = useState(false)
+  const [storageWarning, setStorageWarning] = useState<string | null>(null)
   const { entries: liveCards, retry } = useLiveCards(cards)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
   const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
@@ -87,10 +87,15 @@ function App() {
   useEffect(() => {
     const warn = (event: Event) => {
       const key = (event as CustomEvent<{ key?: string }>).detail?.key
-      if (key === PORTFOLIO_STORAGE_KEY || key === PRICE_HISTORY_STORAGE_KEY) setStorageWarning(true)
+      if (key === PORTFOLIO_STORAGE_KEY || key === PRICE_HISTORY_STORAGE_KEY) setStorageWarning(key)
+    }
+    const recovered = (event: Event) => {
+      const key = (event as CustomEvent<{ key?: string }>).detail?.key
+      setStorageWarning(current => current === key ? null : current)
     }
     window.addEventListener(STORAGE_WARNING_EVENT, warn)
-    return () => window.removeEventListener(STORAGE_WARNING_EVENT, warn)
+    window.addEventListener(STORAGE_RECOVERED_EVENT, recovered)
+    return () => { window.removeEventListener(STORAGE_WARNING_EVENT, warn); window.removeEventListener(STORAGE_RECOVERED_EVENT, recovered) }
   }, [])
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -220,7 +225,7 @@ function App() {
           <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
-        {storageWarning&&<div className="storage-warning" role="alert"><span>Une donnée locale n’a pas pu être sauvegardée. Vérifie ta collection et ton historique de prix.</span><button onClick={()=>{setStorageWarning(false);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(false)}><X size={18}/></button></div>}
+        {storageWarning&&<div className="storage-warning" role="alert"><span>{storageWarning === PRICE_HISTORY_STORAGE_KEY ? 'L’historique des prix est plein. Les relevés les plus anciens seront réduits automatiquement.' : 'La collection n’a pas pu être sauvegardée. Vérifie l’espace disponible ou exporte une copie.'}</span><button onClick={()=>{setStorageWarning(null);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(null)}><X size={18}/></button></div>}
         <div className="content">
           {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<WeeklyCollectionChallenge entries={portfolio.entries}/>}/>}
           {view==='featured' && <>
@@ -302,7 +307,7 @@ function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,o
   return <article className="poke-card">
     <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} onClick={onShowcase} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onShowcase()}}} role="button" tabIndex={0} aria-label={`Voir ${card.name} en 3D`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
       <div className="card-number">{liveEntry?.data?.localId ?? card.number}</div>
-      {card.tcgdexId && liveEntry?.status === 'loading' ? <div className="image-skeleton"/> : card.tcgdexId ? <CardImage image={liveEntry?.data?.image} fallbackImage={liveEntry?.data?.fallbackImage} name={liveEntry?.data?.name ?? card.name} quality="low" className="real-card-image"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
+      {card.tcgdexId ? <CatalogueImage card={{id:card.tcgdexId,name:card.name,localId:card.number}} requestedLanguage={normalizeImageLanguage(card.language)} quality="low"/> : <><div className="fake-orb"></div><div className="pokemon-name">{card.pokemon}</div></>}
       <div className="rarity-pill">{liveEntry?.data?.rarity ?? card.rarity}</div>
       <FavoriteButton className="heart" favorite={favorite} onToggle={onFavorite}/>
     </div>

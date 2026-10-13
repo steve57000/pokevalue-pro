@@ -1,6 +1,7 @@
 import type { CatalogLanguage } from '../api/sets'
 import type { PriceBasis, PriceReference, TcgPlayerQuote } from '../domain/pricing'
 import { money } from '../utils/money'
+import { Info } from 'lucide-react'
 
 type Props = {
   language: CatalogLanguage
@@ -40,24 +41,23 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: 
       ? 'TCGplayer couvre l’Amérique du Nord, pas le Royaume-Uni; certaines réimpressions TCGdex peuvent être mal reliées.'
       : 'Aucune cote locale vérifiée. Cardmarket Europe est séparé du marché asiatique et l’impression peut différer.'
 
+  const cardmarketProvider = asian ? 'Référence Cardmarket' : 'Cardmarket'
+  const tcgplayerContext = `Amérique du Nord · USD · ${basisLabel(tcgplayer?.basis)} · impression et état non renseignés${tcgplayer ? ` · ${tcgplayer.label}` : ''}`
+  const summary = (provider: string, value: number | undefined, currency: 'EUR' | 'USD' = 'EUR') => <span className="binder-price-compact-row">
+    <span>{provider}</span><strong>{value === undefined ? status === 'loading' ? '…' : 'Indisponible' : money(value, currency)}</strong>
+  </span>
+
   return <div className={`binder-price${asian ? ' has-local-market-gap' : ''}`} aria-label="Prix par marché">
-    {asian && <QuoteRow provider="Cote locale" context={language === 'ja' ? 'Japon' : 'Chinois traditionnel'} status="error" />}
-    {(!asian || cardmarket?.value !== undefined) && <QuoteRow
-      provider={asian ? 'Référence Cardmarket' : 'Cardmarket'}
-      context={cardmarketContext}
-      value={cardmarket?.value}
-      currency="EUR"
-      status={status}
-      updatedAt={cardmarket?.updatedAt}
-    />}
-    {language === 'en' && <QuoteRow
-      provider="TCGplayer"
-      context={`Amérique du Nord · USD · ${basisLabel(tcgplayer?.basis)} · impression et état non renseignés${tcgplayer ? ` · ${tcgplayer.label}` : ''}`}
-      value={tcgplayer?.value}
-      currency="USD"
-      status={status}
-      updatedAt={tcgplayer?.updatedAt}
-    />}
-    <small className="binder-price-note">{note} Les moyennes de ventes sont agrégées par période, pas des transactions individuelles.</small>
+    {summary(cardmarketProvider, cardmarket?.value)}
+    {language === 'en' && summary('TCGplayer', tcgplayer?.value, 'USD')}
+    <details className="binder-price-info">
+      <summary aria-label="Afficher les informations sur les prix" title="Informations sur les prix"><Info size={15}/><span>Informations</span></summary>
+      <div className="binder-price-info-content">
+        {asian && <QuoteRow provider="Cote locale" context={language === 'ja' ? 'Japon' : 'Chinois traditionnel'} status="error" />}
+        {(!asian || cardmarket?.value !== undefined) && <QuoteRow provider={cardmarketProvider} context={cardmarketContext} value={cardmarket?.value} currency="EUR" status={status} updatedAt={cardmarket?.updatedAt} />}
+        {language === 'en' && <QuoteRow provider="TCGplayer" context={tcgplayerContext} value={tcgplayer?.value} currency="USD" status={status} updatedAt={tcgplayer?.updatedAt} />}
+        <small className="binder-price-note">{note} Les moyennes de ventes sont agrégées par période, pas des transactions individuelles.</small>
+      </div>
+    </details>
   </div>
 }
