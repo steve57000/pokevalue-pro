@@ -4,6 +4,7 @@ import type {Card} from '../types'
 import {collectionUnitPrice,type CollectionEntry} from '../domain/collection'
 import type {FavoriteCard} from '../domain/favorites'
 import {getAllPriceHistory,type PriceSnapshot} from '../domain/priceHistory'
+import {isAsianCatalogLanguage} from '../domain/pricing'
 import {money} from '../utils/money'
 
 type Props={cards:Card[];entries:CollectionEntry[];favorites:FavoriteCard[];onSelect:(id:string,language:string)=>void}
@@ -28,7 +29,7 @@ export function PriceHistoryExplorer({cards,entries,favorites,onSelect}:Props){
   const entriesByCard=new Map<string,CollectionEntry[]>()
   for(const entry of entries){const key=keyOf(entry.cardId,entry.language);entriesByCard.set(key,[...(entriesByCard.get(key)??[]),entry])}
   const histories=new Map<string,PriceSnapshot[]>()
-  for(const point of getAllPriceHistory()){const key=keyOf(point.cardId,point.language);histories.set(key,[...(histories.get(key)??[]),point])}
+  for(const point of getAllPriceHistory()){if(isAsianCatalogLanguage(point.language))continue;const key=keyOf(point.cardId,point.language);histories.set(key,[...(histories.get(key)??[]),point])}
   const minValue=min===''?Number.NEGATIVE_INFINITY:Number(min),maxValue=max===''?Number.POSITIVE_INFINITY:Number(max)
   return [...histories.entries()].map(([key,points])=>{const ordered=points.sort((a,b)=>a.date.localeCompare(b.date)),latest=ordered[ordered.length-1],previous=ordered[ordered.length-2],meta=metadata.get(key);const {value,manual}=currentCollectionPrice(latest.value,entriesByCard.get(key)??[]);return {key,id:latest.cardId,language:latest.language,name:meta?.name??latest.cardId,setName:meta?.setName??'Extension inconnue',number:meta?.number,owned:meta?.owned??0,latest,value,manual,delta:previous?latest.value-previous.value:undefined} satisfies Row})
     .filter(row=>(!ownedOnly||row.owned>0)&&row.value>=minValue&&row.value<=maxValue)
@@ -36,7 +37,7 @@ export function PriceHistoryExplorer({cards,entries,favorites,onSelect}:Props){
    .sort((a,b)=>b.value-a.value)
  },[cards,entries,favorites,ownedOnly,movement,min,max,revision])
  return <section className="price-explorer" aria-labelledby="price-explorer-title">
-  <header className="price-explorer-heading"><div><span className="eyebrow"><SlidersHorizontal size={14}/> Explorer</span><h2 id="price-explorer-title">Filtrer les prix de ta collection</h2><p>Le prix manuel de ta collection est utilisé pour la valeur affichée; les variations restent basées sur les relevés du marché.</p></div><strong>{rows.length} carte{rows.length===1?'':'s'}</strong></header>
+  <header className="price-explorer-heading"><div><span className="eyebrow"><SlidersHorizontal size={14}/> Explorer</span><h2 id="price-explorer-title">Filtrer les prix de ta collection</h2><p>Le prix manuel de ta collection est utilisé pour la valeur affichée; les variations restent basées sur les références Cardmarket Europe. Les relevés locaux JP / ZH-TW ne sont pas disponibles.</p></div><strong>{rows.length} carte{rows.length===1?'':'s'}</strong></header>
   <div className="price-explorer-filters"><label className="price-owned-filter"><input type="checkbox" checked={ownedOnly} onChange={event=>setOwnedOnly(event.target.checked)}/>Mes cartes possédées</label><label>Évolution<select value={movement} onChange={event=>setMovement(event.target.value)}><option value="all">Toutes</option><option value="changed">Prix modifié</option><option value="up">En hausse</option><option value="down">En baisse</option></select></label><label>Prix minimum (€)<input type="number" min="0" step="0.01" inputMode="decimal" placeholder="Aucun" value={min} onChange={event=>setMin(event.target.value)}/></label><label>Prix maximum (€)<input type="number" min="0" step="0.01" inputMode="decimal" placeholder="Aucun" value={max} onChange={event=>setMax(event.target.value)}/></label></div>
   <div className="price-explorer-list" aria-live="polite">{rows.length?rows.map(row=><button type="button" className="price-explorer-row" key={row.key} onClick={()=>onSelect(row.id,row.language)}><span><strong>{row.name}</strong><small>{row.setName}{row.number?' · nº '+row.number:''}{row.owned?' · ×'+row.owned:''}</small></span><span className="price-explorer-value">{money(row.value)}{row.manual&&<small className="manual-price-indicator">Prix manuel</small>}{row.delta!==undefined&&<small className={row.delta>0?'positive':row.delta<0?'negative':''}>{row.delta>0?<TrendingUp size={13}/>:row.delta<0?<TrendingDown size={13}/>:null}{row.delta>0?'+':''}{money(row.delta)}</small>}</span></button>):<p className="price-explorer-empty">Aucune carte ne correspond. Élargis la tranche de prix ou désactive « Mes cartes possédées ».</p>}</div>
  </section>

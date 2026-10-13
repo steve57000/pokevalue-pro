@@ -4,6 +4,7 @@ import { CatalogueImage } from './CatalogueImage'
 import type { CollectionEntry } from '../domain/collection'
 import { collectionUnitPrice } from '../domain/collection'
 import { getGradingInterest } from '../domain/grading'
+import { isAsianCatalogLanguage } from '../domain/pricing'
 import { useCardPrices, type CardPriceState } from '../hooks/useCardPrices'
 import { money } from '../utils/money'
 import './grading.css'
@@ -32,15 +33,13 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 
   const candidates = owned.map(entry => {
     const priceState = priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]
-    const marketPrice = priceState?.price?.value
+    const asian = isAsianCatalogLanguage(entry.language)
+    const marketPrice = asian ? undefined : priceState?.price?.value
     const unitPrice = collectionUnitPrice(entry, marketPrice)
     const interest = getGradingInterest({
       rawPrice: unitPrice,
       rarity: entry.rarity,
-      trend: priceState?.cardmarket?.trend,
-      avg30: priceState?.cardmarket?.avg30,
-      avg7: priceState?.cardmarket?.avg7,
-      low: priceState?.cardmarket?.low,
+      ...(asian ? {} : { trend: priceState?.cardmarket?.trend, avg30: priceState?.cardmarket?.avg30, avg7: priceState?.cardmarket?.avg7, low: priceState?.cardmarket?.low }),
     })
     const poorCondition = entry.condition === 'played' || entry.condition === 'poor'
     const majorRarity = /secret|illustration|ultra|shiny|hyper|gold|special art|alt art|rainbow/i.test(entry.rarity ?? '')
@@ -49,7 +48,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     const reasons = poorCondition
       ? ['État enregistré trop marqué pour une gradation orientée revente.']
       : interest.reasons
-    return { entry, priceState, unitPrice, interest, recommendation, reasons, majorRarity, needsPriceCheck }
+    return { entry, priceState, unitPrice, interest, recommendation, reasons, majorRarity, needsPriceCheck, asian }
   }).filter(item =>
     item.recommendation !== 'skip'
     && ((item.unitPrice !== undefined && item.unitPrice >= MIN_GRADING_VALUE) || (item.needsPriceCheck && item.majorRarity))
@@ -67,7 +66,10 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   const counts = {
     priority: candidates.filter(item => item.recommendation === 'priority').length,
     review: candidates.filter(item => item.recommendation === 'review').length,
-    missingPrice: owned.filter(entry => !priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]?.price && (entry.priceMode !== 'manual' || entry.manualPrice === undefined)).length,
+    missingPrice: owned.filter(entry => {
+      const usesManual = (entry.priceMode ?? (entry.manualPrice !== undefined ? 'manual' : 'market')) === 'manual'
+      return !(usesManual && entry.manualPrice !== undefined) && (isAsianCatalogLanguage(entry.language) || !priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]?.price)
+    }).length,
   }
 
   return <section className="grading-page">
@@ -94,18 +96,19 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       {owned.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Ta collection est encore vide</h3><p>Ajoute des cartes dans l’onglet Collection : elles apparaîtront ici automatiquement.</p></div>
         : candidates.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Aucune carte à forte valeur détectée</h3><p>Cette liste retient les cartes possédées dont le prix connu ou manuel atteint {money(MIN_GRADING_VALUE)}, ainsi que les raretés majeures sans prix disponible, à vérifier avant toute décision. Les cartes communes restent exclues sauf si leur valeur franchit le seuil. Un prix absent ne signifie pas qu’une carte vaut ce montant, et « à examiner » ne garantit pas la rentabilité.</p></div>
         : analyzed.length === 0 ? <div className="grading-empty"><Search size={24}/><h3>Aucun résultat</h3><p>Essaie un autre filtre ou une autre recherche.</p></div>
-        : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons, needsPriceCheck }) => {
+        : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons, needsPriceCheck, asian }) => {
+          const usesManual = (entry.priceMode ?? (entry.manualPrice !== undefined ? 'manual' : 'market')) === 'manual' && entry.manualPrice !== undefined
           const label = needsPriceCheck ? 'Valeur à vérifier' : recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
           const card = { id: entry.cardId, name: entry.name, localId: entry.number ?? '', image: entry.image }
           return <article className={`grading-card ${recommendation}`} key={entry.key}>
             <div className="grading-card-image"><CatalogueImage card={card} requestedLanguage={entry.language} quality="low"/></div>
             <div className="grading-card-content">
               <div className="grading-card-title"><div><span>{entry.setName} · Nº {entry.number ?? '—'}</span><h3>{entry.name}</h3></div><span className={`grading-tag ${recommendation} ${needsPriceCheck ? 'price-check' : ''}`}>{label}</span></div>
-              <div className="grading-price-line"><span>{entry.priceMode === 'manual' && entry.manualPrice !== undefined ? 'Ton prix manuel' : 'Référence Cardmarket'}</span><strong>{unitPrice === undefined ? (priceState?.status === 'loading' ? 'Chargement…' : 'Indisponible') : money(unitPrice)}</strong></div>
+              <div className="grading-price-line"><span>{usesManual ? 'Ton prix manuel' : asian ? 'Cote locale indisponible' : 'Référence Cardmarket Europe'}</span><strong>{unitPrice === undefined ? (priceState?.status === 'loading' ? 'Chargement…' : 'Indisponible') : money(unitPrice)}</strong></div>
               <div className="grading-meta"><span>Quantité : ×{entry.quantity}</span><span>État enregistré : {conditionLabel(entry.condition)}</span><span>Score indicatif : {interest.score}/100</span></div>
               <ul>{reasons.slice(0, 3).map(reason => <li key={reason}>{reason}</li>)}</ul>
               <Recommendation price={unitPrice}/>
-              {entry.priceMode !== 'manual' && <small className="grading-price-note">Prix non filtré par langue · {entry.language.toUpperCase()}</small>}
+              {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
             </div>
           </article>
         })}</div>}
@@ -154,7 +157,8 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 
 function analyze(entry: CollectionEntry, prices: Record<string, Record<string, CardPriceState>>) {
   const price = prices[entry.language]?.[entry.cardId]
-  return getGradingInterest({ rawPrice: collectionUnitPrice(entry, price?.price?.value), rarity: entry.rarity, trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low })
+  const asian = isAsianCatalogLanguage(entry.language)
+  return getGradingInterest({ rawPrice: collectionUnitPrice(entry, asian ? undefined : price?.price?.value), rarity: entry.rarity, ...(asian ? {} : { trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low }) })
 }
 
 function conditionLabel(value: CollectionEntry['condition']) {
@@ -162,7 +166,7 @@ function conditionLabel(value: CollectionEntry['condition']) {
 }
 
 function Recommendation({ price }: { price?: number }) {
-  if (price === undefined) return <p className="grading-company-recommendation">Prix insuffisant pour recommander un service ; vérifie d’abord le prix français de cette impression.</p>
+  if (price === undefined) return <p className="grading-company-recommendation">Prix insuffisant pour recommander un service ; vérifie d’abord le prix local de cette impression.</p>
   if (price >= 250) return <p className="grading-company-recommendation"><strong>À comparer : PSA, PCA ou BGS.</strong> PSA peut convenir si la liquidité est prioritaire ; PCA est à comparer pour une démarche française ; BGS se discute si l’état est exceptionnel. CGC reste une option selon le coût et ton objectif.</p>
   if (price >= 100) return <p className="grading-company-recommendation"><strong>À comparer : PSA en priorité.</strong> Compare aussi PCA et CGC si le coût total correspond mieux à ton objectif ; soumets seulement après examen minutieux.</p>
   if (price >= 20) return <p className="grading-company-recommendation"><strong>À étudier avec prudence.</strong> Compare PSA, PCA et CGC, frais complets compris ; la marge de rentabilité peut être faible à ce niveau.</p>

@@ -62,5 +62,11 @@ describe('TCGdex market pricing shapes', () => {
   it('continues to read older flat TCGplayer cache objects', () => {
     expect(selectTcgplayerPrice({ tcgplayer: { marketPrice: 3 } } as never)?.value).toBe(3)
   })
+
+  it('uses the median then the low price when TCGplayer has no market field', () => {
+    expect(selectTcgplayerPrice({ tcgplayer: { midPrice: 4.25, lowPrice: 3.5 } } as never)).toMatchObject({ value: 4.25, label: 'Prix intermédiaire TCGplayer', currency: 'USD' })
+    expect(selectTcgplayerPrice({ tcgplayer: { lowPrice: 3.5 } } as never)).toMatchObject({ value: 3.5, label: 'Prix bas TCGplayer', currency: 'USD' })
+    expect(selectTcgplayerPrice({ tcgplayer: { marketPrice: 0, midPrice: Number.NaN, lowPrice: -2 } } as never)).toBeUndefined()
+  })
 })
 

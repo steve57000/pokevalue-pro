@@ -11,7 +11,7 @@ export type PriceReference = {
 export type TcgPlayerQuote = {
   value: number
   currency: 'USD'
-  label: 'Prix du marché TCGplayer'
+  label: 'Marché TCGplayer' | 'Prix intermédiaire TCGplayer' | 'Prix bas TCGplayer'
   provider: 'tcgplayer'
   region: 'Amérique du Nord'
   updatedAt?: string
@@ -24,6 +24,8 @@ const priorities: Array<[keyof NonNullable<TcgDexPricing['cardmarket']>, PriceRe
   ['avg', 'Prix moyen'],
   ['low', 'Prix bas Cardmarket'],
 ]
+
+export const isAsianCatalogLanguage = (language: string) => language === 'ja' || language === 'zh-tw'
 
 export function isValidMarketPrice(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
@@ -67,12 +69,17 @@ export function selectTcgplayerPrice(pricing?: TcgDexPricing | null, variant: 'n
     : variant === 'holofoil'
       ? tcgplayer.holofoil ?? undefined
       : tcgplayer['reverse-holofoil'] ?? tcgplayer.reverse ?? undefined
-  const value = variantData?.marketPrice
-  if (!isValidMarketPrice(value)) return undefined
+  const candidates = [
+    { value: variantData?.marketPrice, label: 'Marché TCGplayer' as const },
+    { value: variantData?.midPrice, label: 'Prix intermédiaire TCGplayer' as const },
+    { value: variantData?.lowPrice, label: 'Prix bas TCGplayer' as const },
+  ]
+  const selected = candidates.find(candidate => isValidMarketPrice(candidate.value))
+  if (!selected || !isValidMarketPrice(selected.value)) return undefined
   return {
-    value,
+    value: selected.value,
     currency: 'USD',
-    label: 'Prix du marché TCGplayer',
+    label: selected.label,
     provider: 'tcgplayer',
     region: 'Amérique du Nord',
     updatedAt: pricingDate(tcgplayer.updatedAt ?? tcgplayer.updated),
