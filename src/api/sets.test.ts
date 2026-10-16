@@ -372,7 +372,7 @@ describe('localized set catalogue', () => {
     expect(delta?.cardCount).toEqual({ total: 135, official: 103 })
   })
 
-  it('keeps the upcoming Delta Reign set selectable as a detail placeholder if TCGdex has no record yet', async () => {
+  it('returns an upcoming Delta Reign detail placeholder if TCGdex has no record yet', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, json: async () => ({}) }) as Response))
 
     const set = await getSet('me06', 'fr')
