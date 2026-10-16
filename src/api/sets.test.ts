@@ -349,6 +349,37 @@ describe('localized set catalogue', () => {
     expect(set.cardCount.total).toBe(161)
   })
 
+  it('adds the two 30th anniversary jumbo promo visuals to the Jumbo catalog', async () => {
+    const jumbo = { id: 'jumbo', name: 'Cartes Jumbo', cardCount: { total: 160, official: 160 }, cards: [] }
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => jumbo }) as Response))
+
+    const set = await getSet('jumbo', 'fr')
+
+    expect(set.cards.map(card => [card.id, card.name, card.image])).toEqual([
+      ['mep-099', 'Amphinobi-ex', 'https://assets.tcgdex.net/en/me/mep/099'],
+      ['mep-100', 'Nymphali-ex', 'https://assets.tcgdex.net/en/me/mep/100'],
+    ])
+    expect(set.cardCount.total).toBe(160)
+  })
+
+  it('lists the announced Delta Reign expansion as upcoming until TCGdex adds it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => [] }) as Response))
+
+    const sets = await listSets('fr')
+    const delta = sets.find(set => set.id === 'me06')
+
+    expect(delta).toMatchObject({ name: 'Méga-Évolution – Règne Delta', upcoming: true, releaseDate: '2026-11-06' })
+    expect(delta?.cardCount).toEqual({ total: 135, official: 103 })
+  })
+
+  it('returns an upcoming Delta Reign detail placeholder if TCGdex has no record yet', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, json: async () => ({}) }) as Response))
+
+    const set = await getSet('me06', 'fr')
+
+    expect(set).toMatchObject({ id: 'me06', name: 'Méga-Évolution – Règne Delta', upcoming: true, releaseDate: '2026-11-06', cards: [] })
+  })
+
   it('uses the Japanese Mew name for the Japanese anniversary cards', async () => {
     const baseSet = { id: 'M6a', name: '30th CELEBRATION', cardCount: { total: 165, official: 103 }, cards: [] }
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => baseSet }) as Response))
