@@ -1,4 +1,4 @@
-export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string; symbol?: string; serie?: { id: string; name?: string } }
+export type SetSummary = { id: string; name: string; cardCount: { total: number; official: number }; logo?: string; symbol?: string; serie?: { id: string; name?: string }; upcoming?: boolean; releaseDate?: string }
 export type SetCard = { id: string; name: string; localId: string; image?: string; rarity?: string }
 export type SetDetail = SetSummary & { serie?: { id: string; name: string }; cards: SetCard[] }
 export type CatalogLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'
@@ -69,6 +69,23 @@ const rgbMewCards = (set: SetDetail, language: string): SetDetail => {
   }
 }
 
+const deltaReignReleaseDate='2026-11-06'
+const upcomingDeltaSet=(language:string):SetSummary=>({id:'me06',name:language==='en'?'Mega Evolution—Delta Reign':'Méga-Évolution – Règne Delta',cardCount:{total:135,official:103},serie:{id:'me',name:language==='en'?'Mega Evolution':'Méga-Évolution'},upcoming:true,releaseDate:deltaReignReleaseDate})
+const includeUpcomingDelta=(sets:SetSummary[],language:string):SetSummary[]=>{
+ if(!['fr','en'].includes(language)||sets.some(set=>set.id.toLowerCase()==='me06'))return sets
+ return [...sets,upcomingDeltaSet(language)]
+}
+const upcomingDeltaDetail=(language:string):SetDetail=>({...upcomingDeltaSet(language),cards:[]})
+const addAnniversaryJumboCards=(set:SetDetail,language:string):SetDetail=>{
+ if(!set?.id||set.id.toLowerCase()!=='jumbo'||!Array.isArray(set.cards))return set
+ const cards:SetCard[]=[
+  {id:'mep-099',name:language==='en'?'Greninja ex':'Amphinobi-ex',localId:'099',image:'https://assets.tcgdex.net/en/me/mep/099',rarity:'Promo'},
+  {id:'mep-100',name:language==='en'?'Sylveon ex':'Nymphali-ex',localId:'100',image:'https://assets.tcgdex.net/en/me/mep/100',rarity:'Promo'},
+ ].filter(card=>!set.cards.some(existing=>existing.id.toLowerCase()===card.id))
+ if(!cards.length)return set
+ return {...set,cards:[...set.cards,...cards]}
+}
+
 const anniversaryMepPromos=[
  {localId:'096',names:{fr:'Sulfura',en:'Moltres',ja:'ファイヤー','zh-tw':'火焰鳥'}},
  {localId:'097',names:{fr:'Artikodin',en:'Articuno',ja:'フリーザー','zh-tw':'急凍鳥'}},
@@ -122,10 +139,10 @@ const withEnglishArtwork = async <T extends { id: string; logo?: string; symbol?
 }
 export const listSets = async (language: string='fr') => {
   if (language === 'en') {
-    const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
+    const sets = includeUpcomingDelta(filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language),language)
     return withFrenchArtwork(sets, language, () => fetchSet<SetSummary[]>(base('fr')))
   }
-  if (!asianLanguages.has(language)) return filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
+  if (!asianLanguages.has(language)) return includeUpcomingDelta(filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language),language)
   const englishRequest = fetchSet<SetSummary[]>(base('en')).catch(() => [])
   const sets = filterLocalizedSets(await fetchSet<SetSummary[]>(base(language)), language)
   const withEnglish = await withEnglishArtwork(sets, language, () => base('en'), englishRequest)
@@ -140,7 +157,8 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
   const englishRequest = isAsian
     ? fetchSet<SetDetail>(`${base('en')}/${encodeURIComponent(normalizedId)}`).catch(() => undefined)
     : undefined
-  const set = await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)
+  let set:SetDetail
+  try{set=await fetchSet<SetDetail>(`${base(language)}/${encodeURIComponent(id)}`)}catch(error){if(id.toLowerCase()==='me06'&&['fr','en'].includes(language))return upcomingDeltaDetail(language);throw error}
   if (isAsian || (language === 'en' && !set.logo)) {
     const frenchRequest = set.logo ? undefined : fetchSet<SetDetail>(`${base('fr')}/${encodeURIComponent(normalizedId)}`).catch(() => undefined)
     const [english, french] = await Promise.all([englishRequest ?? Promise.resolve(undefined), frenchRequest])
@@ -149,7 +167,7 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
     set.logo ??= exactEnglish?.logo ?? exactFrench?.logo
     set.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
   }
-  return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
+  return rgbMewCards(addMissingAnniversaryMepPromos(addAnniversaryJumboCards(set,language),language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
@@ -184,7 +202,7 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
   try {
     const series = await fetchSet<SeriesDetail>(`https://api.tcgdex.net/v2/${language}/series/${encodeURIComponent(id)}`)
     const sets = filterLocalizedSets(series.sets ?? [], language)
-    if (!needsFallback) return { ...series, sets }
+    if (!needsFallback) return { ...series, sets:includeUpcomingDelta(sets,language) }
 
     const frenchRequest = series.logo && sets.every(set => set.logo) ? undefined : fetchSet<SeriesDetail>(seriesEndpointFor('fr', englishId)).catch(() => undefined)
     const [english, french] = await Promise.all([englishRequest ?? Promise.resolve(undefined), frenchRequest])
@@ -194,14 +212,14 @@ export const getSeries = async (id: string, language: string='fr'): Promise<Seri
     series.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
     const englishSets = new Map((exactEnglish?.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(setId => [setId,set] as const)))
     const frenchSets = new Map((exactFrench?.sets ?? []).flatMap(set => exactArtworkIds(set.id).map(setId => [setId,set] as const)))
-    return { ...series, sets: sets.map(set => {
+    return { ...series, sets: includeUpcomingDelta(sets.map(set => {
       const matchingId = exactArtworkIds(set.id)[0]
       const fallback = englishSets.get(matchingId) ?? frenchSets.get(matchingId)
       return { ...set, logo: set.logo ?? fallback?.logo, symbol: set.symbol ?? fallback?.symbol }
-    }) }
+    }),language) }
   } catch {
     // Rebuild localized family details from set summaries on any endpoint failure.
     const sets = await listSets(language)
-    return { id, name: id, sets: sets.filter(set => set.serie?.id === id) }
+    return { id, name: id, sets: includeUpcomingDelta(sets.filter(set => set.serie?.id === id),language) }
   }
 }
