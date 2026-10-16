@@ -75,7 +75,7 @@ const includeUpcomingDelta=(sets:SetSummary[],language:string):SetSummary[]=>{
  if(!['fr','en'].includes(language)||sets.some(set=>set.id.toLowerCase()==='me06'))return sets
  return [...sets,upcomingDeltaSet(language)]
 }
-const upcomingDeltaDetail=(language:string):SetDetail=>({...upcomingDeltaSet(language),cards:[]})
+const upcomingDeltaDetail=(language:string):SetDetail=>({...upcomingDeltaSet(language),serie:{id:'me',name:language==='en'?'Mega Evolution':'Méga-Évolution'},cards:[]})
 const addAnniversaryJumboCards=(set:SetDetail,language:string):SetDetail=>{
  if(!set?.id||set.id.toLowerCase()!=='jumbo'||!Array.isArray(set.cards))return set
  const cards:SetCard[]=[
