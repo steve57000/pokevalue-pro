@@ -863,3 +863,7 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .identifier-image .catalogue-image{width:80px;height:112px;overflow:hidden;border-radius:8px;background:var(--panel2)}.identifier-image .catalogue-image img{width:100%;height:100%;object-fit:contain}@media(max-width:600px){.identifier-image .catalogue-image{width:64px;height:90px}}
 
 @media(max-width:620px){.portfolio-heading .language-tabs{justify-self:start;align-self:start;display:inline-flex;width:fit-content;max-width:100%;min-width:0;flex:none}.portfolio-heading .language-tabs button{flex:0 0 auto}}
+
+
+.series-progress-row.upcoming{opacity:.72;cursor:default}
+.series-progress-row.upcoming .series-progress-name small{display:block;margin-top:.2rem;color:var(--muted,#94a3b8);font-size:.82em;font-weight:500}
