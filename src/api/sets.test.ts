@@ -349,16 +349,29 @@ describe('localized set catalogue', () => {
     expect(set.cardCount.total).toBe(161)
   })
 
-  it('adds the two 30th anniversary jumbo promo visuals to the Jumbo catalog', async () => {
+  it('loads all 160 jumbo variants into the Jumbo catalog', async () => {
     const jumbo = { id: 'jumbo', name: 'Cartes Jumbo', cardCount: { total: 160, official: 160 }, cards: [] }
-    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => jumbo }) as Response))
+    const cards = [
+      { id: 'mep-099', name: 'Amphinobi-ex', localId: '099', image: 'https://assets.tcgdex.net/en/me/mep/099' },
+      { id: 'mep-100', name: 'Nymphali-ex', localId: '100', image: 'https://assets.tcgdex.net/en/me/mep/100' },
+      ...Array.from({ length: 158 }, (_, index) => ({
+        id: `jumbo-test-${index + 1}`,
+        name: `Carte Jumbo ${index + 1}`,
+        localId: String(index + 1),
+      })),
+    ]
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes('/cards?variants.size=jumbo') ? cards : jumbo,
+    }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
 
     const set = await getSet('jumbo', 'fr')
 
-    expect(set.cards.map(card => [card.id, card.name, card.image])).toEqual([
-      ['mep-099', 'Amphinobi-ex', 'https://assets.tcgdex.net/en/me/mep/099'],
-      ['mep-100', 'Nymphali-ex', 'https://assets.tcgdex.net/en/me/mep/100'],
-    ])
+    expect(set.cards).toHaveLength(160)
+    expect(set.cards.map(card => card.id)).toContain('mep-099')
+    expect(set.cards.map(card => card.id)).toContain('mep-100')
+    expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/fr/cards?variants.size=jumbo')
     expect(set.cardCount.total).toBe(160)
   })
 

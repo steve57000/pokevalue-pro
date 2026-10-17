@@ -76,14 +76,12 @@ const includeUpcomingDelta=(sets:SetSummary[],language:string):SetSummary[]=>{
  return [...sets,upcomingDeltaSet(language)]
 }
 const upcomingDeltaDetail=(language:string):SetDetail=>({...upcomingDeltaSet(language),serie:{id:'me',name:language==='en'?'Mega Evolution':'Méga-Évolution'},cards:[]})
-const addAnniversaryJumboCards=(set:SetDetail,language:string):SetDetail=>{
- if(!set?.id||set.id.toLowerCase()!=='jumbo'||!Array.isArray(set.cards))return set
- const cards:SetCard[]=[
-  {id:'mep-099',name:language==='en'?'Greninja ex':'Amphinobi-ex',localId:'099',image:'https://assets.tcgdex.net/en/me/mep/099',rarity:'Promo'},
-  {id:'mep-100',name:language==='en'?'Sylveon ex':'Nymphali-ex',localId:'100',image:'https://assets.tcgdex.net/en/me/mep/100',rarity:'Promo'},
- ].filter(card=>!set.cards.some(existing=>existing.id.toLowerCase()===card.id))
- if(!cards.length)return set
- return {...set,cards:[...set.cards,...cards]}
+const loadJumboCards=async(set:SetDetail,language:string):Promise<SetDetail>=>{
+ if(!set?.id||set.id.toLowerCase()!=='jumbo')return set
+ // The API counts Jumbo cards on this set but stores their records in the
+ // original expansions. Its nested filter gathers those records into one catalog.
+ const cards=await fetchSet<SetCard[]>(`${base(language).replace(/\/sets$/, '/cards')}?variants.size=jumbo`)
+ return {...set,cards}
 }
 
 const anniversaryMepPromos=[
@@ -167,7 +165,8 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
     set.logo ??= exactEnglish?.logo ?? exactFrench?.logo
     set.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
   }
-  return rgbMewCards(addMissingAnniversaryMepPromos(addAnniversaryJumboCards(set,language),language), language)
+  set=await loadJumboCards(set,language)
+  return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
 export type SeriesDetail = SeriesSummary & { sets: SetSummary[] }
