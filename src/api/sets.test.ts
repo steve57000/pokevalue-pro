@@ -349,30 +349,27 @@ describe('localized set catalogue', () => {
     expect(set.cardCount.total).toBe(161)
   })
 
-  it('loads all 160 jumbo variants into the Jumbo catalog', async () => {
+  it('loads every upstream Jumbo variant despite the stale set count', async () => {
     const jumbo = { id: 'jumbo', name: 'Cartes Jumbo', cardCount: { total: 160, official: 160 }, cards: [] }
-    const cards = [
-      { id: 'mep-099', name: 'Amphinobi-ex', localId: '099', image: 'https://assets.tcgdex.net/en/me/mep/099' },
-      { id: 'mep-100', name: 'Nymphali-ex', localId: '100', image: 'https://assets.tcgdex.net/en/me/mep/100' },
-      ...Array.from({ length: 158 }, (_, index) => ({
-        id: `jumbo-test-${index + 1}`,
-        name: `Carte Jumbo ${index + 1}`,
-        localId: String(index + 1),
-      })),
-    ]
-    const fetchMock = vi.fn(async (url: string) => ({
-      ok: true,
-      json: async () => url.includes('/cards?variants.size=jumbo') ? cards : jumbo,
-    }) as Response)
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => jumbo }) as Response))
 
     const set = await getSet('jumbo', 'fr')
 
-    expect(set.cards).toHaveLength(160)
+    expect(set.cards).toHaveLength(206)
+    expect(new Set(set.cards.map(card => card.id)).size).toBe(206)
     expect(set.cards.map(card => card.id)).toContain('mep-099')
     expect(set.cards.map(card => card.id)).toContain('mep-100')
-    expect(fetchMock.mock.calls.map(([url]) => url)).toContain('https://api.tcgdex.net/v2/fr/cards?variants.size=jumbo')
-    expect(set.cardCount.total).toBe(160)
+    expect(set.cards.some(card => card.name === 'Dracaufeu-ex')).toBe(true)
+    expect(set.cardCount).toMatchObject({ total: 206, official: 160 })
+  })
+
+  it('uses the full Jumbo catalogue size in set summaries', async () => {
+    const jumbo = { id: 'jumbo', name: 'Cartes Jumbo', cardCount: { total: 160, official: 160 } }
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => [jumbo] }) as Response))
+
+    const sets = await listSets('fr')
+
+    expect(sets[0].cardCount).toMatchObject({ total: 206, official: 160 })
   })
 
   it('lists the announced Delta Reign expansion as upcoming until TCGdex adds it', async () => {

@@ -3,6 +3,8 @@ export type SetCard = { id: string; name: string; localId: string; image?: strin
 export type SetDetail = SetSummary & { serie?: { id: string; name: string }; cards: SetCard[] }
 export type CatalogLanguage = 'fr' | 'en' | 'ja' | 'zh-tw'
 
+import { getJumboCards, JUMBO_CARD_COUNT } from './jumbo-cards'
+
 // These CS* records are incorrectly duplicated as “Triplet Beat” by the
 // upstream Asian catalogues: each advertises 101 cards but its detail is empty.
 const asianCatalogueGhostIds = new Set([
@@ -72,16 +74,15 @@ const rgbMewCards = (set: SetDetail, language: string): SetDetail => {
 const deltaReignReleaseDate='2026-11-06'
 const upcomingDeltaSet=(language:string):SetSummary=>({id:'me06',name:language==='en'?'Mega Evolution—Delta Reign':'Méga-Évolution – Règne Delta',cardCount:{total:135,official:103},serie:{id:'me',name:language==='en'?'Mega Evolution':'Méga-Évolution'},upcoming:true,releaseDate:deltaReignReleaseDate})
 const includeUpcomingDelta=(sets:SetSummary[],language:string):SetSummary[]=>{
- if(!['fr','en'].includes(language)||sets.some(set=>set.id.toLowerCase()==='me06'))return sets
- return [...sets,upcomingDeltaSet(language)]
+ const withJumboCount=sets.map(set=>set.id.toLowerCase()==='jumbo'?{...set,cardCount:{...set.cardCount,total:JUMBO_CARD_COUNT}}:set)
+ if(!['fr','en'].includes(language)||withJumboCount.some(set=>set.id.toLowerCase()==='me06'))return withJumboCount
+ return [...withJumboCount,upcomingDeltaSet(language)]
 }
 const upcomingDeltaDetail=(language:string):SetDetail=>({...upcomingDeltaSet(language),serie:{id:'me',name:language==='en'?'Mega Evolution':'Méga-Évolution'},cards:[]})
-const loadJumboCards=async(set:SetDetail,language:string):Promise<SetDetail>=>{
+const loadJumboCards=(set:SetDetail,language:string):SetDetail=>{
  if(!set?.id||set.id.toLowerCase()!=='jumbo')return set
- // The API counts Jumbo cards on this set but stores their records in the
- // original expansions. Its nested filter gathers those records into one catalog.
- const cards=await fetchSet<SetCard[]>(`${base(language).replace(/\/sets$/, '/cards')}?variants.size=jumbo`)
- return {...set,cards}
+ const cards=getJumboCards(language)
+ return {...set,cardCount:{...set.cardCount,total:cards.length},cards}
 }
 
 const anniversaryMepPromos=[
@@ -165,7 +166,7 @@ export const getSet = async (id: string, language: string='fr'): Promise<SetDeta
     set.logo ??= exactEnglish?.logo ?? exactFrench?.logo
     set.symbol ??= exactEnglish?.symbol ?? exactFrench?.symbol
   }
-  set=await loadJumboCards(set,language)
+  set=loadJumboCards(set,language)
   return rgbMewCards(addMissingAnniversaryMepPromos(set,language), language)
 }
 export type SeriesSummary = { id: string; name: string; logo?: string; symbol?: string }
