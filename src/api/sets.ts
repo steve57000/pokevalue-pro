@@ -80,7 +80,7 @@ const loadJumboCards=async(set:SetDetail,language:string):Promise<SetDetail>=>{
  if(!set?.id||set.id.toLowerCase()!=='jumbo')return set
  // The API counts Jumbo cards on this set but stores their records in the
  // original expansions. Its nested filter gathers those records into one catalog.
- const cards=await fetchSet<SetCard[]>(`${base(language)}/cards?variants.size=jumbo`)
+ const cards=await fetchSet<SetCard[]>(`${base(language).replace(/\/sets$/, '/cards')}?variants.size=jumbo`)
  return {...set,cards}
 }
 
