@@ -1,3 +1,4 @@
+import {useModalDialog} from '../hooks/useModalDialog'
 import { useEffect, useMemo, useState } from 'react'
 import { Download, FileText, X } from 'lucide-react'
 import { getSeries, getSet, listSeries, listSets, type SeriesSummary, type SetSummary } from '../api/sets'
@@ -67,7 +68,7 @@ const ownedRecord=(entry:CollectionEntry):ExportCard=>({...entry,owned:true})
 function catalogRecords(setId:string,setName:string,language:string,cards:{id:string;name:string;localId:string;image?:string;rarity?:string}[],entries:CollectionEntry[],filter:CatalogFilter):ExportCard[] {
   const result:ExportCard[]=[]
   for(const card of cards){
-    const matches=entries.filter(entry=>entry.quantity>0&&entry.cardId===card.id&&entry.language===language)
+    const matches=entries.filter(entry=>entry.quantity>0&&entry.cardId===card.id&&entry.setId===setId&&entry.language===language)
     if(filter==='owned'&&!matches.length)continue
     if(filter==='missing'&&matches.length)continue
     if(matches.length){
@@ -94,6 +95,7 @@ export function CollectionExport({entries}:Props) {
   const [loading,setLoading]=useState(false)
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
+  const dialogRef=useModalDialog(()=>{if(!busy)setOpen(false)},open)
 
   const owned=useMemo(()=>entries.filter(entry=>entry.quantity>0),[entries])
   useEffect(()=>{
@@ -172,7 +174,7 @@ export function CollectionExport({entries}:Props) {
       <button type="button" onClick={()=>{setOpen(true);setError('')}} aria-label="Préparer un export CSV ou PDF"><Download size={17}/> Exporter</button>
     </div>
     {open&&<div className="export-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget&&!busy)setOpen(false)}}>
-      <section className="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+      <section ref={dialogRef} className="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <header><div><span className="eyebrow">Classeur personnel</span><h2 id="export-title">Préparer un export</h2></div><button type="button" className="export-close" aria-label="Fermer" onClick={()=>setOpen(false)} disabled={busy}><X size={20}/></button></header>
         <label className="export-field"><span>Format</span><select value={format} onChange={event=>setFormat(event.target.value as Format)}><option value="csv">CSV · tableur</option><option value="pdf">PDF · impression / partage</option></select></label>
         <label className="export-field"><span>Contenu</span><select value={scope} onChange={event=>changeScope(event.target.value as Scope)}><option value="collection">Toute ma collection possédée</option><option value="sets">Une ou plusieurs extensions</option><option value="blocks">Un ou plusieurs blocs</option><option value="missing">Cartes manquantes d’une ou plusieurs extensions</option></select></label>

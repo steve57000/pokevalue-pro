@@ -1,0 +1,70 @@
+/* Shared interaction and responsive refinements. */
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button:disabled { cursor: not-allowed; }
+button { touch-action: manipulation; }
+input, select, textarea { max-width: 100%; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.content { animation: page-arrive .22s ease-out; }
+@keyframes page-arrive { from { opacity: .35; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dialog-arrive { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.card-details, .card-editor-modal, .export-modal, .mobile-menu { animation: dialog-arrive .2s ease-out; }
+.sidebar nav button, .bottom-nav button, .language-tabs button, .collection-view-switch button, .price-explorer-row { transition: background-color .18s, border-color .18s, color .18s; }
+.add-card-action:active, .collection-quantity button:active { transform: scale(.94); }
+.binder-grid>article { transition: border-color .2s, box-shadow .2s; }
+.binder-grid>article.owned { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 20%, transparent); }
+.challenge-disclosure, .rarity-disclosure, .stats-source { color: var(--muted); font-size: 13px; }
+.challenge-disclosure { margin: 0 0 18px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.challenge-disclosure summary, .rarity-disclosure summary, .stats-source summary { cursor: pointer; padding: 7px 0; color: var(--text); font-weight: 600; min-height: 32px; }
+.challenge-disclosure .weekly-challenge { margin: 12px 0 0; }
+.rarity-disclosure { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 6px; }
+.rarity-disclosure .set-rarity-summary { margin-top: 12px; border-top: 0; }
+.empty-search { padding: 16px; color: var(--muted); }
+.history-insight-grid article { align-content: start; }
+.history-insight-grid article>strong { font-size: clamp(19px, 2.1vw, 26px); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.history-insight-grid article>small { font-size: 11px; color: var(--muted); }
+.price-explorer .history-search { margin-bottom: 16px; }
+.price-explorer .history-search:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+.price-explorer-list { max-height: 440px; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 3px; }
+.price-explorer-row { min-height: 76px; }
+.price-explorer-row.selected { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 9%, var(--panel)); }
+.price-explorer-row:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.price-explorer-values { flex: none; display: grid; justify-items: end; gap: 4px; font-variant-numeric: tabular-nums; }
+.price-explorer-values small { display: flex; align-items: center; gap: 3px; }
+.price-explorer-values .positive { color: var(--success); }
+.price-explorer-values .negative, .negative { color: var(--brand); }
+.price-explorer-row .price-explorer-values>strong { font-size: 17px; }
+.stats-reset, .stats-load-more { min-height: 42px; margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; background: var(--panel2); color: var(--text); cursor: pointer; }
+.stats-load-more { width: 100%; }
+.stats-hint { color: var(--muted); font-size: 12px; margin-bottom: 0; }
+.history-detail-card { scroll-margin-top: 100px; }
+.history-detail-card>.history-actions { margin: 22px 0 16px; justify-content: space-between; flex-wrap: wrap; }
+.stats-source { margin-top: 16px; padding-top: 8px; border-top: 1px solid var(--line); }
+.stats-source p { font-size: 12px; line-height: 1.6; max-width: 760px; }
+.history-card-heading>div { min-width: 0; }
+.history-chart-labels { top: 8%; bottom: 20%; }
+.set-overview-logo { object-fit: contain; }
+@media(max-width:700px) {
+  .history-insight-grid { margin: 16px 0; }
+  .history-insight-grid article>span { font-size: 11px; }
+  .history-insight-grid article>strong { font-size: clamp(18px, 5vw, 24px); }
+  .price-explorer-list { max-height: 360px; }
+  .price-explorer-row { min-height: 72px; padding: 11px; }
+  .price-explorer-row strong { font-size: 13px; }
+  .price-explorer-row small { font-size: 11px; }
+  .price-explorer-row .price-explorer-values>strong { font-size: 16px; }
+  .history-card-heading .eyebrow { font-size: 10px; letter-spacing: .05em; }
+  .history-card-heading h2 { font-size: 22px; }
+  .history-current-price { min-width: 0; }
+  .history-search input, .price-explorer-filters select, .price-explorer-filters input:not([type=checkbox]) { font-size: 16px; }
+  .history-detail-card { scroll-margin-top: 90px; }
+  .history-actions button { min-height: 44px; }
+  .details-tabs { overflow-x: auto; }
+  .details-tabs button { flex-shrink: 0; }
+  .collection-summary>div>span { line-height: 1.5; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after { animation-duration: .01ms!important; animation-iteration-count: 1!important; transition-duration: .01ms!important; scroll-behavior: auto!important; }
+}

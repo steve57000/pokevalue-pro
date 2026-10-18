@@ -1,5 +1,6 @@
 import type { MarketPriceQuote, PriceBasis, PrintingLanguage, QuoteAggregation, QuoteVariant } from './pricing'
 import { writeStoredJson } from '../utils/storage'
+import { isAsianCatalogLanguage } from './pricing'
 
 /** `language` remains the selected catalog language for backwards compatibility. */
 export type PriceMetricSnapshot = {
@@ -241,11 +242,22 @@ export function todayPriceDate() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 }
 
-/** The graph shows one stable series: Cardmarket Europe guide, normal finish. */
+/** A comparable observation per card and day: same market, currency and finish. */
+export function comparablePriceHistory(snapshots: PriceSnapshot[]): PriceSnapshot[] {
+  const daily = new Map<string, PriceSnapshot>()
+  for (const point of snapshots) {
+    if (isAsianCatalogLanguage(point.language) || point.source !== 'cardmarket' || point.market !== 'cardmarket-europe'
+      || point.currency !== 'EUR' || point.variant !== 'normal' || point.basis !== 'guide') continue
+    const key = `${point.language}:${point.cardId}:${point.date}`
+    const previous = daily.get(key)
+    if (!previous || snapshotTime(point) > snapshotTime(previous)
+      || (snapshotTime(point) === snapshotTime(previous) && historyKey(point).localeCompare(historyKey(previous)) > 0)) daily.set(key, point)
+  }
+  return [...daily.values()].sort((a, b) => a.date.localeCompare(b.date) || a.language.localeCompare(b.language) || a.cardId.localeCompare(b.cardId))
+}
+
 export function getPriceHistory(cardId: string, language: string, storage: Pick<Storage, 'getItem'> = localStorage): PriceSnapshot[] {
-  return readHistory(storage).filter(point => point.cardId === cardId && point.language === language
-    && point.source === 'cardmarket' && point.market === 'cardmarket-europe' && point.variant === 'normal' && point.basis === 'guide')
-    .sort((a, b) => a.date.localeCompare(b.date))
+  return comparablePriceHistory(readHistory(storage)).filter(point => point.cardId === cardId && point.language === language)
 }
 
 export function getAllPriceHistory(storage: Pick<Storage, 'getItem'> = localStorage): PriceSnapshot[] {

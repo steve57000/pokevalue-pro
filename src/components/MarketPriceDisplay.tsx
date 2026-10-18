@@ -4,6 +4,8 @@ import { money } from '../utils/money'
 import { Info } from 'lucide-react'
 
 type Props = {
+  personalPrice?: number
+  jumbo?: boolean
   language: CatalogLanguage
   status?: 'loading' | 'success' | 'error'
   cardmarket?: PriceReference | null
@@ -32,7 +34,7 @@ function QuoteRow({ provider, context, value, currency = 'EUR', status, updatedA
   </div>
 }
 
-export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: Props) {
+export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, personalPrice, jumbo }: Props) {
   const asian = language === 'ja' || language === 'zh-tw'
   const cardmarketContext = `Europe · EUR · ${basisLabel(cardmarket?.basis)} · impression et état non renseignés${cardmarket ? ` · ${cardmarket.label}` : ''}`
   const note = language === 'fr'
@@ -46,7 +48,7 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: 
   // Keep the card tile focused on one actionable figure. English cards prefer
   // their North American reference when it exists; otherwise Cardmarket is a
   // clearly European fallback inside the detailed information panel.
-  const primaryValue = asian ? undefined : language === 'en' && tcgplayer?.value !== undefined
+  const primaryValue = personalPrice !== undefined ? { value: personalPrice, currency: 'EUR' as const } : asian || jumbo ? undefined : language === 'en' && tcgplayer?.value !== undefined
     ? { value: tcgplayer.value, currency: 'USD' as const }
     : cardmarket?.value !== undefined ? { value: cardmarket.value, currency: 'EUR' as const } : undefined
   const compactAmount = primaryValue
@@ -54,13 +56,15 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer }: 
     : status === 'loading' ? '…' : '—'
 
   return <div className={`binder-price${asian ? ' has-local-market-gap' : ''}`} aria-label="Prix par marché">
-    <span className="binder-price-compact-row" aria-label={primaryValue ? `Prix indicatif ${compactAmount}` : 'Prix indisponible'}><strong>{compactAmount}</strong></span>
+    <span className="binder-price-compact-row" aria-label={primaryValue ? `${personalPrice!==undefined?'Prix personnel':'Prix indicatif'} ${compactAmount}` : 'Prix indisponible'}><strong>{compactAmount}</strong></span>
     <details className="binder-price-info">
       <summary aria-label="Afficher les informations sur les prix" title="Informations sur les prix"><Info size={15}/><span>Informations</span></summary>
       <div className="binder-price-info-content">
+        {personalPrice!==undefined&&<QuoteRow provider="Prix personnel" context="Valeur de ma collection" value={personalPrice}/>}
+        {jumbo&&<p>Pas de cote Jumbo disponible. Renseigne ton prix dans les paramètres.</p>}
         {asian && <QuoteRow provider="Cote locale" context={language === 'ja' ? 'Japon' : 'Chinois traditionnel'} status="error" />}
-        {(!asian || cardmarket?.value !== undefined) && <QuoteRow provider={cardmarketProvider} context={cardmarketContext} value={cardmarket?.value} currency="EUR" status={status} updatedAt={cardmarket?.updatedAt} />}
-        {language === 'en' && <QuoteRow provider="TCGplayer" context={tcgplayerContext} value={tcgplayer?.value} currency="USD" status={status} updatedAt={tcgplayer?.updatedAt} />}
+        {!jumbo && (!asian || cardmarket?.value !== undefined) && <QuoteRow provider={cardmarketProvider} context={cardmarketContext} value={cardmarket?.value} currency="EUR" status={status} updatedAt={cardmarket?.updatedAt} />}
+        {!jumbo && language === 'en' && <QuoteRow provider="TCGplayer" context={tcgplayerContext} value={tcgplayer?.value} currency="USD" status={status} updatedAt={tcgplayer?.updatedAt} />}
         <small className="binder-price-note">{note} Les moyennes de ventes sont agrégées par période, pas des transactions individuelles.</small>
       </div>
     </details>

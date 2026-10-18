@@ -1,61 +1,86 @@
-import {useEffect,useMemo,useRef,useState} from 'react'
-import {Activity,CalendarDays,Heart,Library,RefreshCw,Search,ShieldCheck,TrendingDown,TrendingUp} from 'lucide-react'
-import {useCardPrices,refreshCardPrices} from '../hooks/useCardPrices'
-import {getAllPriceHistory,getPriceHistory,type PriceSnapshot} from '../domain/priceHistory'
-import {isAsianCatalogLanguage} from '../domain/pricing'
-import type {Card} from '../types'
-import type {CollectionEntry} from '../domain/collection'
-import type {FavoriteCard} from '../domain/favorites'
-import {money} from '../utils/money'
-import type {PriceHistorySyncStatus} from '../hooks/useGitHubPriceHistorySync'
-import {CatalogueImage} from './CatalogueImage'
-import {PriceHistoryExplorer} from './PriceHistoryExplorer'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Activity, CalendarDays, Library, Layers, RefreshCw, Wallet, TrendingDown, TrendingUp } from 'lucide-react'
+import { useCardPrices, refreshCardPrices } from '../hooks/useCardPrices'
+import { getAllPriceHistory, type PriceSnapshot } from '../domain/priceHistory'
+import { buildStatsRows } from '../domain/collectionStats'
+import { isAsianCatalogLanguage } from '../domain/pricing'
+import type { Card } from '../types'
+import type { CollectionEntry } from '../domain/collection'
+import type { FavoriteCard } from '../domain/favorites'
+import { money } from '../utils/money'
+import { readStoredString, writeStoredString } from '../utils/storage'
+import type { PriceHistorySyncStatus } from '../hooks/useGitHubPriceHistorySync'
+import { CatalogueImage } from './CatalogueImage'
+import { PriceHistoryExplorer } from './PriceHistoryExplorer'
 
-type TrackedCard={id:string;language:string;name:string;setName:string;number?:string}
-type Props={cards:Card[];entries:CollectionEntry[];favorites:FavoriteCard[];historySync:{status:PriceHistorySyncStatus;message:string}}
-const identity=(card:Pick<TrackedCard,'id'|'language'>)=>`${card.language}:${card.id}`
-const cardLanguage=(language:string)=>language==='FR'?'fr':language==='JP'?'ja':language.toLowerCase()
-
-export function PriceHistoryPage({cards,entries,favorites,historySync}:Props){
- const [search,setSearch]=useState(''),[range,setRange]=useState<'30'|'90'|'all'>('30'),[selectedKey,setSelectedKey]=useState(()=>{try{return sessionStorage.getItem('pv-stats-selected-card-v1')??''}catch{return ''}})
- const detailRef=useRef<HTMLElement>(null)
- const options=useMemo(()=>{const byKey=new Map<string,TrackedCard>();for(const card of cards)if(card.tcgdexId){const value={id:card.tcgdexId,language:cardLanguage(card.language),name:card.name,setName:card.set,number:card.number};byKey.set(identity(value),value)}for(const entry of entries){const value={id:entry.cardId,language:entry.language,name:entry.name,setName:entry.setName,number:entry.number};if(!byKey.has(identity(value)))byKey.set(identity(value),value)}for(const favorite of favorites){const value={id:favorite.cardId,language:favorite.language,name:favorite.name,setName:favorite.setName,number:favorite.localId};if(!byKey.has(identity(value)))byKey.set(identity(value),value)}for(const point of getAllPriceHistory()){if(isAsianCatalogLanguage(point.language))continue;const value={id:point.cardId,language:point.language,name:point.cardId,setName:'Carte suivie'};if(!byKey.has(identity(value)))byKey.set(identity(value),value)}return [...byKey.values()].sort((a,b)=>a.name.localeCompare(b.name,'fr'))},[cards,entries,favorites])
- const selected=options.find(card=>identity(card)===selectedKey)??options[0]
- const selectCardKey=(key:string)=>{setSelectedKey(key);try{sessionStorage.setItem('pv-stats-selected-card-v1',key)}catch{}}
-
- const currentPrices=useCardPrices(selected?[selected.id]:[],selected?.language??'fr')
- const livePrice=selected?currentPrices[selected.id]:undefined
- const asian=selected?isAsianCatalogLanguage(selected.language):false
- const [history,setHistory]=useState<PriceSnapshot[]>(()=>selected?getPriceHistory(selected.id,selected.language):[])
- useEffect(()=>{const update=()=>setHistory(selected?getPriceHistory(selected.id,selected.language):[]);update();window.addEventListener('pv-price-history-updated',update);return()=>window.removeEventListener('pv-price-history-updated',update)},[selected?.id,selected?.language])
- useEffect(()=>{if(selected&&livePrice?.status==='success')setHistory(getPriceHistory(selected.id,selected.language))},[selected?.id,selected?.language,livePrice?.status])
- const allHistory=getAllPriceHistory().filter(point=>!isAsianCatalogLanguage(point.language)),trackedCount=new Set(allHistory.map(point=>`${point.language}:${point.cardId}`)).size
- const filteredOptions=options.filter(card=>`${card.name} ${card.setName} ${card.number??''} ${card.id}`.toLocaleLowerCase('fr').includes(search.toLocaleLowerCase('fr')))
- const historyForMarket=asian?[]:history
- const visibleHistory=useMemo(()=>{if(range==='all'||historyForMarket.length<2)return historyForMarket;const cutoff=Date.now()-Number(range)*24*60*60*1000;return historyForMarket.filter(point=>new Date(`${point.date}T00:00:00`).getTime()>=cutoff)},[historyForMarket,range])
- const values=visibleHistory.map(point=>point.value),latest=values[values.length-1],first=values[0],change=latest!==undefined&&first!==undefined?latest-first:undefined,changePercent=change!==undefined&&first?change/first*100:undefined
- return <section className="price-history-page">
-  <div className="page-heading"><span className="eyebrow"><Activity size={15}/> Marché & collection</span><h1>Statistiques & prix</h1><p>Analyse la valeur de ta collection, les tendances de prix et les relevés du marché.</p><p className={`history-sync-note ${historySync.status}`} role="status">{historySync.message}</p></div>
-  <div className="history-insight-grid" aria-label="Indicateurs du catalogue">
-   <article><span><Library size={17}/> Cartes référencées</span><strong>{cards.length}</strong></article>
-   <article><span><TrendingUp size={17}/> Tendance positive</span><strong>{cards.filter(card=>card.trend==='up').length}</strong></article>
-   <article><span><ShieldCheck size={17}/> Raretés couvertes</span><strong>{new Set(cards.map(card=>card.rarity)).size}</strong></article>
-   <article><span><Heart size={17}/> Favoris enregistrés</span><strong>{favorites.length}</strong></article>
-  </div>
-  <div className="history-overview"><article><span>Cartes suivies</span><strong>{trackedCount}</strong><small>avec au moins un relevé</small></article><article><span>Relevés enregistrés</span><strong>{allHistory.length}</strong><small>sources et marchés conservés séparément</small></article><article><span>Période affichée</span><strong>{range==='all'?'Tout':`${range} jours`}</strong><small>guide Cardmarket Europe · EUR</small></article></div>
-  <PriceHistoryExplorer cards={cards} entries={entries} favorites={favorites} onSelect={(id,language)=>{selectCardKey(language+':'+id);setSearch('');requestAnimationFrame(()=>requestAnimationFrame(()=>detailRef.current?.scrollIntoView({behavior:'smooth',block:'start'})))}} />
-  <div className="history-controls"><label className="history-search"><Search size={17}/><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Rechercher une carte ou une extension"/></label><label className="history-card-select"><span>Carte</span><select value={selected?identity(selected):''} onChange={event=>selectCardKey(event.target.value)}>{selected&&!filteredOptions.some(card=>identity(card)===identity(selected))&&<option value={identity(selected)}>{selected.name} · {selected.setName} ({selected.language.toUpperCase()})</option>}{filteredOptions.map(card=><option key={identity(card)} value={identity(card)}>{card.name} · {card.number?`nº ${card.number} · `:''}{card.setName} ({card.language.toUpperCase()})</option>)}</select></label><div className="history-actions"><div className="history-range" aria-label="Période du graphique">{(['30','90','all'] as const).map(value=><button key={value} className={range===value?'active':''} onClick={()=>setRange(value)}>{value==='all'?'Tout':`${value} j`}</button>)}</div>{selected&&<button className="history-refresh" onClick={()=>refreshCardPrices([selected.id],selected.language)} disabled={livePrice?.status==='loading'}><RefreshCw size={15} className={livePrice?.status==='loading'?'spinning':''}/><span>Actualiser</span></button>}</div></div>
-   {selected?<article ref={detailRef} tabIndex={-1} style={{scrollMarginTop:100}} className="history-detail-card"><div className="history-card-heading"><div className="history-selected-preview"><CatalogueImage card={{id:selected.id,name:selected.name,localId:selected.number??selected.id.split('-').pop()??''}} requestedLanguage={selected.language} quality="high"/></div><div><span className="eyebrow"><CalendarDays size={14}/> {selected.setName} · {selected.language.toUpperCase()}</span><h2>{selected.name}</h2><p>{selected.number?`Nº ${selected.number} · `:''}{selected.id}</p></div><div className="history-current-price"><small>{asian?'Cote locale indisponible':livePrice?.status==='success'&&livePrice.price?`Cardmarket Europe · EUR · ${marketBasisLabel(livePrice.price.basis)}`:'Dernier prix enregistré'}</small><strong>{!asian&&livePrice?.status==='success'&&livePrice.price?money(livePrice.price.value):latest!==undefined?money(latest):'—'}</strong>{!asian&&livePrice?.cardmarket?.updatedAt&&<small className="history-price-updated">Source mise à jour le {formatUpdatedAt(livePrice.cardmarket.updatedAt)}</small>}{visibleHistory.length>1&&change!==undefined&&<span className={change>0?'positive':change<0?'negative':''}>{change>0?<TrendingUp size={15}/>:change<0?<TrendingDown size={15}/>:null}{change>0?'+':''}{money(change)}{changePercent!==undefined&&` (${changePercent>0?'+':''}${changePercent.toFixed(1)} %)`}</span>}</div></div>
-   {visibleHistory.length>1?<div className="history-chart-wrap"><div className="history-chart-labels"><span>{money(Math.max(...values))}</span><span>{money((Math.max(...values)+Math.min(...values))/2)}</span><span>{money(Math.min(...values))}</span></div><PriceChart points={visibleHistory}/><div className="history-dates"><span>{formatDate(visibleHistory[0].date)}</span><span>{formatDate(visibleHistory[visibleHistory.length-1].date)}</span></div></div> :<div className="history-empty"><Activity size={26}/><strong>{asian?'Cotation asiatique locale indisponible':livePrice?.status==='loading'?'Prix en cours d’actualisation…':historyForMarket.length===1?'Premier relevé enregistré':'Pas encore de relevé'}</strong><p>{asian?'Aucun fournisseur de cotation locale japonaise ou chinoise traditionnelle n’est intégré. Les anciens relevés européens ne sont pas présentés comme des prix asiatiques.':historyForMarket.length===1?`Un seul point (${formatDate(historyForMarket[0].date)}) ne permet pas encore de montrer une évolution. Les prochains relevés quotidiens compléteront la courbe.`:historyForMarket.length===0?'Le prix actuel apparaît dès que Cardmarket fournit une valeur pour cette carte. Les relevés quotidiens suivants construiront son historique.':'Aucun relevé dans cette période. Essaie une période plus large.'}</p></div>}
-   <footer className="history-source">{asian?'Aucune source locale validée. Les cotes Cardmarket Europe restent des guides séparés du marché asiatique.':'Source : guide Cardmarket Europe via TCGdex · observation quotidienne · langue d’impression et état non communiqués.'}</footer>
-  </article>:<div className="history-empty"><Activity size={26}/><strong>Aucune carte à suivre</strong><p>Ajoute une carte à tes favoris ou à ta collection pour la retrouver ici.</p></div>}
- </section>
+type Props = { cards: Card[]; entries: CollectionEntry[]; favorites: FavoriteCard[]; historySync: { status: PriceHistorySyncStatus; message: string } }
+const SELECTION_KEY = 'pv-stats-selected-card-v1'
+export function PriceHistoryPage({ cards, entries, favorites, historySync }: Props) {
+  const [range, setRange] = useState<'30' | '90' | 'all'>('30')
+  const [selectedKey, setSelectedKey] = useState(() => readStoredString(SELECTION_KEY, '', 'session'))
+  const [revision, setRevision] = useState(0)
+  const detailRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const update = () => setRevision(value => value + 1)
+    window.addEventListener('pv-price-history-updated', update)
+    return () => window.removeEventListener('pv-price-history-updated', update)
+  }, [])
+  const rows = useMemo(() => buildStatsRows(cards, entries, favorites, getAllPriceHistory()), [cards, entries, favorites, revision])
+  const owned = rows.filter(row => row.owned > 0)
+  const selected = rows.find(row => row.key === selectedKey || `${row.language}:${row.id}` === selectedKey) ?? owned[0]
+  const ids = (language: string) => [...new Set(rows.filter(row => (row.owned > 0 || row.key === selected?.key) && row.language === language && row.setId !== 'jumbo' && row.variant === 'normal').map(row => row.id))]
+  const fr = useCardPrices(ids('fr'), 'fr'), en = useCardPrices(ids('en'), 'en')
+  const priceMaps = { fr, en }
+  const current = selected ? priceMaps[selected.language as keyof typeof priceMaps]?.[selected.id] : undefined
+  const marketAvailable = selected && selected.setId !== 'jumbo' && selected.variant === 'normal' && !isAsianCatalogLanguage(selected.language)
+  const history = selected?.history ?? []
+  const cutoff = Date.now() - Number(range) * 86400000
+  const visibleHistory = range === 'all' ? history : history.filter(point => Date.parse(`${point.date}T00:00:00Z`) >= cutoff)
+  const first = visibleHistory[0]?.value, latest = visibleHistory[visibleHistory.length - 1]?.value
+  const change = first !== undefined && latest !== undefined && visibleHistory.length > 1 ? latest - first : undefined
+  const total = owned.reduce((sum, row) => sum + (row.value ?? 0) * row.owned, 0)
+  const valued = owned.filter(row => row.value !== undefined).length
+  const loading = Object.values(fr).some(price => price.status === 'loading') || Object.values(en).some(price => price.status === 'loading')
+  const selectCard = (key: string) => {
+    setSelectedKey(key); writeStoredString(SELECTION_KEY, key, 'session')
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      detailRef.current?.focus({ preventScroll: true })
+      detailRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+    }))
+  }
+  return <section className="price-history-page">
+    <div className="page-heading"><span className="eyebrow"><Activity size={15}/> Ma collection</span><h1>Statistiques</h1>{historySync.status === 'error' && <p className="history-sync-note error" role="status">{historySync.message}</p>}</div>
+    <div className="history-insight-grid" aria-label="Statistiques de ma collection">
+      <article><span><Library size={17}/> Cartes différentes</span><strong>{owned.length}</strong></article>
+      <article><span><Layers size={17}/> Exemplaires</span><strong>{owned.reduce((sum, row) => sum + row.owned, 0)}</strong></article>
+      <article><span><Wallet size={17}/> Valeur · EUR</span><strong>{valued < owned.length ? '≈ ' : ''}{money(total)}</strong><small>{valued}/{owned.length} valorisées{loading ? ' · actualisation…' : ''}</small></article>
+      <article><span><CalendarDays size={17}/> Extensions</span><strong>{new Set(owned.map(row => row.setId)).size}</strong></article>
+    </div>
+    <PriceHistoryExplorer rows={rows} selectedKey={selected?.key} onSelect={selectCard}/>
+    {selected && <article ref={detailRef} tabIndex={-1} className="history-detail-card">
+      <div className="history-card-heading">
+        <div className="history-selected-preview"><CatalogueImage card={{ id: selected.id, name: selected.name, localId: selected.number ?? '', image: selected.image }} requestedLanguage={selected.language} quality="high"/></div>
+        <div><span className="eyebrow">{selected.setName} · {selected.language.toUpperCase()}</span><h2>{selected.name}</h2><p>{selected.number ? `Nº ${selected.number}` : ''}{selected.owned ? ` · ${selected.owned} exemplaire${selected.owned === 1 ? '' : 's'}` : ''}</p></div>
+        <div className="history-current-price"><small>{selected.manual ? 'Prix personnel · unitaire' : 'Guide Cardmarket · EUR'}</small><strong>{selected.value === undefined ? '—' : money(selected.value)}</strong>{selected.owned > 1 && selected.value !== undefined && <small>{money(selected.value * selected.owned)} au total</small>}{change !== undefined && <span className={change > 0 ? 'positive' : change < 0 ? 'negative' : ''}>{change > 0 ? <TrendingUp size={15}/> : change < 0 ? <TrendingDown size={15}/> : null}{change > 0 ? '+' : ''}{money(change)}{first ? ` (${change > 0 ? '+' : ''}${(change / first * 100).toFixed(1)} %)` : ''}<small> marché</small></span>}</div>
+      </div>
+      <div className="history-actions">
+        <div className="history-range" role="group" aria-label="Période du graphique">{(['30', '90', 'all'] as const).map(value => <button key={value} className={range === value ? 'active' : ''} aria-pressed={range === value} onClick={() => setRange(value)}>{value === 'all' ? 'Tout' : `${value} j`}</button>)}</div>
+        {marketAvailable && <button className="history-refresh" onClick={() => refreshCardPrices([selected.id], selected.language)} disabled={current?.status === 'loading'}><RefreshCw size={15} className={current?.status === 'loading' ? 'spinning' : ''}/>{current?.status === 'loading' ? 'Actualisation…' : 'Actualiser'}</button>}
+      </div>
+      {visibleHistory.length > 1 ? <PriceChart points={visibleHistory}/> : <div className="history-empty"><Activity size={26}/><strong>{!marketAvailable ? 'Cote de cette édition indisponible' : current?.status === 'loading' ? 'Actualisation du prix…' : visibleHistory.length === 1 ? 'Premier relevé enregistré' : history.length ? 'Aucun relevé sur cette période' : 'Pas encore de relevé'}</strong><p>{!marketAvailable ? 'Tu peux renseigner ton prix dans les paramètres de la carte.' : visibleHistory.length === 1 ? 'La courbe apparaîtra au prochain relevé quotidien.' : history.length ? 'Choisis une période plus large.' : 'La courbe se construira dès que des prix seront disponibles.'}</p></div>}
+      <details className="stats-source"><summary>À propos des prix</summary><p>Valeur de collection : prix personnels prioritaires, sinon guide Cardmarket Europe en euros. Les cartes sans prix restent comptées et ne contribuent pas au total.</p><p>Courbe et variations : guide Cardmarket, finition normale, un relevé par jour. Langue d’impression et état non précisés par TCGdex. Les Jumbo et les éditions asiatiques n’ont pas de cote adaptée ici.</p>{history[history.length - 1] && <p>Dernier relevé : {formatDate(history[history.length - 1]!.date)}.</p>}</details>
+    </article>}
+  </section>
 }
 
-function PriceChart({points}:{points:PriceSnapshot[]}){
- const values=points.map(point=>point.value),min=Math.min(...values),max=Math.max(...values),span=max-min||Math.max(max*.08,1),coords=points.map((point,index)=>({x:48+(points.length===1?0:index/(points.length-1)*612),y:20+(max-point.value)/span*190})),line=coords.map((point,index)=>`${index?'L':'M'} ${point.x} ${point.y}`).join(' '),last=coords[coords.length-1],area=`${line} L ${last?.x??48} 238 L ${coords[0]?.x??48} 238 Z`
- return <svg className="history-chart" viewBox="0 0 700 260" role="img" aria-label={`Courbe de ${money(points[0].value)} à ${money(points[points.length-1].value)}`}><defs><linearGradient id="price-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".22"/><stop offset="100%" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>{[22,117,212].map(y=><path key={y} className="history-gridline" d={`M48 ${y}H660`}/>)}<path className="history-area" d={area}/><path className="history-line" d={line}/>{coords.map((point,index)=><circle key={`${points[index].date}-${index}`} cx={point.x} cy={point.y} r={index===coords.length-1?5:3}><title>{points[index].date} · {money(points[index].value)}</title></circle>)}</svg>
+function PriceChart({ points }: { points: PriceSnapshot[] }) {
+  const values = points.map(point => point.value), min = Math.min(...values), max = Math.max(...values)
+  const padding = max === min ? Math.max(max * .08, 1) : (max - min) * .08
+  const bottom = Math.max(0, min - padding), top = max + padding, span = top - bottom
+  const start = Date.parse(points[0].date), duration = Date.parse(points[points.length - 1]!.date) - start || 1
+  const coords = points.map(point => ({ x: 48 + (Date.parse(point.date) - start) / duration * 612, y: 22 + (top - point.value) / span * 190 }))
+  const line = coords.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ')
+  const area = `${line} L ${coords[coords.length - 1]!.x} 238 L ${coords[0].x} 238 Z`
+  return <div className="history-chart-wrap"><div className="history-chart-labels"><span>{money(top)}</span><span>{money((top + bottom) / 2)}</span><span>{money(bottom)}</span></div><svg className="history-chart" viewBox="0 0 700 260" role="img" aria-label={`Prix du ${formatDate(points[0].date)} au ${formatDate(points[points.length - 1]!.date)}, de ${money(values[0])} à ${money(values[values.length - 1]!)}`}><defs><linearGradient id="price-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".22"/><stop offset="100%" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>{[22, 117, 212].map(y => <path key={y} className="history-gridline" d={`M48 ${y}H660`}/>)}<path className="history-area" d={area}/><path className="history-line" d={line}/>{coords.map((point, index) => <circle key={points[index].date} cx={point.x} cy={point.y} r={index === coords.length - 1 ? 5 : 3}><title>{formatDate(points[index].date)} · {money(points[index].value)}</title></circle>)}</svg><div className="history-dates"><span>{formatDate(points[0].date)}</span><span>{formatDate(points[points.length - 1]!.date)}</span></div></div>
 }
-const formatDate=(value:string)=>new Date(`${value}T00:00:00`).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})
-const formatUpdatedAt=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?value:date.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}
-const marketBasisLabel=(basis?:string)=>basis==='listing'?'annonce agrégée':basis==='completed-sale'?'ventes conclues moyennées':basis==='unknown'?'base inconnue':'prix guide'
+const formatDate = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })

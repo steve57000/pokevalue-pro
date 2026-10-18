@@ -35,14 +35,14 @@ export function SeriesComparison({ sets, currentSet, entries, prices, language, 
     return () => { active = false }
   }, [mode, selected, language, details])
 
-  const marketPrices = useCardPrices(mode === 'market' ? selected.flatMap(id => details[id]?.cards.map(card => card.id) ?? []) : [], language)
+  const marketPrices = useCardPrices(mode === 'market' ? selected.filter(id=>id!=='jumbo').flatMap(id => details[id]?.cards.map(card => card.id) ?? []) : [], language)
   const rows = useMemo(() => selected.map(id => {
     const set = sets.find(item => item.id === id)
     const owned = entries.filter(entry => entry.setId === id && entry.language === language && entry.quantity > 0)
     const catalogue = details[id]?.cards ?? []
     const source = mode === 'market'
-      ? catalogue.map(card => ({ name: card.name, id: card.id, quantity: 1, value: asian ? undefined : marketPrices[card.id]?.price?.value }))
-      : owned.map(entry => ({ name: entry.name, id: entry.cardId, quantity: entry.quantity, value: collectionUnitPrice(entry, asian ? undefined : prices[entry.cardId]?.price?.value) }))
+      ? catalogue.map(card => ({ name: card.name, id: card.id, quantity: 1, value: asian || id === 'jumbo' || marketPrices[card.id]?.price?.basis !== 'guide' ? undefined : marketPrices[card.id]?.price?.value }))
+      : owned.map(entry => ({ name: entry.name, id: entry.cardId, quantity: entry.quantity, value: collectionUnitPrice(entry, asian || id === 'jumbo' || entry.variant !== 'normal' || prices[entry.cardId]?.price?.basis !== 'guide' ? undefined : prices[entry.cardId]?.price?.value) }))
     const valued = source.filter((item): item is typeof item & { value: number } => item.value !== undefined)
     const values = valued.map(item => item.value)
     const top = [...valued].sort((a, b) => b.value - a.value)
@@ -51,9 +51,9 @@ export function SeriesComparison({ sets, currentSet, entries, prices, language, 
       id,
       name: set?.name ?? id,
       total,
-      owned: owned.length,
+      owned: new Set(owned.map(entry=>entry.cardId)).size,
       copies: owned.reduce((count, item) => count + item.quantity, 0),
-      progress: total ? owned.length / total * 100 : 0,
+      progress: total ? Math.min(100,new Set(owned.map(entry=>entry.cardId)).size / total * 100) : 0,
       totalValue: valued.reduce((count, item) => count + item.value * item.quantity, 0),
       average: values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0,
       median: median(values),
@@ -83,13 +83,13 @@ export function SeriesComparison({ sets, currentSet, entries, prices, language, 
       <button className="details-close" onClick={onClose} aria-label="Fermer la comparaison"><X /></button>
       <span className="eyebrow">Analyse progressive</span>
       <h2 id="comparison-title">Comparer les séries</h2>
-      <p id="comparison-help">Sélectionne jusqu’à 4 extensions. Les catalogues et prix marché ne sont chargés qu’après sélection. {marketNote}</p>
+      <p id="comparison-help">Compare jusqu’à 4 extensions. {marketNote}</p>
       <div className="comparison-modes">
         <button className={mode === 'collection' ? 'active' : ''} onClick={() => setMode('collection')}>Ma collection</button>
         <button className={mode === 'market' ? 'active' : ''} onClick={() => setMode('market')}>Marché des extensions</button>
       </div>
       <div className="comparison-selected"><strong>Sélectionnées</strong>{selected.map(id => <button key={id} onClick={() => selected.length > 1 && setSelected(current => current.filter(value => value !== id))}>{sets.find(item => item.id === id)?.name ?? id} ×</button>)}</div>
-      <input className="comparison-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Rechercher une extension…" />
+      <input className="comparison-search" aria-label="Rechercher une extension à comparer" value={query} onChange={event => setQuery(event.target.value)} placeholder="Rechercher une extension…" />
       <div className="comparison-picker">{available.map(set => <label key={set.id} className={selected.includes(set.id) ? 'selected' : ''}><input type="checkbox" checked={selected.includes(set.id)} disabled={!selected.includes(set.id) && selected.length >= 4} onChange={() => setSelected(current => current.includes(set.id) ? (current.length > 1 ? current.filter(id => id !== set.id) : current) : [...current, set.id])} />{set.name}<small>{set.id}</small></label>)}</div>
       <label className="comparison-sort">Trier par <select value={sort} onChange={event => setSort(event.target.value as Sort)}><option value="total">Valeur totale</option><option value="collection">Valeur de ma collection</option><option value="progress">Progression</option><option value="average">Moyenne</option><option value="median">Médiane</option><option value="top">Top carte</option><option value="count">Nombre de cartes</option></select></label>
       <div className="comparison-grid">{rows.map(row => <article key={row.id}>
