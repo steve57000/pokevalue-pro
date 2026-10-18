@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { AlertTriangle, Cloud, Download, Upload } from 'lucide-react'
-import { parseCollection, type CollectionDocument } from '../domain/collection'
+import { mergeCollections, parseCollection, type CollectionDocument } from '../domain/collection'
 import type { GitHubCollectionSync } from '../hooks/useGitHubCollectionSync'
 
 export function CollectionSyncSettings({ sync, document, onChange }: { sync: GitHubCollectionSync; document: CollectionDocument; onChange: (value: CollectionDocument) => void }) {
@@ -19,6 +19,6 @@ export function CollectionSyncSettings({ sync, document, onChange }: { sync: Git
       {sync.status==='error'&&<button onClick={()=>void (sync.account ? sync.retry() : sync.connect())}>Réessayer</button>}
       <p className="last-sync">Dernière sauvegarde : {sync.lastSavedAt ? sync.lastSavedAt.toLocaleString('fr-FR') : 'aucune sauvegarde distante durant cette session'}</p>
     </div>
-    <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Import JSON</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) try { onChange(parseCollection(JSON.parse(await file.text()))); sync.markImport('Import chargé localement') } catch(error) { sync.markImport((error as Error).message) }}}/></div>
+    <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Importer et fusionner</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) try { onChange(mergeCollections(document,parseCollection(JSON.parse(await file.text())))); sync.markImport('Collection importée et fusionnée') } catch(error) { sync.markImport((error as Error).message) } finally { if(importRef.current)importRef.current.value='' }}}/></div>
   </section>
 }

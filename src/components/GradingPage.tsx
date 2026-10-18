@@ -23,7 +23,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   const owned = useMemo(() => entries.filter(entry => entry.quantity > 0), [entries])
   const idsByLanguage = Object.fromEntries(languages.map(language => [
     language,
-    [...new Set(owned.filter(entry => entry.language === language).map(entry => entry.cardId))],
+    [...new Set(owned.filter(entry => entry.language === language && entry.setId !== 'jumbo' && entry.variant === 'normal').map(entry => entry.cardId))],
   ])) as Record<typeof languages[number], string[]>
   const fr = useCardPrices(idsByLanguage.fr, 'fr')
   const en = useCardPrices(idsByLanguage.en, 'en')
@@ -33,7 +33,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 
   const candidates = owned.map(entry => {
     const priceState = priceMaps[entry.language as keyof typeof priceMaps]?.[entry.cardId]
-    const asian = isAsianCatalogLanguage(entry.language)
+    const asian = isAsianCatalogLanguage(entry.language) || entry.setId === 'jumbo' || entry.variant !== 'normal'
     const marketPrice = asian || priceState?.price?.basis !== 'guide' ? undefined : priceState?.price?.value
     const unitPrice = collectionUnitPrice(entry, marketPrice)
     const interest = getGradingInterest({
@@ -157,7 +157,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
 
 function analyze(entry: CollectionEntry, prices: Record<string, Record<string, CardPriceState>>) {
   const price = prices[entry.language]?.[entry.cardId]
-  const asian = isAsianCatalogLanguage(entry.language)
+  const asian = isAsianCatalogLanguage(entry.language) || entry.setId === 'jumbo' || entry.variant !== 'normal'
   return getGradingInterest({ rawPrice: collectionUnitPrice(entry, asian || price?.price?.basis !== 'guide' ? undefined : price?.price?.value), rarity: entry.rarity, ...(asian ? {} : { trend: price?.cardmarket?.trend, avg30: price?.cardmarket?.avg30, avg7: price?.cardmarket?.avg7, low: price?.cardmarket?.low }) })
 }
 

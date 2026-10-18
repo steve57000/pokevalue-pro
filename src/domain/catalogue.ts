@@ -1,3 +1,4 @@
+import { collectionUnitPrice } from './collection'
 import type { CollectionEntry } from './collection'
 import type { PriceReference } from './pricing'
 
@@ -14,14 +15,14 @@ export function sortCatalogueCards<T extends SortableCard>(cards:T[], sort:CardS
     if(sort==='owned') return Number(Boolean(eb?.quantity))-Number(Boolean(ea?.quantity)) || cardNumber(a.localId)-cardNumber(b.localId)
     if(sort==='quantity') return (eb?.quantity??0)-(ea?.quantity??0) || cardNumber(a.localId)-cardNumber(b.localId)
     if(sort==='price-asc'||sort==='price-desc') {
-      const av=prices[a.id]?.price?.value, bv=prices[b.id]?.price?.value
+      const av=ea?collectionUnitPrice(ea,prices[a.id]?.price?.value):prices[a.id]?.price?.value, bv=eb?collectionUnitPrice(eb,prices[b.id]?.price?.value):prices[b.id]?.price?.value
       if(av===undefined&&bv===undefined)return cardNumber(a.localId)-cardNumber(b.localId)
       if(av===undefined)return 1
       if(bv===undefined)return -1
       return (av-bv)*(sort==='price-desc'?-1:1)
     }
     if(sort==='grading'){
-      const interest=(card:T)=>getGradingInterest({rawPrice:prices[card.id]?.price?.value,rarity:card.rarity,...prices[card.id]?.cardmarket})
+      const interest=(card:T)=>getGradingInterest({rawPrice:entries.has(card.id)?collectionUnitPrice(entries.get(card.id)!,prices[card.id]?.price?.value):prices[card.id]?.price?.value,rarity:card.rarity,...prices[card.id]?.cardmarket})
       const rank={high:3,medium:2,low:1},ai=interest(a),bi=interest(b)
       return rank[bi.level]-rank[ai.level]||(prices[b.id]?.price?.value??-1)-(prices[a.id]?.price?.value??-1)
     }

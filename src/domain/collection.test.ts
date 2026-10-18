@@ -18,3 +18,18 @@ describe('collection portfolio', () => {
 
 import {totalValuesByCurrency} from './collection'
 it('multiplie les quantités mais ne mélange jamais EUR et USD',()=>expect(totalValuesByCurrency([{value:10,quantity:3,currency:'EUR'},{value:5,quantity:2,currency:'USD'}])).toEqual({EUR:30,USD:10}))
+
+import { findCollectionEntry, parseCollection, updateCollectionCard } from './collection'
+it('preserves personal fields when quantity changes or a Jumbo is re-added',()=>{
+ const card={...entry,setId:'jumbo'}
+ let doc=upsertEntry(emptyCollection(),{...card,manualPrice:45,priceMode:'manual',notes:'Cadeau',condition:'excellent'})
+ doc=updateCollectionCard(doc,card,{quantity:0})
+ doc=updateCollectionCard(doc,card,{quantity:2})
+ expect(findCollectionEntry(doc,card)).toMatchObject({quantity:2,manualPrice:45,priceMode:'manual',notes:'Cadeau',condition:'excellent'})
+ expect(findCollectionEntry(doc,entry)).toBeUndefined()
+})
+it('validates imports before applying them and accepts normal backup round trips',()=>{
+ const doc=upsertEntry(emptyCollection(),entry)
+ expect(parseCollection(JSON.parse(JSON.stringify(doc)))).toEqual(doc)
+ for(const bad of [null,{...doc,entries:[null]},{...doc,entries:[{...doc.entries[0],quantity:-1}]},{...doc,entries:[{...doc.entries[0],manualPrice:'30'}]},{...doc,entries:[{...doc.entries[0],key:'wrong'}]},{...doc,entries:[doc.entries[0],doc.entries[0]]}]) expect(()=>parseCollection(bad)).toThrow()
+})

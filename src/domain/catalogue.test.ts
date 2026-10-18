@@ -6,3 +6,9 @@ const prices:Record<string,PriceState>={a:{status:'success',price:{value:20,curr
 describe('catalogue',()=>{it('normalise une recherche accentuée',()=>expect(normalizeSearch('Méga')).toBe('mega'));it('trie les prix dans les deux sens et garde les absents à la fin',()=>{expect(sortCatalogueCards(cards,'price-asc',prices,new Map()).map(x=>x.id)).toEqual(['b','a','c']);expect(sortCatalogueCards(cards,'price-desc',prices,new Map()).map(x=>x.id)).toEqual(['a','b','c'])})})
 
 it('trie le potentiel de gradation high, medium, low puis le prix',()=>{const gradingCards=[{id:'low',name:'A',localId:'1'},{id:'high',name:'B',localId:'2',rarity:'Secret'},{id:'medium',name:'C',localId:'3'}];const gradingPrices:Record<string,PriceState>={low:{status:'success',price:{value:2,currency:'EUR',label:'Prix de vente moyen Cardmarket',provider:'cardmarket'}},high:{status:'success',price:{value:110,currency:'EUR',label:'Prix de vente moyen Cardmarket',provider:'cardmarket'}},medium:{status:'success',price:{value:30,currency:'EUR',label:'Prix de vente moyen Cardmarket',provider:'cardmarket'}}};expect(sortCatalogueCards(gradingCards,'grading',gradingPrices,new Map()).map(x=>x.id)).toEqual(['high','medium','low'])})
+
+import {emptyCollection,upsertEntry} from './collection'
+it('sorts by the same personal value shown in collection tiles',()=>{
+ const entry=upsertEntry(emptyCollection(),{source:'tcgdex',setId:'x',cardId:'c',language:'fr',variant:'normal',name:'C',setName:'X',quantity:1,condition:'mint',notes:'',manualPrice:50}).entries[0]
+ expect(sortCatalogueCards(cards,'price-desc',prices,new Map([['c',entry]])).map(card=>card.id)).toEqual(['c','a','b'])
+})

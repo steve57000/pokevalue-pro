@@ -37,8 +37,12 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
     const byKey = new Map<string, TrackedCard>()
     const add = (item: TrackedCard) => byKey.set(identity(item), item)
     for (const card of cards) if (card.tcgdexId) add({ id: card.tcgdexId, language: normalizeLanguage(card.language), name: card.name, setName: card.set, number: card.number })
-    for (const entry of entries) if (entry.quantity > 0) add({ id: entry.cardId, language: normalizeLanguage(entry.language), name: entry.name, setName: entry.setName, number: entry.number })
-    for (const favorite of favorites) add({ id: favorite.cardId, language: normalizeLanguage(favorite.language), name: favorite.name, setName: favorite.setName, number: favorite.localId })
+    for (const entry of entries) if (entry.quantity > 0 && entry.setId !== 'jumbo' && entry.variant === 'normal') add({ id: entry.cardId, language: normalizeLanguage(entry.language), name: entry.name, setName: entry.setName, number: entry.number })
+    for (const favorite of favorites) {
+      if (favorite.setId === 'jumbo') continue
+      const id = favorite.source === 'editorial' ? cards.find(card => card.id === favorite.cardId)?.tcgdexId : favorite.cardId
+      if (id) add({ id, language: normalizeLanguage(favorite.language), name: favorite.name, setName: favorite.setName, number: favorite.localId })
+    }
     return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr') || a.setName.localeCompare(b.setName, 'fr'))
   }, [cards, entries, favorites])
 
@@ -83,7 +87,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
       setMessage('Entre un seuil supérieur à 0 €.')
       return
     }
-    const duplicate = alerts.some((alert) => identity(alert) === identity(selected) && alert.direction === direction && alert.targetPrice === price && !alert.triggeredAt)
+    const duplicate = alerts.some((alert) => priceAlertKey(alert) === identity(selected) && alert.direction === direction && alert.targetPrice === price && !alert.triggeredAt)
     if (duplicate) {
       setMessage('Cette alerte existe déjà.')
       return
@@ -119,7 +123,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
           <label>Carte<select value={selected ? identity(selected) : ''} onChange={(event) => setSelectedKey(event.target.value)}>{trackedCards.map((card) => <option key={identity(card)} value={identity(card)}>{card.name} · {card.setName} ({languageLabel(card.language)})</option>)}</select></label>
           <div className="alert-current-price" role="status">
             <span>Prix Cardmarket Europe · EUR</span>
-            <strong>{current?.status === 'success' && current.price ? money(current.price.value) : current?.status === 'error' ? 'Prix indisponible' : 'Chargement…'}</strong>
+            <strong>{current?.status === 'success' && current.price ? money(current.price.value) : current?.status === 'error' || current?.status === 'success' ? 'Prix indisponible' : 'Chargement…'}</strong>
             {current?.status === 'success' && !current.price && <small>Aucun prix Cardmarket disponible pour cette carte.</small>}
             {selected && isAsianCatalogLanguage(selected.language) && <small>Référence européenne uniquement; elle ne représente pas le marché local asiatique.</small>}
           </div>
@@ -129,7 +133,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
           </div>
           <button className="feature-primary" type="submit"><BellRing size={17}/> Créer l’alerte</button>
         </> : <p className="alert-no-cards">Ajoute d’abord une carte à ta collection ou à tes favoris pour la surveiller.</p>}
-        <p className="alerts-note">Les seuils sont vérifiés à l’ouverture de cette page et lors de l’actualisation quotidienne ou manuelle des prix. Le signal apparaît dans PokéValue lorsque l’application est ouverte.</p>
+        <p className="alerts-note">Vérification à l’ouverture et à l’actualisation. Les alertes s’affichent dans l’application.</p>
         {message && <p className="feature-feedback" role="status" aria-live="polite">{message}</p>}
       </form>
 

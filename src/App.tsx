@@ -9,13 +9,14 @@ import { cards, rarities, sets } from './data'
 import { CardImage } from './components/CardImage'
 import { CatalogueImage } from './components/CatalogueImage'
 import { CardIdentifier } from './components/CardIdentifier'
-import {CardDetailsModal} from './components/CardDetailsModal'
+import {CardWorkspace} from './components/CardWorkspace'
+import {useModalDialog} from './hooks/useModalDialog'
 import { Portfolio } from './components/Portfolio'
 import { GradingPage } from './components/GradingPage'
 import { CollectionSyncSettings } from './components/CollectionSyncSettings'
 import { ScrollToTop } from './components/ScrollToTop'
 import { LivePrice } from './components/LivePrice'
-import { getPriceStats,selectCardmarketPrice } from './domain/pricing'
+import { selectCardmarketPrice } from './domain/pricing'
 import { normalizeImageLanguage } from './domain/image'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
@@ -23,12 +24,11 @@ import { money } from './utils/money'
 import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT, STORAGE_RECOVERED_EVENT } from './utils/storage'
 import { PRICE_HISTORY_STORAGE_KEY } from './domain/priceHistory'
 import type { Card } from './types'
-import { emptyCollection, parseCollection, setIdFromCardId, upsertEntry, type CollectionDocument } from './domain/collection'
+import { emptyCollection, parseCollection, setIdFromCardId, updateCollectionCard, findCollectionEntry, type CollectionCard, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
 import { useGitHubPriceHistorySync } from './hooks/useGitHubPriceHistorySync'
 import { useFavorites } from './hooks/useFavorites'
 import { FavoriteButton } from './components/FavoriteButton'
-import { CardShowcase } from './components/CardShowcase'
 import { PriceHistoryPage } from './components/PriceHistoryPage'
 import { PriceAlertsPage } from './components/PriceAlertsPage'
 import { SharedChallengePage, WeeklyCollectionChallenge } from './components/WeeklyCollectionChallenge'
@@ -73,14 +73,17 @@ function App() {
   const {favorites,isFavorite,toggleFavorite} = useFavorites(cards)
   const [showcase, setShowcase] = useState<Card|null>(null)
   const [showcaseFavorite, setShowcaseFavorite] = useState<FavoriteInput|null>(null)
+  const recoveryRef = useRef(false)
   const [portfolio, setPortfolio] = useState<CollectionDocument>(() => {
-    try { return parseCollection(readStoredJson<unknown>(PORTFOLIO_STORAGE_KEY, emptyCollection())) } catch { return emptyCollection() }
+    const stored=readStoredJson<unknown>(PORTFOLIO_STORAGE_KEY, emptyCollection())
+    try { return parseCollection(stored) } catch { recoveryRef.current=true;writeStoredJson('pv-portfolio-recovery-v1',stored); return emptyCollection() }
   })
-  const [recentScans, setRecentScans] = useState<ScannerCandidate[]>(readRecentScans)
+  const [recentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [trendTab,setTrendTab]=useState<'popular'|'market'>(()=>window.location.hash.includes('scanner')?'market':'popular')
-  const [storageWarning, setStorageWarning] = useState<string | null>(null)
-  const { entries: liveCards, retry } = useLiveCards(cards)
+  const [storageWarning, setStorageWarning] = useState<string | null>(()=>recoveryRef.current?'collection-recovery':null)
+  const { entries: liveCards, retry } = useLiveCards(view === 'featured' ? cards : [])
+  const menuRef = useModalDialog(() => setMobileMenuOpen(false), mobileMenuOpen, false)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
   const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
 
@@ -139,33 +142,17 @@ function App() {
     const matchesValue = card.rawMax >= minValue
     return matchesText && matchesSet && matchesRarity && matchesValue
   }), [query, setFilter, rarityFilter, minValue])
-  const editorialFavorite=(card:Card):FavoriteInput=>({source:'editorial',cardId:card.id,setId:card.tcgdexId?.slice(0,card.tcgdexId.lastIndexOf('-')),language:card.language.toLowerCase(),name:card.name,setName:card.set,localId:card.number,image:liveCards[card.id]?.data?.image})
+  const editorialFavorite=(card:Card):FavoriteInput=>({source:'editorial',cardId:card.id,setId:card.tcgdexId?.slice(0,card.tcgdexId.lastIndexOf('-')),language:normalizeImageLanguage(card.language),name:card.name,setName:card.set,localId:card.number,image:liveCards[card.id]?.data?.image})
 
-  const rememberScannedCard = (candidate: ScannerCandidate) => {
-    setRecentScans((current) => [candidate, ...current.filter((card) => card.id !== candidate.id)].slice(0, 50))
-  }
-
-  const isScannedCardCollected = (tcgdexId: string) => portfolio.entries.some(e => e.cardId === tcgdexId && e.quantity > 0)
-
-  const togglePortfolioCard = (card: Card) => {
-    const cardId = card.tcgdexId ?? card.id
-    const existing = portfolio.entries.find(entry => entry.cardId === cardId && entry.variant === 'normal' && entry.language === card.language.toLowerCase() && entry.quantity > 0)
-    setPortfolio(upsertEntry(portfolio, {
-      source: 'tcgdex', setId: setIdFromCardId(cardId), cardId, language: card.language.toLowerCase(), variant: 'normal',
-      name: card.name, setName: card.set, number: card.number, rarity: card.rarity,
-      quantity: existing ? 0 : 1, condition: 'near-mint', notes: '',
-    }))
-  }
-
-  const toggleScannedCollection = (candidate: ScannerCandidate) => {
-    rememberScannedCard(candidate)
-    const existing = portfolio.entries.find(entry => entry.cardId === candidate.id && entry.language === candidate.language && entry.quantity > 0)
-    setPortfolio(upsertEntry(portfolio, {
-      source: 'tcgdex', setId: setIdFromCardId(candidate.id), cardId: candidate.id, language: candidate.language, variant: 'normal',
-      name: candidate.name, setName: candidate.setName ?? 'Série inconnue', number: candidate.localId,
-      image: candidate.image, rarity: candidate.rarity, quantity: existing ? 0 : 1, condition: 'near-mint', notes: '',
-    }))
-  }
+  const collectionCard = (card: Card, favorite?: FavoriteInput | null): CollectionCard => ({
+    source: 'tcgdex', cardId: card.tcgdexId ?? card.id, setId: favorite?.setId ?? setIdFromCardId(card.tcgdexId ?? card.id),
+    language: normalizeImageLanguage(favorite?.language ?? card.language), variant: 'normal', name: card.name, setName: card.set,
+    number: card.number, image: favorite?.image ?? liveCards[card.id]?.data?.image, rarity: card.rarity,
+  })
+  const togglePortfolioCard = (card: Card) => setPortfolio(current => {
+    const identity = collectionCard(card), existing = findCollectionEntry(current, identity)
+    return updateCollectionCard(current, identity, { quantity: existing?.quantity ? 0 : 1 })
+  })
 
   const navigate=useCallback((next:View)=>{
     const destination:View=next==='scanner'?'featured':next
@@ -181,8 +168,8 @@ function App() {
 
   const nav = [
     {id:'collection', label:'Collection', icon:Library,group:'Mon espace'},
-    {id:'favorites', label:'Favoris', icon:Heart,group:'Ma espace'},
-    {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Ma espace'},
+    {id:'favorites', label:'Favoris', icon:Heart,group:'Mon espace'},
+    {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Mon espace'},
     {id:'featured', label:'Tendances', icon:TrendingUp,group:'Marché'},
     {id:'history', label:'Stats', icon:History,group:'Marché'},
     {id:'alerts', label:'Alertes prix', icon:Bell,group:'Marché'},
@@ -202,7 +189,7 @@ function App() {
           {nav.map((item,index) => {
             const Icon = item.icon
             const group=item.group,previous=index?nav[index-1].group:''
-            return <div className="nav-item" key={item.id}>{group!==previous&&<span className="nav-label">{group}</span>}<button className={view===item.id?'active':''} onClick={()=>navigate(item.id)}>
+            return <div className="nav-item" key={item.id}>{group!==previous&&<span className="nav-label">{group}</span>}<button className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}>
               <Icon size={19}/><span>{item.label}</span>
               {item.id==='favorites' && favorites.length>0 && <b>{favorites.length}</b>}
               {item.id==='collection' && portfolio.entries.some(e=>e.quantity>0) && <b>{portfolio.entries.filter(e=>e.quantity>0).length}</b>}
@@ -211,29 +198,28 @@ function App() {
         </nav>
         <div className="side-card">
           <Sparkles size={20}/>
-          <strong>Mode chineur</strong>
-          <p>Repère plus vite les cartes intéressantes dans les lots.</p>
+          <strong>Bien acheter</strong>
           <button onClick={()=>navigate('guide')}>Voir la méthode <ChevronRight size={15}/></button>
         </div>
-        <p className="disclaimer">Prix Cardmarket via TCGdex lorsqu’ils sont disponibles. Toujours vérifier les ventes récentes avant achat.</p>
+        <p className="disclaimer">Prix indicatifs · Cardmarket / TCGdex</p>
       </aside>
 
       <main>
         <header className="topbar">
           <div className="mobile-brand"><div className="brand-mark">PV</div><strong>PokéValue</strong></div>
           {view==='featured'&&trendTab==='popular'&&<div className="global-search"><Search size={18}/><input aria-label="Rechercher dans les tendances" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher dans les cartes tendance…"/></div>}
-          <button className="icon-btn" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
+          <button className="icon-btn" aria-label={theme==='dark'?'Activer le thème clair':'Activer le thème sombre'} onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
-        {storageWarning&&<div className="storage-warning" role="alert"><span>{storageWarning === PRICE_HISTORY_STORAGE_KEY ? 'L’historique des prix est plein. Les relevés les plus anciens seront réduits automatiquement.' : 'La collection n’a pas pu être sauvegardée. Vérifie l’espace disponible ou exporte une copie.'}</span><button onClick={()=>{setStorageWarning(null);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(null)}><X size={18}/></button></div>}
-        <div className="content">
-          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<WeeklyCollectionChallenge entries={portfolio.entries}/>}/>}
+        {storageWarning&&<div className="storage-warning" role="alert"><span>{storageWarning === 'collection-recovery' ? 'La sauvegarde locale est invalide. Une copie de récupération a été conservée. Importe une sauvegarde valide.' : storageWarning === PRICE_HISTORY_STORAGE_KEY ? 'L’historique des prix est plein. Les relevés les plus anciens seront réduits automatiquement.' : 'La collection n’a pas pu être sauvegardée. Vérifie l’espace disponible ou exporte une copie.'}</span><button onClick={()=>{setStorageWarning(null);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(null)}><X size={18}/></button></div>}
+        <div className="content" key={view}>
+          {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<details className="challenge-disclosure"><summary>Mon défi de collection</summary><WeeklyCollectionChallenge entries={portfolio.entries}/></details>}/>}
           {view==='featured' && <>
             <section className="hero">
               <div>
                 <span className="eyebrow"><TrendingUp size={15}/> Marché Pokémon</span>
                 <h1>Tendances</h1>
-                <p>Parcours les cartes sélectionnées pour leur intérêt de marché ou cherche directement une carte et ses références de prix.</p>
+                <p>Une sélection à explorer, des prix à suivre.</p>
               </div>
               <div className="hero-stat">
                 <span>Cartes de la sélection</span>
@@ -250,9 +236,9 @@ function App() {
             {trendTab==='market'?<CardIdentifier document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite}/>:<>
             <section className="filters">
               <div className="filter-title"><SlidersHorizontal size={17}/> Filtres</div>
-              <select value={setFilter} onChange={e=>setSetFilter(e.target.value)}><option>Toutes</option>{sets.map(s=><option key={s}>{s}</option>)}</select>
-              <select value={rarityFilter} onChange={e=>setRarityFilter(e.target.value)}><option>Toutes</option>{rarities.map(r=><option key={r}>{r}</option>)}</select>
-              <select value={minValue} onChange={e=>setMinValue(Number(e.target.value))}>
+              <select aria-label="Filtrer par extension" value={setFilter} onChange={e=>setSetFilter(e.target.value)}><option>Toutes</option>{sets.map(s=><option key={s}>{s}</option>)}</select>
+              <select aria-label="Filtrer par rareté" value={rarityFilter} onChange={e=>setRarityFilter(e.target.value)}><option>Toutes</option>{rarities.map(r=><option key={r}>{r}</option>)}</select>
+              <select aria-label="Valeur minimale" value={minValue} onChange={e=>setMinValue(Number(e.target.value))}>
                 <option value="0">Toute valeur</option><option value="50">50 € et +</option><option value="100">100 € et +</option><option value="250">250 € et +</option><option value="500">500 € et +</option>
               </select>
               {(setFilter!=='Toutes'||rarityFilter!=='Toutes'||minValue>0||query) && <button className="reset" onClick={()=>{setSetFilter('Toutes');setRarityFilter('Toutes');setMinValue(0);setQuery('')}}><X size={15}/> Réinitialiser</button>}
@@ -261,8 +247,8 @@ function App() {
             <div className="result-head"><strong>{filtered.length} carte{filtered.length!==1?'s':''}</strong><span>Triées par score d’intérêt</span></div>
             <section className="card-grid">
               {[...filtered].sort((a,b)=>b.score-a.score).map(card =>
-                <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={isFavorite(editorialFavorite(card))} collected={portfolio.entries.some(e=>e.cardId===(card.tcgdexId??card.id)&&e.quantity>0)}
-                  onShowcase={()=>{setShowcase(card);setShowcaseFavorite(editorialFavorite(card))}} onOpen={()=>setSelected(card)} onRetry={()=>retry(card.id)}
+                <CardTile key={card.id} card={card} liveEntry={liveCards[card.id]} favorite={isFavorite(editorialFavorite(card))} collected={Boolean(findCollectionEntry(portfolio,collectionCard(card))?.quantity)}
+                  onShowcase={()=>{setShowcase(card);setShowcaseFavorite(editorialFavorite(card))}} onOpen={()=>{setShowcaseFavorite(editorialFavorite(card));setSelected(card)}} onRetry={()=>retry(card.id)}
                   onFavorite={()=>toggleFavorite(editorialFavorite(card))}
                   onCollect={()=>togglePortfolioCard(card)}
                 />
@@ -286,17 +272,16 @@ function App() {
       </main>
 
       <nav className="bottom-nav">
-        {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Stats':item.id==='featured'?'Tendances':item.label.split(' ')[0]}</span></button>})}
-        <button className={['sync','estimator','guide','grading'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
+        {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Stats':item.id==='featured'?'Tendances':item.label.split(' ')[0]}</span></button>})}
+        <button className={['sync','estimator','guide','grading','alerts'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['alerts','sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div ref={menuRef as React.RefObject<HTMLDivElement>} id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['alerts','sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 
-      {showcase&&<CardShowcase card={{id:showcase.tcgdexId??showcase.id,name:showcase.name,localId:showcase.number,image:showcaseFavorite?.image??liveCards[showcase.id]?.data?.image}} setName={showcase.set} requestedLanguage={normalizeImageLanguage(showcase.language)} owned={portfolio.entries.some(e=>e.cardId===(showcase.tcgdexId??showcase.id)&&e.quantity>0)} quantity={portfolio.entries.find(e=>e.cardId===(showcase.tcgdexId??showcase.id)&&e.quantity>0)?.quantity} onToggle={()=>togglePortfolioCard(showcase)} onIncrement={()=>{const id=showcase.tcgdexId??showcase.id,entry=portfolio.entries.find(e=>e.cardId===id&&e.quantity>0);setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(id),cardId:id,language:showcase.language.toLowerCase(),variant:'normal',name:showcase.name,setName:showcase.set,number:showcase.number,rarity:showcase.rarity,quantity:(entry?.quantity??0)+1,condition:entry?.condition??'near-mint',notes:entry?.notes??''}))}} favorite={isFavorite(showcaseFavorite??editorialFavorite(showcase))} onFavorite={()=>toggleFavorite(showcaseFavorite??editorialFavorite(showcase))} onDetails={()=>{setShowcase(null);setSelected(showcase)}} onClose={()=>setShowcase(null)}/>}
+      {(showcase||selected)&&<CardWorkspace key={`${(showcase??selected)!.id}:${showcaseFavorite?.setId??''}:${showcaseFavorite?.language??''}`} card={collectionCard((showcase??selected)!,showcaseFavorite)} document={portfolio} onChange={setPortfolio} initialView={showcase?'showcase':'details'} favorite={isFavorite(showcaseFavorite??editorialFavorite((showcase??selected)!))} onFavorite={()=>toggleFavorite(showcaseFavorite??editorialFavorite((showcase??selected)!))} onClose={()=>{setShowcase(null);setSelected(null);setShowcaseFavorite(null)}}/>}
 
-      {selected && (()=>{const cardId=selected.tcgdexId??selected.id,live=liveCards[selected.id]?.data,entry=portfolio.entries.find(e=>e.cardId===cardId&&e.language===selected.language.toLowerCase()&&e.quantity>0),stats=getPriceStats(live?.pricing),market=selectCardmarketPrice(live?.pricing),favorite=editorialFavorite(selected);const change=(quantity:number)=>setPortfolio(upsertEntry(portfolio,{source:'tcgdex',setId:setIdFromCardId(cardId),cardId,language:selected.language.toLowerCase(),variant:'normal',name:selected.name,setName:selected.set,number:selected.number,rarity:selected.rarity,quantity,condition:entry?.condition??'near-mint',notes:entry?.notes??'',manualPrice:entry?.manualPrice}));return <CardDetailsModal card={{id:cardId,name:selected.name,localId:selected.number,image:live?.image,rarity:selected.rarity}} setName={selected.set} language={selected.language.toLowerCase()} entry={entry} price={{status:liveCards[selected.id]?.status==='error'?'error':'success',language:selected.language.toLowerCase(),price:market,...stats}} favorite={isFavorite(favorite)} onFavorite={()=>toggleFavorite(favorite)} onQuantity={change} onEdit={()=>{}} onShowcase={()=>{setSelected(null);setShowcase(selected);setShowcaseFavorite(favorite)}} onClose={()=>setSelected(null)}/>})()}
     </div>
   )
 }
