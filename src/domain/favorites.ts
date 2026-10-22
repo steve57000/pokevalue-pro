@@ -47,3 +47,13 @@ export function parseFavorites(value: unknown): FavoriteCard[] {
   }
   return [...result.values()]
 }
+
+export function sortFavoritesByPrice(favorites: FavoriteCard[], values: Map<string, number | undefined>, descending = false) {
+  return [...favorites].sort((a,b) => {
+    const left=values.get(a.key),right=values.get(b.key)
+    if(left===undefined&&right===undefined)return a.name.localeCompare(b.name,'fr')
+    if(left===undefined)return 1
+    if(right===undefined)return -1
+    return (left-right)*(descending?-1:1)||a.name.localeCompare(b.name,'fr')
+  })
+}

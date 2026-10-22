@@ -166,7 +166,7 @@ export function parsePriceHistoryDocument(value: unknown): PriceHistoryDocument 
 function snapshotTime(snapshot: PriceSnapshot) { return snapshot.recordedAt ? Date.parse(snapshot.recordedAt) : Date.parse(`${snapshot.date}T00:00:00Z`) }
 function historyKey(snapshot: PriceSnapshot) {
   return [snapshot.language, snapshot.cardId, snapshot.date, snapshot.source, snapshot.market, snapshot.currency,
-    snapshot.printingLanguage, snapshot.variant, snapshot.condition, snapshot.aggregator, snapshot.externalProductId ?? ''].join(':')
+    snapshot.printingLanguage, snapshot.variant, snapshot.condition, snapshot.aggregator, snapshot.externalProductId ?? '', snapshot.basis].join(':')
 }
 function mergeQuoteSnapshots(current: PriceSnapshot, incoming: PriceSnapshot): PriceSnapshot {
   const incomingIsNewer = snapshotTime(incoming) >= snapshotTime(current)
@@ -187,10 +187,16 @@ export function mergePriceHistory(local: PriceSnapshot[], remote: PriceSnapshot[
     if (!current) merged.set(key, snapshot)
     else merged.set(key, mergeQuoteSnapshots(current, snapshot))
   }
-  return [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || a.language.localeCompare(b.language)
+  const sorted = [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || a.language.localeCompare(b.language)
     || a.cardId.localeCompare(b.cardId) || a.source.localeCompare(b.source) || a.market.localeCompare(b.market)
     || a.currency.localeCompare(b.currency) || a.variant.localeCompare(b.variant) || a.basis.localeCompare(b.basis)
-    || a.metric.localeCompare(b.metric) || (a.externalProductId ?? '').localeCompare(b.externalProductId ?? '')).slice(-MAX)
+    || a.metric.localeCompare(b.metric) || (a.externalProductId ?? '').localeCompare(b.externalProductId ?? ''))
+  // Prune old chart points, never the last known price of an inactive card.
+  const latest = new Map<string, PriceSnapshot>()
+  for(const point of sorted) latest.set(historyKey({...point,date:''}),point)
+  const remaining = Math.max(0,MAX-latest.size)
+  const retained = new Set([...latest.values(), ...(remaining ? sorted.slice(-remaining) : [])])
+  return sorted.filter(point=>retained.has(point))
 }
 
 export function samePriceHistory(a: PriceSnapshot[], b: PriceSnapshot[]) {

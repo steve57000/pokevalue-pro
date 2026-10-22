@@ -10,3 +10,11 @@ describe('favorites',()=>{
  it('parses valid favorites and rejects corrupt values',()=>expect(parseFavorites([createFavorite({...base,language:'fr'}),null,{name:'incomplet'}])).toHaveLength(1))
  it('migrates known legacy editorial ids without inventing unknown cards',()=>{const card={id:'pika',name:'Pikachu',pokemon:'Pikachu',set:'Base',year:1999,number:'25',rarity:'Rare',language:'FR',rawMin:1,rawMax:2,graded10:3,trend:'up',score:1,color:'#000',accent:'#fff',note:''} satisfies Card;localStorage.setItem('pv-favorites',JSON.stringify(['pika','missing']));expect(migrateLegacyFavorites([card])).toMatchObject([{cardId:'pika',language:'fr',source:'editorial'}])})
 })
+
+import {sortFavoritesByPrice} from './favorites'
+it('really sorts favorite prices in both directions and keeps unavailable values last',()=>{
+ const make=(cardId:string,name:string)=>createFavorite({source:'tcgdex',cardId,language:'fr',name,setName:'Série'})
+ const cards=[make('a','A'),make('b','B'),make('c','C')],values=new Map([[cards[0].key,20],[cards[1].key,0]])
+ expect(sortFavoritesByPrice(cards,values).map(card=>card.cardId)).toEqual(['b','a','c'])
+ expect(sortFavoritesByPrice(cards,values,true).map(card=>card.cardId)).toEqual(['a','b','c'])
+})
