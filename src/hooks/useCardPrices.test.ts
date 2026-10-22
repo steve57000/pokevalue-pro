@@ -12,6 +12,10 @@ describe('daily market price refresh', () => {
   it('never invents a price when none is known',()=>{
     expect(retainKnownPrices(undefined,{status:'success',language:'fr',price:null}).price).toBeUndefined()
   })
+  it('does not replace a known guide with a non-comparable listing',()=>{
+    const next={...known,price:{...known.price!,basis:'listing' as const,value:90}}
+    expect(retainKnownPrices(known,next)).toMatchObject({price:known.price,retained:true})
+  })
   it('refreshes cards that have never been checked', () => {
     expect(isCardPriceRefreshDue(undefined, 10_000)).toBe(true)
   })

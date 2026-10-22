@@ -11,8 +11,9 @@ export function isCardPriceRefreshDue(checkedAt?:number,now=Date.now()){return c
 function notify(){listeners.forEach(x=>x())}
 /** A missing response is not a new zero-price observation. */
 export function retainKnownPrices(previous:CardPriceState|undefined,next:CardPriceState):CardPriceState {
- return {...next,price:next.price??previous?.price,tcgplayerQuote:next.tcgplayerQuote??previous?.tcgplayerQuote,
-  retained:next.retained||Boolean((!next.price&&previous?.price)||(!next.tcgplayerQuote&&previous?.tcgplayerQuote))}
+ const keepGuide=previous?.price?.basis==='guide'&&next.price?.basis!=='guide'
+ return {...next,price:keepGuide?previous.price:next.price??previous?.price,tcgplayerQuote:next.tcgplayerQuote??previous?.tcgplayerQuote,
+  retained:next.retained||keepGuide||Boolean((!next.price&&previous?.price)||(!next.tcgplayerQuote&&previous?.tcgplayerQuote))}
 }
 function restorePrice(point:PriceSnapshot|undefined,language:string):CardPriceState|undefined {
  return point?{status:'loading',language,retained:true,price:{value:point.value,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',updatedAt:point.sourceUpdatedAt??point.recordedAt??point.date}}:undefined
