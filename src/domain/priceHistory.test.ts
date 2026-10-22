@@ -43,8 +43,21 @@ describe('price history',()=>{
   const listing=snapshot({date:'2026-10-01',basis:'listing',source:'ebay',aggregator:'manual',market:'france',currency:'EUR'})
   const sale=snapshot({date:'2026-10-01',basis:'completed-sale',source:'ebay',aggregator:'manual',market:'france',currency:'EUR',value:9})
   const merged=mergePriceHistory([cardmarket,listing,sale])
-  expect(merged).toHaveLength(2)
-  expect(merged.find(row=>row.source==='ebay')?.quotes.map(quote=>quote.basis).sort()).toEqual(['completed-sale','listing'])
+  expect(merged).toHaveLength(3)
+  expect(merged.filter(row=>row.source==='ebay').map(quote=>quote.basis).sort()).toEqual(['completed-sale','listing'])
+ })
+
+ it('does not erase today’s guide when a later response contains only an offer',()=>{
+  const guide=snapshot({value:150})
+  const offer=snapshot({value:90,basis:'listing',metric:'low',recordedAt:'2026-10-01T09:00:00Z'})
+  const merged=mergePriceHistory([offer],[guide])
+  expect(merged.find(point=>point.basis==='guide')?.value).toBe(150)
+ })
+
+ it('retains the last price of inactive cards when the history budget is exceeded',()=>{
+  const old=snapshot({cardId:'30th-c-001',date:'2020-01-01'})
+  const recent=Array.from({length:20001},(_,i)=>snapshot({cardId:`card-${i}`,date:'2026-10-01'}))
+  expect(mergePriceHistory([old,...recent])).toContainEqual(old)
  })
 
  it('keeps a changed upstream product mapping separate in history',()=>{

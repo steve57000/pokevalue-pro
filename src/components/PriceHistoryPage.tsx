@@ -34,12 +34,14 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
   const current = selected ? priceMaps[selected.language as keyof typeof priceMaps]?.[selected.id] : undefined
   const marketAvailable = selected && selected.setId !== 'jumbo' && selected.variant === 'normal' && !isAsianCatalogLanguage(selected.language)
   const history = selected?.history ?? []
-  const cutoff = Date.now() - Number(range) * 86400000
+  const cutoff = Date.parse(new Date().toISOString().slice(0,10)) - (Number(range) - 1) * 86400000
   const visibleHistory = range === 'all' ? history : history.filter(point => Date.parse(`${point.date}T00:00:00Z`) >= cutoff)
   const first = visibleHistory[0]?.value, latest = visibleHistory[visibleHistory.length - 1]?.value
   const change = first !== undefined && latest !== undefined && visibleHistory.length > 1 ? latest - first : undefined
   const total = owned.reduce((sum, row) => sum + (row.value ?? 0) * row.owned, 0)
   const valued = owned.filter(row => row.value !== undefined).length
+  const manualTotal = owned.filter(row=>row.manual).reduce((sum,row)=>sum+(row.value??0)*row.owned,0)
+  const lastPoint = history[history.length-1]
   const loading = Object.values(fr).some(price => price.status === 'loading') || Object.values(en).some(price => price.status === 'loading')
   const selectCard = (key: string) => {
     setSelectedKey(key); writeStoredString(SELECTION_KEY, key, 'session')
@@ -53,9 +55,10 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
     <div className="history-insight-grid" aria-label="Statistiques de ma collection">
       <article><span><Library size={17}/> Cartes différentes</span><strong>{owned.length}</strong></article>
       <article><span><Layers size={17}/> Exemplaires</span><strong>{owned.reduce((sum, row) => sum + row.owned, 0)}</strong></article>
-      <article><span><Wallet size={17}/> Valeur · EUR</span><strong>{valued < owned.length ? '≈ ' : ''}{money(total)}</strong><small>{valued}/{owned.length} valorisées{loading ? ' · actualisation…' : ''}</small></article>
+      <article><span><Wallet size={17}/> {valued < owned.length ? 'Valeur connue' : 'Valeur'} · EUR</span><strong>{owned.length && !valued ? '—' : money(total)}</strong><small>{valued}/{owned.length} valorisées{loading ? ' · actualisation…' : ''}</small></article>
       <article><span><CalendarDays size={17}/> Extensions</span><strong>{new Set(owned.map(row => row.setId)).size}</strong></article>
     </div>
+    {owned.length>0 && <details className="stats-source"><summary>Couverture des prix · {owned.length-valued} sans prix</summary><p>Prix personnels : {money(manualTotal)} · Guides marché : {money(total-manualTotal)}. Quantités incluses.</p><p>Les cartes sans cote restent dans la liste. La valeur connue n’est pas une estimation des cartes manquantes.</p><button className="history-refresh" disabled={loading} onClick={()=>{refreshCardPrices(ids('fr'),'fr');refreshCardPrices(ids('en'),'en')}}><RefreshCw size={15} className={loading?'spinning':''}/>{loading?'Actualisation…':'Actualiser les cotes'}</button></details>}
     <PriceHistoryExplorer rows={rows} selectedKey={selected?.key} onSelect={selectCard}/>
     {selected && <article ref={detailRef} tabIndex={-1} className="history-detail-card">
       <div className="history-card-heading">
@@ -63,12 +66,13 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
         <div><span className="eyebrow">{selected.setName} · {selected.language.toUpperCase()}</span><h2>{selected.name}</h2><p>{selected.number ? `Nº ${selected.number}` : ''}{selected.owned ? ` · ${selected.owned} exemplaire${selected.owned === 1 ? '' : 's'}` : ''}</p></div>
         <div className="history-current-price"><small>{selected.manual ? 'Prix personnel · unitaire' : 'Guide Cardmarket · EUR'}</small><strong>{selected.value === undefined ? '—' : money(selected.value)}</strong>{selected.owned > 1 && selected.value !== undefined && <small>{money(selected.value * selected.owned)} au total</small>}{change !== undefined && <span className={change > 0 ? 'positive' : change < 0 ? 'negative' : ''}>{change > 0 ? <TrendingUp size={15}/> : change < 0 ? <TrendingDown size={15}/> : null}{change > 0 ? '+' : ''}{money(change)}{first ? ` (${change > 0 ? '+' : ''}${(change / first * 100).toFixed(1)} %)` : ''}<small> marché</small></span>}</div>
       </div>
+      {!selected.manual && <p className="stats-hint" role="status">{selected.value===undefined ? current?.status==='loading'?'Recherche de cote…':'Aucune cote comparable disponible' : `Dernier prix connu · ${lastPoint?formatDate(lastPoint.date):''}`}{current?.status==='error'?' · actualisation impossible, prix conservé':current?.retained?' · cote conservée':''}</p>}
       <div className="history-actions">
         <div className="history-range" role="group" aria-label="Période du graphique">{(['30', '90', 'all'] as const).map(value => <button key={value} className={range === value ? 'active' : ''} aria-pressed={range === value} onClick={() => setRange(value)}>{value === 'all' ? 'Tout' : `${value} j`}</button>)}</div>
         {marketAvailable && <button className="history-refresh" onClick={() => refreshCardPrices([selected.id], selected.language)} disabled={current?.status === 'loading'}><RefreshCw size={15} className={current?.status === 'loading' ? 'spinning' : ''}/>{current?.status === 'loading' ? 'Actualisation…' : 'Actualiser'}</button>}
       </div>
       {visibleHistory.length > 1 ? <PriceChart points={visibleHistory}/> : <div className="history-empty"><Activity size={26}/><strong>{!marketAvailable ? 'Cote de cette édition indisponible' : current?.status === 'loading' ? 'Actualisation du prix…' : visibleHistory.length === 1 ? 'Premier relevé enregistré' : history.length ? 'Aucun relevé sur cette période' : 'Pas encore de relevé'}</strong><p>{!marketAvailable ? 'Tu peux renseigner ton prix dans les paramètres de la carte.' : visibleHistory.length === 1 ? 'La courbe apparaîtra au prochain relevé quotidien.' : history.length ? 'Choisis une période plus large.' : 'La courbe se construira dès que des prix seront disponibles.'}</p></div>}
-      <details className="stats-source"><summary>À propos des prix</summary><p>Valeur de collection : prix personnels prioritaires, sinon guide Cardmarket Europe en euros. Les cartes sans prix restent comptées et ne contribuent pas au total.</p><p>Courbe et variations : guide Cardmarket, finition normale, un relevé par jour. Langue d’impression et état non précisés par TCGdex. Les Jumbo et les éditions asiatiques n’ont pas de cote adaptée ici.</p>{history[history.length - 1] && <p>Dernier relevé : {formatDate(history[history.length - 1]!.date)}.</p>}</details>
+      <details className="stats-source"><summary>À propos des prix</summary><p>Valeur de collection : prix personnel si ce mode est choisi, sinon dernier guide Cardmarket Europe connu en euros. Les cartes sans prix restent comptées et ne contribuent pas au total.</p><p>Courbe et variations : guide Cardmarket, finition normale, un relevé par jour. Langue d’impression et état non précisés par TCGdex. Les Jumbo et les éditions asiatiques n’ont pas de cote adaptée ici.</p>{lastPoint && <p>Dernier relevé : {formatDate(lastPoint.date)}.{lastPoint.sourceUpdatedAt ? ` Mise à jour source : ${new Date(lastPoint.sourceUpdatedAt).toLocaleDateString('fr-FR')}.` : ' Date de mise à jour source non fournie.'}</p>}</details>
     </article>}
   </section>
 }

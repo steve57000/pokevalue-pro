@@ -7,20 +7,21 @@ import { money } from '../utils/money'
 export { currentCollectionPrice } from '../domain/collectionStats'
 
 type Props = { rows: StatsRow[]; selectedKey?: string; onSelect: (key: string) => void }
-type Filters = { ownedOnly: boolean; movement: string; min: string; max: string; search: string }
+type Filters = { ownedOnly: boolean; missingOnly: boolean; movement: string; min: string; max: string; search: string }
 const STORAGE_KEY = 'pv-stats-explorer-filters-v1'
-const defaults: Filters = { ownedOnly: true, movement: 'all', min: '', max: '', search: '' }
+const defaults: Filters = { ownedOnly: true, missingOnly: false, movement: 'all', min: '', max: '', search: '' }
 function readFilters(): Filters {
   const saved = readStoredJson<Partial<Filters> | null>(STORAGE_KEY, null, 'session')
-  return { ownedOnly: typeof saved?.ownedOnly === 'boolean' ? saved.ownedOnly : true, movement: ['all', 'changed', 'up', 'down'].includes(saved?.movement ?? '') ? saved!.movement! : 'all', min: typeof saved?.min === 'string' ? saved.min : '', max: typeof saved?.max === 'string' ? saved.max : '', search: typeof saved?.search === 'string' ? saved.search : '' }
+  return { ownedOnly: typeof saved?.ownedOnly === 'boolean' ? saved.ownedOnly : true, missingOnly: saved?.missingOnly === true, movement: ['all', 'changed', 'up', 'down'].includes(saved?.movement ?? '') ? saved!.movement! : 'all', min: typeof saved?.min === 'string' ? saved.min : '', max: typeof saved?.max === 'string' ? saved.max : '', search: typeof saved?.search === 'string' ? saved.search : '' }
 }
 export function PriceHistoryExplorer({ rows, selectedKey, onSelect }: Props) {
   const [filters, setFilters] = useState(readFilters)
   const [limit, setLimit] = useState(50)
   const update = (next: Filters) => { setFilters(next); setLimit(50); writeStoredJson(STORAGE_KEY, next, 'session') }
-  const { ownedOnly, movement, min, max, search } = filters
+  const { ownedOnly, missingOnly, movement, min, max, search } = filters
   const invalidRange = min !== '' && max !== '' && Number(min) > Number(max)
   const shown = rows.filter(row => (!ownedOnly || row.owned > 0)
+    && (!missingOnly || row.value === undefined)
     && normalizeSearch(`${row.name} ${row.setName} ${row.number ?? ''}`).includes(normalizeSearch(search))
     && (min === '' || row.value !== undefined && row.value >= Number(min))
     && (max === '' || row.value !== undefined && row.value <= Number(max))
@@ -30,12 +31,13 @@ export function PriceHistoryExplorer({ rows, selectedKey, onSelect }: Props) {
     <label className="history-search"><Search size={18}/><input aria-label="Rechercher dans les statistiques" placeholder="Pokémon, extension ou numéro…" value={search} onChange={event => update({ ...filters, search: event.target.value })}/></label>
     <div className="price-explorer-filters">
       <label className="price-owned-filter"><input type="checkbox" checked={ownedOnly} onChange={event => update({ ...filters, ownedOnly: event.target.checked })}/>Mes cartes possédées</label>
+      <label className="price-owned-filter"><input type="checkbox" checked={missingOnly} onChange={event => update({ ...filters, missingOnly: event.target.checked, min:'',max:'',movement:'all' })}/>Sans prix uniquement</label>
       <label>Évolution<select value={movement} onChange={event => update({ ...filters, movement: event.target.value })}><option value="all">Toutes</option><option value="changed">Prix modifié</option><option value="up">En hausse</option><option value="down">En baisse</option></select></label>
       <label>Minimum (€)<input type="number" min="0" step="0.01" inputMode="decimal" value={min} placeholder="Aucun" onChange={event => update({ ...filters, min: event.target.value })}/></label>
       <label>Maximum (€)<input type="number" min="0" step="0.01" inputMode="decimal" value={max} placeholder="Aucun" aria-invalid={invalidRange} onChange={event => update({ ...filters, max: event.target.value })}/></label>
     </div>
     {invalidRange && <p role="alert" className="negative">Le maximum doit être supérieur ou égal au minimum.</p>}
-    {(!ownedOnly || movement !== 'all' || min || max || search) && <button className="stats-reset" onClick={() => update(defaults)}>Réinitialiser les filtres</button>}
+    {(!ownedOnly || missingOnly || movement !== 'all' || min || max || search) && <button className="stats-reset" onClick={() => update(defaults)}>Réinitialiser les filtres</button>}
     {!ownedOnly && <p className="stats-hint">Collection, favoris et sélection PokéValue.</p>}
     <div className="price-explorer-list">
       {shown.slice(0, limit).map(row => <button key={row.key} className={`price-explorer-row${selectedKey === row.key ? ' selected' : ''}`} aria-pressed={selectedKey === row.key} onClick={() => onSelect(row.key)}>

@@ -1,3 +1,4 @@
+import {readStoredJson} from '../utils/storage'
 import { useRef } from 'react'
 import { AlertTriangle, Cloud, Download, Upload } from 'lucide-react'
 import { mergeCollections, parseCollection, type CollectionDocument } from '../domain/collection'
@@ -5,9 +6,10 @@ import type { GitHubCollectionSync } from '../hooks/useGitHubCollectionSync'
 
 export function CollectionSyncSettings({ sync, document, onChange }: { sync: GitHubCollectionSync; document: CollectionDocument; onChange: (value: CollectionDocument) => void }) {
   const importRef = useRef<HTMLInputElement>(null)
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(document, null, 2)], { type: 'application/json' }))
-    const link = Object.assign(window.document.createElement('a'), { href: url, download: 'pokevalue-portfolio.json' }); link.click(); URL.revokeObjectURL(url)
+  const recovery=readStoredJson<unknown>('pv-portfolio-recovery-v1',null)
+  const download = (value:unknown=document,filename='pokevalue-portfolio.json') => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }))
+    const link = Object.assign(window.document.createElement('a'), { href: url, download: filename }); link.click(); URL.revokeObjectURL(url)
   }
   return <section className="sync-page tool-page">
     <span className="eyebrow"><Cloud size={16}/> Synchronisation</span><h1>Sauvegarde</h1><p>Ta collection locale reste disponible hors connexion. Relie un dépôt privé pour la sauvegarder automatiquement.</p>
@@ -19,6 +21,7 @@ export function CollectionSyncSettings({ sync, document, onChange }: { sync: Git
       {sync.status==='error'&&<button onClick={()=>void (sync.account ? sync.retry() : sync.connect())}>Réessayer</button>}
       <p className="last-sync">Dernière sauvegarde : {sync.lastSavedAt ? sync.lastSavedAt.toLocaleString('fr-FR') : 'aucune sauvegarde distante durant cette session'}</p>
     </div>
-    <div className="portfolio-tools"><button onClick={download}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Importer et fusionner</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) try { onChange(mergeCollections(document,parseCollection(JSON.parse(await file.text())))); sync.markImport('Collection importée et fusionnée') } catch(error) { sync.markImport((error as Error).message) } finally { if(importRef.current)importRef.current.value='' }}}/></div>
+    {recovery!==null&&<div className="portfolio-tools"><button onClick={()=>download(recovery,'pokevalue-recovery.json')}><Download size={16}/> Télécharger la copie de récupération</button></div>}
+    <div className="portfolio-tools"><button onClick={()=>download()}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Importer et fusionner</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) try { onChange(mergeCollections(document,parseCollection(JSON.parse(await file.text())))); sync.markImport('Collection importée et fusionnée') } catch(error) { sync.markImport((error as Error).message) } finally { if(importRef.current)importRef.current.value='' }}}/></div>
   </section>
 }

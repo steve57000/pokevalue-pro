@@ -16,7 +16,10 @@ import { GradingPage } from './components/GradingPage'
 import { CollectionSyncSettings } from './components/CollectionSyncSettings'
 import { ScrollToTop } from './components/ScrollToTop'
 import { LivePrice } from './components/LivePrice'
-import { selectCardmarketPrice } from './domain/pricing'
+import { isAsianCatalogLanguage, selectCardmarketPrice } from './domain/pricing'
+import { useCardPrices } from './hooks/useCardPrices'
+import { normalizeSearch } from './domain/catalogue'
+import { sortFavoritesByPrice } from './domain/favorites'
 import { normalizeImageLanguage } from './domain/image'
 import type { ScannerCandidate } from './domain/scanner'
 import { useLiveCards } from './hooks/useLiveCards'
@@ -24,7 +27,7 @@ import { money } from './utils/money'
 import { readStoredJson, readStoredString, writeStoredJson, writeStoredString, STORAGE_WARNING_EVENT, STORAGE_RECOVERED_EVENT } from './utils/storage'
 import { PRICE_HISTORY_STORAGE_KEY } from './domain/priceHistory'
 import type { Card } from './types'
-import { emptyCollection, parseCollection, setIdFromCardId, updateCollectionCard, findCollectionEntry, type CollectionCard, type CollectionDocument } from './domain/collection'
+import { collectionUnitPrice, emptyCollection, parseCollection, setIdFromCardId, updateCollectionCard, findCollectionEntry, type CollectionCard, type CollectionDocument } from './domain/collection'
 import { useGitHubCollectionSync } from './hooks/useGitHubCollectionSync'
 import { useGitHubPriceHistorySync } from './hooks/useGitHubPriceHistorySync'
 import { useFavorites } from './hooks/useFavorites'
@@ -258,7 +261,7 @@ function App() {
             </>}
           </>}
 
-          {view==='favorites'&&<FavoritesPage favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
+          {view==='favorites'&&<FavoritesPage document={portfolio} favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
           {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
           {view==='alerts'&&<PriceAlertsPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
           {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)} onCreateChallenge={()=>navigate('collection')}/>}
@@ -309,14 +312,19 @@ function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,o
   </article>
 }
 
-function FavoritesPage({favorites,editorialCards,onShowcase,onToggle}:{favorites:FavoriteCard[];editorialCards:Card[];onShowcase:(favorite:FavoriteCard)=>void;onToggle:(favorite:FavoriteInput)=>void}) {
+function FavoritesPage({document,favorites,editorialCards,onShowcase,onToggle}:{document:CollectionDocument;favorites:FavoriteCard[];editorialCards:Card[];onShowcase:(favorite:FavoriteCard)=>void;onToggle:(favorite:FavoriteInput)=>void}) {
   const [sort,setSort]=useState('recent')
   const [language,setLanguage]=useState('all')
   const [search,setSearch]=useState('')
-  const needle=search.trim().toLocaleLowerCase('fr')
-  const shown=[...favorites]
-    .filter(card => (language==='all' || card.language===language) && (!needle || `${card.name} ${card.setName} ${card.localId ?? ''}`.toLocaleLowerCase('fr').includes(needle)))
-    .sort((a,b) => sort==='name' ? a.name.localeCompare(b.name) : sort==='set' ? a.setName.localeCompare(b.setName) : sort==='price-asc' || sort==='price-desc' ? 0 : b.addedAt.localeCompare(a.addedAt))
+  const identity=(favorite:FavoriteCard)=>{const id=favorite.source==='editorial'?editorialCards.find(card=>card.id===favorite.cardId)?.tcgdexId??favorite.cardId:favorite.cardId;return {source:'tcgdex' as const,cardId:id,setId:favorite.setId??setIdFromCardId(id),language:normalizeImageLanguage(favorite.language),variant:'normal'}}
+  const ids=(language:string)=>favorites.filter(favorite=>identity(favorite).language===language&&favorite.setId!=='jumbo').map(favorite=>identity(favorite).cardId)
+  const fr=useCardPrices(ids('fr'),'fr'),en=useCardPrices(ids('en'),'en')
+  const priceValues=new Map(favorites.map(favorite=>{const card=identity(favorite),entry=findCollectionEntry(document,card),quote=(card.language==='en'?en:fr)[card.cardId]?.price,market=card.setId==='jumbo'||isAsianCatalogLanguage(card.language)||quote?.basis!=='guide'?undefined:quote.value;return [favorite.key,entry?.quantity?collectionUnitPrice(entry,market):market]}))
+  const needle=normalizeSearch(search)
+  const ordered=sort==='price-asc'||sort==='price-desc'?sortFavoritesByPrice(favorites,priceValues,sort==='price-desc'):[...favorites].sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'fr'):sort==='set'?a.setName.localeCompare(b.setName,'fr'):b.addedAt.localeCompare(a.addedAt))
+  const shown=ordered
+    .filter(card => (language==='all' || normalizeImageLanguage(card.language)===language) && (!needle || normalizeSearch(`${card.name} ${card.setName} ${card.localId ?? ''}`).includes(needle)))
+
 
   return <section className="favorites-page">
     <div className="page-heading">
@@ -346,7 +354,7 @@ function FavoritesPage({favorites,editorialCards,onShowcase,onToggle}:{favorites
                     ? <CatalogueImage card={{id:imageCardId,name:card.name,localId:card.localId ?? ''}} requestedLanguage={card.language} quality="low"/>
                     : <CardImage image={card.image} name={card.name} quality="low"/>}
                 </button>
-                <div><strong>{card.name}</strong><span>{card.localId && `Nº ${card.localId} · `}{card.setName}</span><small>{card.language.toUpperCase()}</small></div>
+                <div><strong>{card.name}</strong><span>{card.localId && `Nº ${card.localId} · `}{card.setName}</span><small>{card.language.toUpperCase()}</small><b className="favorite-value">{priceValues.get(card.key)===undefined?'Prix indisponible':money(priceValues.get(card.key)!)}</b></div>
                 <FavoriteButton favorite onToggle={()=>onToggle(card)}/>
               </article>
             })}
