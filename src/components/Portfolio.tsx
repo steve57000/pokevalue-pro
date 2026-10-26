@@ -93,7 +93,8 @@ export function Portfolio({document,onChange,isFavorite=()=>false,onFavorite,hea
  // Default catalogue cards are requested in batches; price/grading sorts index all matching cards.
  const needsCompletePriceIndex=['price-asc','price-desc','grading'].includes(sort)||filter==='grading'
  const shortlist=detail?.cards.filter(card=>(filter==='all'||filter==='grading'||(filter==='owned'?entriesById.has(card.id):!entriesById.has(card.id)))&&normalizeSearch(`${card.name} ${card.localId}`).includes(normalizeSearch(deferredSearch)))??[]
- const cataloguePriceIds=selectedSet==='jumbo'?[]:needsCompletePriceIndex?shortlist.map(card=>card.id):shortlist.slice(0,visibleCount+24).map(card=>card.id)
+ const cataloguePriceCandidates=needsCompletePriceIndex?shortlist:sortCatalogueCards(shortlist,sort,{},entriesById)
+ const cataloguePriceIds=selectedSet==='jumbo'?[]:cataloguePriceCandidates.slice(0,needsCompletePriceIndex?undefined:visibleCount+24).map(card=>card.id)
  const priceIds=isAsianCatalogLanguage(language)?[]:[...new Set([...cataloguePriceIds,...ownedEntries.filter(e=>e.language===language&&e.setId!=='jumbo'&&e.variant==='normal').map(e=>e.cardId)])]
  const prices=useCardPrices(priceIds,language)
  const asianCatalog=isAsianCatalogLanguage(language),noMarket=asianCatalog||selectedSet==='jumbo',catalogSortPrices=noMarket?{}:prices
