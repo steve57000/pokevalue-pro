@@ -23,6 +23,8 @@ describe('flux de prix de ventes gradées',()=>{
  })
  it('ne remplace pas les anciennes observations par un flux inactif',()=>{
   expect(mergeGradedMarket(feed(),EMPTY_GRADED_MARKET).quotes).toHaveLength(1)
+  const newer=feed({generatedAt:'2026-10-22T10:00:00Z',quotes:[{...quote,median30:270}]})
+  expect(mergeGradedMarket(newer,feed()).quotes[0].median30).toBe(270)
   expect(quoteFreshness(quote,Date.parse('2026-10-27T10:00:00Z'))).toBe('stale')
  })
 })
