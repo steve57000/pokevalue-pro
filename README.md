@@ -74,7 +74,9 @@ Les liens **eBay vendus** ouvrent une recherche de transactions : **les prix eBa
 
 La **prime nette** compare la médiane gradée à la valeur brute locale après saisie des frais totaux par société et de la commission de vente ; elle reste vide si l'une des valeurs manque. Le calcul n'est pas une prédiction de note ni un conseil de rentabilité garanti.
 
-Les observations sont enregistrées sous `pv-graded-sales-v1` dans le **stockage local du navigateur**, indépendamment des sauvegardes de collection et de l'historique Cardmarket. Utiliser **Exporter les ventes** pour une sauvegarde JSON et **Importer des ventes** pour les restaurer ailleurs. Aucune synchronisation distante ni API secrète n'a été ajoutée : une intégration de prix gradés automatiquement actualisés nécessiterait une source licenciée et la gestion sécurisée de ses identifiants, à discuter avant toute création de backend.
+Les observations sont enregistrées sous `pv-graded-sales-v1` dans le **stockage local du navigateur**, indépendamment des sauvegardes de collection et de l'historique Cardmarket.
+
+**Flux externe préparé (non activé)** : une section séparée affiche les cotations CardStand lorsqu'un artefact contrôlé `public/data/graded-market.json` est disponible. Un lecteur avec cache local, conservation de l'historique daté et indication de fraîcheur est intégré, sans clé API dans le navigateur. Le flux est actuellement `unconfigured` et aucune valeur n'est inventée. La conception et les étapes de validation figurent dans [docs/graded-sales-feed.md](docs/graded-sales-feed.md). Utiliser **Exporter les ventes** pour une sauvegarde JSON et **Importer des ventes** pour les restaurer ailleurs. Aucune synchronisation distante ni API secrète n'a été ajoutée : une intégration de prix gradés automatiquement actualisés nécessiterait une source licenciée et la gestion sécurisée de ses identifiants, à discuter avant toute création de backend.
 
 ## Fonctionnement du scanner
 
