@@ -1,12 +1,12 @@
 /** Observations de ventes conclues, déclarées et sourcées par le collectionneur.
  * Aucune ligne ne doit être interprétée comme une cote fournie automatiquement. */
 export const GRADING_SERVICES = [
-  {id:'PSA', name:'PSA', url:'https://www.psacard.com/gradingstandards', grades:['10','9','8','7']},
-  {id:'PCA', name:'PCA', url:'https://pcagrade.com/fr/ressources', grades:['10+','10','9.5','9','8','7']},
-  {id:'CCC', name:'CCC Grading', url:'https://www.cccgrading.com/fr/echelle-notation', grades:['10 Black Label','10 Gold Label','10 Neuf+','9.5','9','8','7']},
-  {id:'CollectAura', name:'CollectAura', url:'https://www.collectaura.com/pages/grading-scale', grades:['10 Perfect','10 Gem Mint','9.5','9','8','7']},
-  {id:'BGS', name:'BGS / Beckett', url:'https://www.beckett.com/grading/scale', grades:['10 Black Label','10','9.5','9','8','7']},
-  {id:'CGC', name:'CGC', url:'https://www.cgccards.com/card-grading/grading-scale/', grades:['10 Pristine','10 Gem Mint','9.5','9','8','7']},
+  {id:'PSA', name:'PSA', url:'https://www.psacard.com/gradingstandards', grades:['10','9','8','7','6','5','4','3','2','1']},
+  {id:'PCA', name:'PCA', url:'https://pcagrade.com/fr/ressources', grades:['10+','10','9.5','9','8','7','6','5','4','3','2','1']},
+  {id:'CCC', name:'CCC Grading', url:'https://www.cccgrading.com/fr/echelle-notation', grades:['10 Black Label','10 Gold Label','10 Neuf+','9.5','9','8.5','8','7','6','5','4','3','2','1']},
+  {id:'CollectAura', name:'CollectAura', url:'https://www.collectaura.com/pages/grading-scale', grades:['10 Perfect','10 Gem Mint','9.5','9','8','7','6','5','4','3','2','1']},
+  {id:'BGS', name:'BGS / Beckett', url:'https://www.beckett.com/grading/scale', grades:['10 Black Label','10','9.5','9','8.5','8','7.5','7','6.5','6','5.5','5','4.5','4','3.5','3','2.5','2','1.5','1']},
+  {id:'CGC', name:'CGC', url:'https://www.cgccards.com/card-grading/grading-scale/', grades:['10 Pristine','10 Gem Mint','9.5','9','8.5','8','7.5','7','6.5','6','5.5','5','4.5','4','3.5','3','2.5','2','1.5','1']},
 ] as const
 export type GradingCompany = typeof GRADING_SERVICES[number]['id']
 export type GradedSale = {
@@ -24,7 +24,7 @@ export const GRADED_SALES_STORAGE_KEY='pv-graded-sales-v1'
 const MAX_SALES=2000
 const datePattern=/^\d{4}-\d{2}-\d{2}$/
 const validDate=(date:string)=>datePattern.test(date) && !Number.isNaN(Date.parse(date+'T00:00:00Z')) && new Date(date+'T00:00:00Z').toISOString().slice(0,10)===date
-export function gradeGroup(grade:string):string{return grade.startsWith('10')?'10':grade==='9.5'?'9.5':grade==='9'?'9':grade==='8'?'8':'7'}
+export function gradeGroup(grade:string):string{return grade.match(/^(\d+(?:\.\d+)?)/)?.[1]??grade}
 export function validGradedSale(value:unknown):value is GradedSale {
  if(!value||typeof value!=='object')return false
  const v=value as Partial<GradedSale>
