@@ -131,7 +131,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <button className="grading-history-link" onClick={onPriceHistory}>Ouvrir Stats et prix <ArrowUpRight size={16}/></button>
     </header>
 
-    <section className="grading-source-status" aria-live="polite" aria-label="État des prix gradés">
+    {gradedSourceStatus!=='unconfigured'&&<section className="grading-source-status" aria-live="polite" aria-label="État des prix gradés">
       <div className="grading-source-indicator">
         <span className="grading-source-dot" data-status={gradedSourceStatus} aria-hidden="true"/>
         <div>
@@ -154,14 +154,14 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         </div>
       </div>
       <a href="https://github.com/steve57000/pokevalue-pro/blob/main/docs/graded-sales-feed.md" target="_blank" rel="noreferrer">Comprendre la connexion <ArrowUpRight size={15}/></a>
-    </section>
+    </section>}
     <div className="grading-summary">
       <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Prix ≥ {money(MIN_GRADING_VALUE)} ou rareté majeure à vérifier</span></article>
       <article className="is-priority"><small>À examiner en priorité</small><strong>{counts.priority}</strong><span>Signaux de marché élevés</span></article>
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Les données gradées sont présentées par source : observations personnelles enregistrées localement et éventuelles cotes externes issues d’un flux daté. Aucune valeur n’est inventée lorsqu’une source ne répond pas. La note future n’est jamais garantie.</p></aside>
+    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
     <div className="grading-data-actions">
       <button type="button" onClick={exportSales}>Exporter les ventes ({gradedSales.length})</button>
       <label>Importer des ventes (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
