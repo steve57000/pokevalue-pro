@@ -252,7 +252,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   return()=>{active=false}
  },[card.id,card.image,card.localId,card.name,requestedLanguage,quality,visible,rejectedUrls,retryNonce])
  useEffect(()=>{if(!image||image.url)return
-  const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},20_000)
+  const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},60_000)
   return()=>window.clearTimeout(timer)
  },[image,card.id])
  const show=image?.url
@@ -264,7 +264,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},3500);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
+ useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},12_000);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
  return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'||priority?'eager':'lazy'} fetchPriority={priority?'high':'auto'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()
