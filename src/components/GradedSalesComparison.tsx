@@ -1,4 +1,5 @@
 import {useMemo,useState,type FormEvent} from 'react'
+import {GradedSaleSources} from './GradedSaleSources'
 import {ArrowUpRight,BarChart3,Plus,Trash2} from 'lucide-react'
 import type {CollectionEntry} from '../domain/collection'
 import {
@@ -58,10 +59,12 @@ export function GradedSalesComparison({entry,rawPrice,sales,onAdd,onRemove}:Prop
  }
  return <div className="grading-comparison">
   <div className="grading-comparison-heading">
-   <div><span className="eyebrow"><BarChart3 size={15}/> Marché secondaire</span><h4>Comparer les ventes gradées</h4>
-    <p>Même carte et même impression ({entry.language.toUpperCase()} · {entry.variant}). Les notes affichées ne sont pas équivalentes entre sociétés. Ventes documentées localement, sans vérification automatique.</p></div>
+   <div><span className="eyebrow"><BarChart3 size={15}/> Marché secondaire</span><h4>Ventes gradées · sources externes</h4>
+    <p>Recherches de ventes terminées pour cette carte ({entry.language.toUpperCase()} · {entry.variant}). Vérifie chaque résultat : aucune cote automatique n’est extrapolée.</p></div>
    <button type="button" className="grading-add-sale" onClick={()=>setFormVisible(open=>!open)}><Plus size={15}/> Ajouter une vente</button>
   </div>
+  <GradedSaleSources entry={entry}/>
+  {own.length>0&&<><h5 className="grading-recorded-heading">Mes ventes documentées · {own.length}</h5>
   <div className="grading-comparison-controls">
    <label>Note recherchée<select value={targetGrade} onChange={event=>setTargetGrade(event.target.value)}>{groupOptions.map(grade=><option key={grade} value={grade}>{grade}</option>)}</select></label>
    <label>Ventes sur<select value={period} onChange={event=>setPeriod(Number(event.target.value) as 90|365)}><option value={90}>90 jours</option><option value={365}>12 mois</option></select></label>
@@ -87,8 +90,8 @@ export function GradedSalesComparison({entry,rawPrice,sales,onAdd,onRemove}:Prop
    })}</tbody>
   </table></div>
   <p className="grading-comparison-footnote">*Prime nette vs vente brute = (médiane gradée − valeur brute) × (1 − commission) − frais totaux de gradation et d'envoi. À renseigner pour chaque société. Calcul indicatif : les frais, taxes et autres risques personnels ne sont pas tous connus.</p>
-  {observed.length===0?<p className="grading-comparison-empty">Aucune vente enregistrée pour cette note et cette période. Les liens eBay ouvrent une recherche de ventes terminées ; vérifier chaque impression, langue, variante et transaction avant de saisir un prix. Aucun montant n’est extrapolé.</p>
-   :<p className="grading-comparison-observed">{observed.length} combinaison{observed.length>1?'s':''} société / note avec données sur {period} jours · {own.length} vente{own.length>1?'s':''} enregistrée{own.length>1?'s':''} au total pour cette carte.</p>}
+  {observed.length===0?<p className="grading-comparison-empty">Aucune vente personnelle enregistrée pour cette note et cette période.</p>
+   :<p className="grading-comparison-observed">{observed.length} combinaison{observed.length>1?'s':''} société / note avec données sur {period} jours · {own.length} vente{own.length>1?'s':''} enregistrée{own.length>1?'s':''} au total pour cette carte.</p>}</>}
   {formVisible&&<form className="grading-sale-form" onSubmit={submit}>
    <h5>Documenter une vente conclue</h5><p>Ne pas enregistrer les annonces encore en vente. Les prix doivent être en euros, hors frais de port.</p>
    <div className="grading-sale-fields">
