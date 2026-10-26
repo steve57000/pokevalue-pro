@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { GradedSalesComparison } from './GradedSalesComparison'
+import { parseGradedSales, readGradedSales, saveGradedSales, type GradedSale } from '../domain/gradedSales'
 import { ArrowUpRight, BadgeCheck, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import { CatalogueImage } from './CatalogueImage'
 import type { CollectionEntry } from '../domain/collection'
@@ -20,6 +22,40 @@ const MIN_GRADING_VALUE = 20
 export function GradingPage({ entries, onPriceHistory }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
+  const [showAllOwned, setShowAllOwned] = useState(false)
+  const [expandedCard, setExpandedCard] = useState<string | null>(null)
+  const [gradedSales, setGradedSales] = useState<GradedSale[]>(readGradedSales)
+  const [saleStorageError, setSaleStorageError] = useState('')
+  const persistSales = (next: GradedSale[]) => {
+    try {
+      saveGradedSales(next)
+      setGradedSales(next)
+      setSaleStorageError('')
+    } catch {
+      setSaleStorageError('Enregistrement impossible : espace de stockage local indisponible ou saturé. Exporte tes ventes avant toute autre modification.')
+    }
+  }
+  const exportSales = () => {
+    const blob = new Blob([JSON.stringify(gradedSales, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'pokevalue-ventes-gradees.json'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+  const importSales = async (file?: File) => {
+    if (!file) return
+    try {
+      const imported = parseGradedSales(JSON.parse(await file.text()))
+      const known = new Set(gradedSales.map(item => item.id))
+      persistSales([...gradedSales, ...imported.filter(item => !known.has(item.id))])
+    } catch (caught) {
+      setSaleStorageError(caught instanceof Error ? caught.message : 'Import impossible : fichier invalide.')
+    }
+  }
   const owned = useMemo(() => entries.filter(entry => entry.quantity > 0), [entries])
   const idsByLanguage = Object.fromEntries(languages.map(language => [
     language,
@@ -50,8 +86,8 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       : interest.reasons
     return { entry, priceState, unitPrice, interest, recommendation, reasons, majorRarity, needsPriceCheck, asian }
   }).filter(item =>
-    item.recommendation !== 'skip'
-    && ((item.unitPrice !== undefined && item.unitPrice >= MIN_GRADING_VALUE) || (item.needsPriceCheck && item.majorRarity))
+    showAllOwned || (item.recommendation !== 'skip'
+    && ((item.unitPrice !== undefined && item.unitPrice >= MIN_GRADING_VALUE) || (item.needsPriceCheck && item.majorRarity)))
   )
 
   const analyzed = candidates.filter(item => {
@@ -76,7 +112,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     <header className="grading-heading">
       <span className="eyebrow"><BadgeCheck size={16}/> Atelier de collection</span>
       <h1>Préparer une gradation</h1>
-      <p>Repère les cartes à examiner, compare les options et prépare-les sans confondre potentiel et garantie de note.</p>
+      <p>Compare les notes et les ventes conclues, carte par carte, avant de choisir une société de gradation.</p>
       <button className="grading-history-link" onClick={onPriceHistory}>Ouvrir Stats et prix <ArrowUpRight size={16}/></button>
     </header>
 
@@ -86,11 +122,18 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>La sélection est indicative : les prix Cardmarket de l’application ne sont pas filtrés par langue, et aucune estimation de note PSA/CGC/BGS ni de valeur de revente après gradation n’est disponible. Vérifie la langue, l’état réel, les ventes comparables et le coût total avant d’envoyer une carte.</p></aside>
+    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Les prix gradés affichés ci-dessous proviennent uniquement des ventes terminées que tu documentes avec leur source : ils ne sont ni inventés ni actualisés automatiquement. La note future n’est jamais garantie.</p></aside>
+    <div className="grading-data-actions">
+      <button type="button" onClick={exportSales}>Exporter les ventes ({gradedSales.length})</button>
+      <label>Importer des ventes (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
+      <p>Sauvegarde locale distincte de ta collection : exporte ce fichier pour conserver les observations.</p>
+      {saleStorageError&&<p role="alert" className="grading-data-error">{saleStorageError}</p>}
+    </div>
 
     <section className="grading-candidates">
-      <div className="grading-list-heading"><div><h2>Cartes à valeur significative</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · valeur ≥ {money(MIN_GRADING_VALUE)}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
+      <div className="grading-list-heading"><div><h2>Comparer mes cartes</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · {showAllOwned?'collection complète':'sélection à examiner'}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
       <div className="grading-filters" aria-label="Filtrer les cartes">
+        <button type="button" className={showAllOwned ? 'active' : ''} aria-pressed={showAllOwned} onClick={()=>{setShowAllOwned(value=>!value);setFilter('all')}}>{showAllOwned?'Collection complète ✓':'Afficher toute la collection'}</button>
         {([['all','Toutes'],['priority','Prioritaires'],['review','À examiner']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}{value === 'priority' ? ` · ${counts.priority}` : value === 'review' ? ` · ${counts.review}` : ''}</button>)}
       </div>
       {owned.length === 0 ? <div className="grading-empty"><Sparkles size={24}/><h3>Ta collection est encore vide</h3><p>Ajoute des cartes dans l’onglet Collection : elles apparaîtront ici automatiquement.</p></div>
@@ -98,7 +141,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         : analyzed.length === 0 ? <div className="grading-empty"><Search size={24}/><h3>Aucun résultat</h3><p>Essaie un autre filtre ou une autre recherche.</p></div>
         : <div className="grading-card-grid">{analyzed.map(({ entry, priceState, unitPrice, interest, recommendation, reasons, needsPriceCheck, asian }) => {
           const usesManual = (entry.priceMode ?? (entry.manualPrice !== undefined ? 'manual' : 'market')) === 'manual' && entry.manualPrice !== undefined
-          const label = needsPriceCheck ? 'Valeur à vérifier' : recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
+          const label = recommendation === 'skip' ? 'État défavorable' : needsPriceCheck ? 'Valeur à vérifier' : recommendation === 'priority' ? 'À examiner en priorité' : 'À examiner'
           const card = { id: entry.cardId, name: entry.name, localId: entry.number ?? '', image: entry.image }
           return <article className={`grading-card ${recommendation}`} key={entry.key}>
             <div className="grading-card-image"><CatalogueImage card={card} requestedLanguage={entry.language} quality="low"/></div>
@@ -109,7 +152,9 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
               <ul>{reasons.slice(0, 3).map(reason => <li key={reason}>{reason}</li>)}</ul>
               <Recommendation price={unitPrice}/>
               {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
+              <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
             </div>
+            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot"><GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
           </article>
         })}</div>}
     </section>
@@ -119,6 +164,8 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <div className="grading-service-grid">
         <article><span className="grading-service-mark">PSA</span><h3>Revente et liquidité</h3><p>À privilégier si ton objectif principal est une revente facile et que la carte est recherchée, en excellent état et susceptible d’obtenir une note élevée.</p><small>Repère : carte brute autour de 100 € ou plus, après vérification du coût total et des ventes récentes.</small></article>
         <article><span className="grading-service-mark">PCA</span><h3>Certification française</h3><p>À considérer pour une démarche en France, une protection de collection ou une carte destinée à des acheteurs familiers de PCA. Son échelle comprend notamment 10+ Collector, 10 Neuf Sup’ et 9,5 Neuf.</p><small>Compare la demande pour PCA sur les ventes réellement conclues ; une note PCA ne se convertit pas directement en note PSA.</small></article>
+        <article><span className="grading-service-mark">CCC</span><h3>Certification avec GradeReport®</h3><p>CCC distingue notamment 10 Neuf+, 10 Gold Label et 10 Black Label. Il faut comparer séparément chacune de ces étiquettes.</p><small><a href="https://www.cccgrading.com/fr/echelle-notation" target="_blank" rel="noreferrer">Échelle officielle CCC</a> · frais selon la valeur déclarée.</small></article>
+        <article><span className="grading-service-mark">CollectAura</span><h3>Perfect et Gem Mint</h3><p>CollectAura propose notamment deux qualifications pour le 10 : Perfect et Gem Mint. Les ventes doivent être rattachées au bon label.</p><small><a href="https://www.collectaura.com/pages/grading-scale" target="_blank" rel="noreferrer">Échelle officielle CollectAura</a> · formules Standard, Subgrades et Advanced.</small></article>
         <article><span className="grading-service-mark">CGC</span><h3>Alternative à comparer</h3><p>À considérer pour une collection personnelle ou si le tarif et le service disponibles sont mieux adaptés à ta carte. Compare la demande locale pour cette société.</p><small>Ne choisis pas uniquement sur le prix annoncé : ajoute envoi, assurance et retour.</small></article>
         <article><span className="grading-service-mark">BGS</span><h3>Cartes premium impeccables</h3><p>À envisager surtout pour une carte haut de gamme dont centrage, surface, coins et bords sont exceptionnels, si tu recherches l’évaluation détaillée BGS.</p><small>Pour une carte très coûteuse, vérifie aussi le niveau de service et la valeur déclarée acceptés.</small></article>
       </div>
@@ -137,6 +184,8 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         <article><span className="grading-service-mark">PSA</span><h3>Échelle propre à PSA</h3><p>PSA 10 décrit une carte quasiment parfaite selon ses standards : coins nets, mise au point et brillant d’origine, sans tache. Le centrage PSA 10 tolère environ 55/45 au recto et 75/25 au verso ; ces chiffres ne sont pas des règles universelles pour les autres sociétés.</p></article>
         <article><span className="grading-service-mark">PCA</span><h3>Repères PCA</h3><p>PCA distingue notamment 10+ Collector (qualité exceptionnelle), 10 Neuf Sup’ (aspect parfait avec de possibles micro-défauts d’origine) et 9,5 Neuf (aspect neuf avec de très rares défauts visibles à l’inspection). Consulte leur échelle illustrée complète.</p></article>
         <article><span className="grading-service-mark">BGS</span><h3>Sous-notes détaillées</h3><p>Beckett affiche des sous-notes pour le centrage, les coins, les bords et la surface, puis une note globale. Cela aide à comprendre les points forts et faibles ; vérifie les services et options disponibles au moment de soumettre.</p></article>
+        <article><span className="grading-service-mark">CCC</span><h3>10 avec labels distincts</h3><p>CCC différencie notamment Neuf+, Gold Label et Black Label ; leur valeur de marché doit être évaluée indépendamment.</p></article>
+        <article><span className="grading-service-mark">CollectAura</span><h3>Deux types de 10</h3><p>Perfect et Gem Mint sont deux grades distincts. Ne regroupe jamais leurs ventes pour calculer une médiane.</p></article>
         <article><span className="grading-service-mark">CGC</span><h3>Échelle CGC actuelle</h3><p>CGC utilise une échelle propre sur 10, avec Gem Mint 10 et Pristine 10 au sommet. Les anciennes étiquettes et anciennes notes CGC peuvent relever d’une échelle antérieure : compare toujours le type de certification.</p></article>
       </div>
       <p className="grading-guide-note"><strong>Important :</strong> un 10 chez PCA, PSA, BGS ou CGC n’est pas automatiquement équivalent à un 10 d’une autre société. Pour une revente, compare la même carte, la même langue, le même service et des ventes conclues récentes — pas les prix affichés ni les notes seules.</p>
@@ -150,7 +199,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         <article><b>3</b><h3>Respecter la consigne du service</h3><p>Pour PSA, utilise la protection souple et le semi-rigide demandés dans son guide, plutôt qu’un top loader. PCA indique une sleeve puis un top loader ou un Card Saver, sans scotcher ni mettre de team bag. Pour BGS et CGC, vérifie la consigne de soumission actuelle.</p></article>
         <article><b>4</b><h3>Emballer le colis</h3><p>Range les cartes dans l’ordre du formulaire, protège le lot entre cartons rigides, immobilise-le dans un carton solide et utilise un suivi avec assurance adaptée à la valeur.</p></article>
       </div>
-      <div className="grading-official-links"><span>Références officielles :</span><a href="https://pcagrade.com/fr/ressources" target="_blank" rel="noreferrer">PCA · échelle, FAQ et envoi <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/gradingstandards" target="_blank" rel="noreferrer">PSA · standards <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/en-DE/info/shipguide" target="_blank" rel="noreferrer">PSA · préparation <ArrowUpRight size={14}/></a><a href="https://www.beckett.com/grading/scale" target="_blank" rel="noreferrer">BGS · échelle <ArrowUpRight size={14}/></a><a href="https://www.cgccards.com/card-grading/grading-scale/" target="_blank" rel="noreferrer">CGC · échelle <ArrowUpRight size={14}/></a></div>
+      <div className="grading-official-links"><span>Références officielles :</span><a href="https://pcagrade.com/fr/ressources" target="_blank" rel="noreferrer">PCA · échelle, FAQ et envoi <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/gradingstandards" target="_blank" rel="noreferrer">PSA · standards <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/en-DE/info/shipguide" target="_blank" rel="noreferrer">PSA · préparation <ArrowUpRight size={14}/></a><a href="https://www.beckett.com/grading/scale" target="_blank" rel="noreferrer">BGS · échelle <ArrowUpRight size={14}/></a><a href="https://www.cgccards.com/card-grading/grading-scale/" target="_blank" rel="noreferrer">CGC · échelle <ArrowUpRight size={14}/></a><a href="https://www.cccgrading.com/fr/echelle-notation" target="_blank" rel="noreferrer">CCC · échelle <ArrowUpRight size={14}/></a><a href="https://www.collectaura.com/pages/grading-scale" target="_blank" rel="noreferrer">CollectAura · échelle <ArrowUpRight size={14}/></a></div>
     </section>
   </section>
 }
