@@ -1,4 +1,11 @@
-# Flux des ventes gradées — décision d’architecture (octobre 2026)
+# Flux des ventes gradées — état et conditions d’activation (octobre 2026)
+
+> **État vérifié le 26 octobre 2026 : source non connectée.** Le fichier `public/data/graded-market.json` contient `status: "unconfigured"` et zéro cote. Il n'y a actuellement **aucun prix gradé automatique dans le site**. Le lecteur de données et le cache sont prêts, mais ils n'interrogent aucun fournisseur ; les liens eBay ne remplissent pas les tableaux.
+>
+> **Licence CardStand :** les [conditions de son API](https://www.cardstand.app/developers/terms) interdisent notamment la constitution d'une base de prix concurrente et limitent le cache. PokeValue Pro étant un catalogue public avec statistiques de prix, **ne pas activer CardStand sans accord explicite couvrant cet usage.**
+>
+> **Autre fournisseur à étudier :** [PokemonPriceTracker](https://www.pokemonpricetracker.com/licensing) autorise des outils de collection non commerciaux sur le plan gratuit et demande le plan Business pour un usage commercial. Sa couverture PSA/CGC/BGS/SGC ne garantit pas CCC, PCA ou CollectAura. Une clé privée, un rapprochement strict des cartes et la licence adaptée restent nécessaires.
+
 
 ## État du projet
 
@@ -10,7 +17,7 @@
 
 ## Source sélectionnée
 
-**CardStand** : `https://cardstand.app/fr/developers`.
+**CardStand (étude technique uniquement ; activation soumise à autorisation)** : `https://cardstand.app/fr/developers`.
 
 Endpoints identifiés dans la documentation :
 
@@ -23,10 +30,10 @@ Les 100 appels mensuels et 10/min du forfait gratuit imposent une sélection lim
 
 **Important** : les détails des champs et la présence de CCC/CollectAura ne sont pas validés sur des réponses API authentifiées : tester plusieurs cartes réelles avant de coder le normaliseur de production. Les sociétés ou les notes non reconnues sont ignorées, jamais converties vers PSA 10 par défaut.
 
-## Architecture d'activation envisagée — à valider avant création
+## Architecture d'activation envisagée — uniquement avec un fournisseur autorisé
 
-1. Obtenir une clé CardStand et un accord explicite sur la conservation et l'affichage sur un site public des données dérivées des ventes.
-2. Stocker la clé dans un **GitHub Actions Secret** (`CARDSTAND_API_KEY`), jamais dans le code Vite, `VITE_*`, le JSON public ni les logs.
+1. Choisir un fournisseur autorisant l'usage prévu et obtenir une clé API personnelle et privée.
+2. Stocker la clé dans un **GitHub Actions Secret** propre au fournisseur, jamais dans Vite, le JSON public ni les logs.
 3. Dans une **GitHub Action planifiée**, limiter les appels et sélectionner uniquement une **liste publique de cartes suivies** (sans exporter la collection privée ni les quantités possédées). Résoudre les identifiants fournisseur et vérifier la correspondance de chaque impression. Rejeter tout résultat ambigu.
 4. Transformer une réponse authentique vers le format `GradedMarketFeed` décrit par `src/domain/gradedMarket.ts` ; séparer *médiane* (agrégat) de *moyenne journalière pondérée* (historique) et de *vente unitaire*.
 5. Conserver les points de vente dans un **fichier versionné** ou un stockage persistant sous contrat. Le cache temporaire GitHub Actions n'est pas l'historique permanent. Ne jamais écraser l'historique valide sur 429, timeout ou réponse invalide.
