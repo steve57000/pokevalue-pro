@@ -80,6 +80,8 @@ export function parseGradedMarketFeed(value:unknown):GradedMarketFeed{
 export function mergeGradedMarket(previous:GradedMarketFeed,next:GradedMarketFeed):GradedMarketFeed{
  const latest=parseGradedMarketFeed(next)
  if(latest.status==='unconfigured')return previous
+ // An old Pages artifact or intermediate CDN cache must not revert newer observations.
+ if(previous.generatedAt&&latest.generatedAt&&Date.parse(latest.generatedAt)<Date.parse(previous.generatedAt))return previous
  const prior=new Map(previous.quotes.map(quote=>[[quote.cardKey,quote.provider,quote.company,quote.grade,quote.finish].join('|'),quote]))
  const updated=latest.quotes.map(quote=>{
   const key=[quote.cardKey,quote.provider,quote.company,quote.grade,quote.finish].join('|')
