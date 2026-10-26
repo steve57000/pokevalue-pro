@@ -31,8 +31,10 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       saveGradedSales(next)
       setGradedSales(next)
       setSaleStorageError('')
+      return true
     } catch {
       setSaleStorageError('Enregistrement impossible : espace de stockage local indisponible ou saturé. Exporte tes ventes avant toute autre modification.')
+      return false
     }
   }
   const exportSales = () => {
