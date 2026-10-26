@@ -71,3 +71,18 @@
 .grading-comparison-slot{grid-column:1/-1;min-width:0}
 .grading-comparison-slot>.grading-comparison{width:100%}
 @media(min-width:701px){.grading-data-actions p{max-width:500px}}
+
+
+/* Automatic market quotes and sparse transaction history */
+.grading-market-panel{padding:14px 0 18px;border-bottom:1px solid var(--line);min-width:0}
+.grading-market-panel>h5,.grading-market-panel h5{margin:0 0 6px;font-size:1rem;display:flex;align-items:center;gap:7px}
+.grading-market-panel>p,.grading-market-panel header p{margin:0;color:var(--muted);font-size:.85rem;line-height:1.55}
+.grading-market-panel header{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.grading-market-panel header a{font-size:.83rem;display:inline-flex;align-items:center;gap:4px;color:var(--brand);white-space:nowrap}
+.grading-market-history{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:12px;max-width:100%;min-width:0}
+.grading-market-history label{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:.85rem;color:var(--muted)}
+.grading-market-history select{max-width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--panel);color:var(--text)}
+.grading-market-chart{overflow:hidden;padding-top:7px}
+.grading-market-chart svg{max-width:100%;height:auto;display:block}
+.grading-market-chart small{color:var(--muted);font-size:.8rem}
+@media(max-width:700px){.grading-market-panel header{flex-direction:column}.grading-market-history{padding:8px}}
