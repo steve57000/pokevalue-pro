@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { GradedSalesComparison } from './GradedSalesComparison'
+import { GradedMarketComparison } from './GradedMarketComparison'
+import { useGradedMarket } from '../hooks/useGradedMarket'
 import { parseGradedSales, readGradedSales, saveGradedSales, type GradedSale } from '../domain/gradedSales'
 import { ArrowUpRight, BadgeCheck, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import { CatalogueImage } from './CatalogueImage'
@@ -20,6 +22,7 @@ type Filter = 'all' | 'priority' | 'review'
 const MIN_GRADING_VALUE = 20
 
 export function GradingPage({ entries, onPriceHistory }: Props) {
+  const gradedMarket = useGradedMarket()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [showAllOwned, setShowAllOwned] = useState(false)
@@ -132,7 +135,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Les prix gradés affichés ci-dessous proviennent uniquement des ventes terminées que tu documentes avec leur source : ils ne sont ni inventés ni actualisés automatiquement. La note future n’est jamais garantie.</p></aside>
+    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Les données gradées sont présentées par source : observations personnelles enregistrées localement et éventuelles cotes externes issues d’un flux daté. Aucune valeur n’est inventée lorsqu’une source ne répond pas. La note future n’est jamais garantie.</p></aside>
     <div className="grading-data-actions">
       <button type="button" onClick={exportSales}>Exporter les ventes ({gradedSales.length})</button>
       <label>Importer des ventes (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
@@ -164,7 +167,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
               {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
               <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
             </div>
-            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot"><GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
+            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot"><GradedMarketComparison entry={entry} feed={gradedMarket}/><GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
           </article>
         })}</div>}
     </section>
