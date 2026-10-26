@@ -97,5 +97,5 @@ export function gradedMarketForCard(feed:GradedMarketFeed,cardKey:string){
 }
 export function quoteFreshness(quote:GradedMarketQuote,now=Date.now()){
  const age=now-Date.parse(quote.fetchedAt)
- return age<0||age>7*86400000?'stale':age>48*3600000?'aging':'fresh'
+ return age<0||age>=7*86400000?'stale':age>48*3600000?'aging':'fresh'
 }
