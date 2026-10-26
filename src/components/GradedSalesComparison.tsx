@@ -11,7 +11,7 @@ type Props={
  entry:CollectionEntry
  rawPrice?:number
  sales:GradedSale[]
- onAdd:(item:GradedSale)=>void
+ onAdd:(item:GradedSale)=>boolean
  onRemove:(id:string)=>void
 }
 const groupOptions=['10','9.5','9','8','7'] as const
@@ -49,14 +49,17 @@ export function GradedSalesComparison({entry,rawPrice,sales,onAdd,onRemove}:Prop
    soldAt:date,marketplace:marketplace.trim(),sourceUrl:url.trim(),
   }
   try{
-   onAdd(createGradedSale(input))
+   if(sales.some(previous=>previous.cardKey===input.cardKey&&previous.sourceUrl===input.sourceUrl&&previous.company===input.company&&previous.grade===input.grade)){
+    setError('Cette vente est déjà enregistrée pour cette carte et cette note.');return
+   }
+   if(!onAdd(createGradedSale(input))){setError('La vente n’a pas été sauvegardée. Vérifie l’espace de stockage local.');return}
    setPrice('');setUrl('');setError('');setFormVisible(false)
   }catch(caught){setError(caught instanceof Error?caught.message:'Vente invalide.')}
  }
  return <div className="grading-comparison">
   <div className="grading-comparison-heading">
    <div><span className="eyebrow"><BarChart3 size={15}/> Marché secondaire</span><h4>Comparer les ventes gradées</h4>
-    <p>Même carte, même impression ({entry.language.toUpperCase()} · {entry.variant}) et même note chez chaque société. Ventes documentées saisies localement, non vérifiées automatiquement.</p></div>
+    <p>Même carte et même impression ({entry.language.toUpperCase()} · {entry.variant}). Les notes affichées ne sont pas équivalentes entre sociétés. Ventes documentées localement, sans vérification automatique.</p></div>
    <button type="button" className="grading-add-sale" onClick={()=>setFormVisible(open=>!open)}><Plus size={15}/> Ajouter une vente</button>
   </div>
   <div className="grading-comparison-controls">
