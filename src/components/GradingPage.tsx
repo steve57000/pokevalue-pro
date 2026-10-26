@@ -136,13 +136,11 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         <span className="grading-source-dot" data-status={gradedSourceStatus} aria-hidden="true"/>
         <div>
           <strong>{gradedSourceStatus==='loading'?'Vérification des prix gradés…':
-            gradedSourceStatus==='unconfigured'?'Prix gradés automatiques non configurés':
+            
             gradedSourceStatus==='error'?'Source de prix gradés inaccessible':
             gradedSourceStatus==='cached'?'Derniers prix gradés enregistrés':
             gradedSourceStatus==='empty'?'Source connectée, sans observations':'Prix gradés automatiques disponibles'}</strong>
-          <p>{gradedSourceStatus==='unconfigured'
-            ?'Aucun fournisseur autorisé n’alimente encore les ventes réalisées. Les cases vides ne sont pas des prix à 0 €. Les liens eBay permettent de documenter des ventes manuellement.'
-            :gradedSourceStatus==='error'
+          <p>{gradedSourceStatus==='error'
               ?'Le flux de données n’a pas pu être lu. Aucun prix n’est inventé ; les ventes que tu as enregistrées sont conservées.'
               :gradedSourceStatus==='cached'
                 ?'Le flux actuel ne fournit plus de données. Les dernières observations locales sont conservées et datées ; elles peuvent être anciennes.'
