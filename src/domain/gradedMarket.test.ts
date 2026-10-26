@@ -27,6 +27,7 @@ describe('flux de prix de ventes gradées',()=>{
   expect(mergeGradedMarket(newer,feed()).quotes[0].median30).toBe(270)
   expect(quoteFreshness(quote,Date.parse('2026-10-27T10:00:00Z'))).toBe('stale')
   expect(quoteFreshness(quote,Date.parse('2026-10-27T09:59:59Z'))).toBe('aging')
-  expect(quoteFreshness(quote,Date.parse('2026-10-22T10:00:00Z'))).toBe('aging')
+  expect(quoteFreshness(quote,Date.parse('2026-10-22T10:00:00Z'))).toBe('fresh')
+  expect(quoteFreshness(quote,Date.parse('2026-10-22T10:00:01Z'))).toBe('aging')
  })
 })
