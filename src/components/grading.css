@@ -67,3 +67,7 @@
  .grading-sale-fields .grading-sale-url{grid-column:1/-1}
  .grading-comparison{padding-top:13px}
 }
+
+.grading-comparison-slot{grid-column:1/-1;min-width:0}
+.grading-comparison-slot>.grading-comparison{width:100%}
+@media(min-width:701px){.grading-data-actions p{max-width:500px}}
