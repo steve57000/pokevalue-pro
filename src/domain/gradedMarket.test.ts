@@ -8,6 +8,11 @@ const quote={
 }
 const feed=(updates:Partial<GradedMarketFeed>={}):GradedMarketFeed=>({schemaVersion:1,generatedAt:'2026-10-20T10:00:00Z',status:'active',quotes:[quote],...updates})
 describe('flux de prix de ventes gradées',()=>{
+ it('signale explicitement un flux inactif sans inventer de prix',()=>{
+  expect(EMPTY_GRADED_MARKET.status).toBe('unconfigured')
+  expect(EMPTY_GRADED_MARKET.generatedAt).toBeNull()
+  expect(EMPTY_GRADED_MARKET.quotes).toHaveLength(0)
+ })
  it('rejette les faux prix, mélanges de notes et données non sourcées',()=>{
   expect(parseGradedMarketFeed(feed()).quotes).toHaveLength(1)
   expect(()=>parseGradedMarketFeed(feed({quotes:[{...quote,grade:'unknown'}]}))).toThrow()
