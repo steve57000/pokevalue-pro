@@ -1,3 +1,5 @@
+import { getAllPriceHistory, parsePriceHistoryDocument, replacePriceHistory } from '../domain/priceHistory'
+import { usePriceHistory } from '../hooks/usePriceHistory'
 import {readStoredJson} from '../utils/storage'
 import { useRef } from 'react'
 import { AlertTriangle, Cloud, Download, Upload } from 'lucide-react'
@@ -5,6 +7,8 @@ import { mergeCollections, parseCollection, type CollectionDocument } from '../d
 import type { GitHubCollectionSync } from '../hooks/useGitHubCollectionSync'
 
 export function CollectionSyncSettings({ sync, document, onChange }: { sync: GitHubCollectionSync; document: CollectionDocument; onChange: (value: CollectionDocument) => void }) {
+  const historyImportRef = useRef<HTMLInputElement>(null)
+  const { persistence, snapshots } = usePriceHistory()
   const importRef = useRef<HTMLInputElement>(null)
   const recovery=readStoredJson<unknown>('pv-portfolio-recovery-v1',null)
   const download = (value:unknown=document,filename='pokevalue-portfolio.json') => {
@@ -21,6 +25,11 @@ export function CollectionSyncSettings({ sync, document, onChange }: { sync: Git
       {sync.status==='error'&&<button onClick={()=>void (sync.account ? sync.retry() : sync.connect())}>Réessayer</button>}
       <p className="last-sync">Dernière sauvegarde : {sync.lastSavedAt ? sync.lastSavedAt.toLocaleString('fr-FR') : 'aucune sauvegarde distante durant cette session'}</p>
     </div>
+    <div className="github-panel"><h2>Historique des prix</h2><p>{snapshots.length} relevés · {persistence==='error'?'enregistrement local à réessayer':persistence==='loading'?'chargement…':persistence==='saving'?'enregistrement…':'disponibles sur cet appareil'}</p><div className="portfolio-tools">
+      <button onClick={()=>download({schemaVersion:2,updatedAt:new Date().toISOString(),snapshots:getAllPriceHistory()},'pokevalue-prices.json')}><Download size={16}/> Exporter les prix</button>
+      <button onClick={()=>historyImportRef.current?.click()}><Upload size={16}/> Fusionner un historique</button>
+      <input hidden ref={historyImportRef} type="file" accept="application/json" onChange={async event=>{const file=event.target.files?.[0];if(file)try{replacePriceHistory(parsePriceHistoryDocument(JSON.parse(await file.text())).snapshots);sync.markImport('Historique fusionné')}catch(error){sync.markImport((error as Error).message)}finally{if(historyImportRef.current)historyImportRef.current.value=''}}}/>
+    </div></div>
     {recovery!==null&&<div className="portfolio-tools"><button onClick={()=>download(recovery,'pokevalue-recovery.json')}><Download size={16}/> Télécharger la copie de récupération</button></div>}
     <div className="portfolio-tools"><button onClick={()=>download()}><Download size={16}/> Export JSON</button><button onClick={()=>importRef.current?.click()}><Upload size={16}/> Importer et fusionner</button><input hidden ref={importRef} type="file" accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file) try { onChange(mergeCollections(document,parseCollection(JSON.parse(await file.text())))); sync.markImport('Collection importée et fusionnée') } catch(error) { sync.markImport((error as Error).message) } finally { if(importRef.current)importRef.current.value='' }}}/></div>
   </section>

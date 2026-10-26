@@ -12,6 +12,9 @@ describe('daily market price refresh', () => {
   it('never invents a price when none is known',()=>{
     expect(retainKnownPrices(undefined,{status:'success',language:'fr',price:null}).price).toBeUndefined()
   })
+  it('keeps the current guide when a failed refresh returns an older API cache entry',()=>{
+    expect(retainKnownPrices(known,{...known,status:'error',retained:true,price:{...known.price!,value:90}})).toMatchObject({price:known.price,retained:true})
+  })
   it('does not replace a known guide with a non-comparable listing',()=>{
     const next={...known,price:{...known.price!,basis:'listing' as const,value:90}}
     expect(retainKnownPrices(known,next)).toMatchObject({price:known.price,retained:true})

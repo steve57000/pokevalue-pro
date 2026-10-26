@@ -45,6 +45,15 @@ describe('collection statistics regressions', () => {
     const points = [point({date:'2026-10-17',value:15}), point({recordedAt:'2026-10-18T08:00:00Z'}), point({value:22,recordedAt:'2026-10-18T09:00:00Z',externalProductId:'new'}), point({source:'tcgplayer',market:'tcgplayer-north-america',currency:'USD',value:200}), point({currency:'USD',value:300}), point({variant:'reverse-holofoil',value:400}), point({basis:'listing',value:5}), point({language:'ja',value:800})]
     expect(comparablePriceHistory(points).map(point=>point.value)).toEqual([15,22])
     expect(comparablePriceHistory([...points].reverse())).toEqual(comparablePriceHistory(points))
-    expect(buildStatsRows([], [saved()], [], points)[0].delta).toBe(7)
+    expect(buildStatsRows([], [saved()], [], points)[0].delta).toBeUndefined() // Product mapping changed.
+  })
+  it('shows observed evolution over the full period instead of only the last day',()=>{
+    const [row]=buildStatsRows([], [saved()], [], [point({date:'2026-10-16',value:10}),point({date:'2026-10-17',value:15}),point()])
+    expect(row).toMatchObject({delta:10,deltaPercent:100,deltaLabel:'Depuis le premier relevé'})
+  })
+  it('uses clearly labelled market averages without fabricating historical observations',()=>{
+    const [row]=buildStatsRows([], [saved()], [], [point({quotes:[{value:12,basis:'completed-sale',aggregation:'aggregate',metric:'avg7'},{value:10,basis:'completed-sale',aggregation:'aggregate',metric:'avg30'}]})])
+    expect(row).toMatchObject({delta:2,deltaPercent:20,deltaLabel:'Moy. 7 j / 30 j'})
+    expect(row.history).toHaveLength(1)
   })
 })

@@ -59,7 +59,7 @@ describe('local storage recovery', () => {
     expect(event.detail.key).toBe('pv-portfolio-v1')
   })
 
-  it('compacts derived price history before failing a collection save', () => {
+  it('reports a failed save without silently deleting another card’s history', () => {
     const { storage, values } = createStorage((key, current) => {
       if (key !== 'pv-portfolio-v1') return false
       const history = JSON.parse(current.get('price-history-v1') ?? '[]') as unknown[]
@@ -69,9 +69,9 @@ describe('local storage recovery', () => {
     const dispatchEvent = vi.fn()
     Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: storage, dispatchEvent } })
 
-    expect(writeStoredJson('pv-portfolio-v1', { schemaVersion: 1, entries: [{ manualPrice: 12.5 }] })).toBe(true)
-    expect(JSON.parse(values.get('price-history-v1')!)).toHaveLength(500)
-    expect(JSON.parse(values.get('price-history-v1')!)[499]).toEqual({ index: 799 })
-    expect(dispatchEvent.mock.calls.map(([event]) => (event as CustomEvent).type)).toEqual([STORAGE_RECOVERED_EVENT])
+    expect(writeStoredJson('pv-portfolio-v1', { schemaVersion: 1, entries: [{ manualPrice: 12.5 }] })).toBe(false)
+    expect(JSON.parse(values.get('price-history-v1')!)).toHaveLength(800)
+    expect(JSON.parse(values.get('price-history-v1')!)[0]).toEqual({ index: 0 })
+    expect(dispatchEvent.mock.calls.map(([event]) => (event as CustomEvent).type)).toEqual([STORAGE_WARNING_EVENT])
   })
 })

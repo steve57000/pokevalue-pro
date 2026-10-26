@@ -23,31 +23,43 @@ beforeEach(()=>{
  host=document.createElement('div');document.body.append(host);root=createRoot(host)
 })
 afterEach(()=>{act(()=>root.unmount());host.remove();vi.unstubAllGlobals()})
-describe('statistics navigation',()=>{
- it('keeps the same owned cards, filters and selection after navigation and asynchronous price updates',()=>{
-  act(()=>root.render(page()))
+describe('statistics navigation',async()=>{
+ it('keeps cards beyond the first fifty accessible and the selected detail aligned after price updates',async()=>{
+  const many=[...Array.from({length:60},(_,i)=>({...entries[0],cardId:`test-${i}`,name:`A${String(i).padStart(3,'0')}`})),...entries]
+  await act(async()=>root.render(createElement(PriceHistoryPage,{...props,entries:many})))
+  expect(names()).toHaveLength(20)
+  for(let i=0;i<3;i++)act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Suivant')!.click())
+  expect(names()).toEqual(['Dracaufeu','Magicarpe'])
+  act(()=>host.querySelectorAll<HTMLButtonElement>('.price-explorer-row')[1].click())
+  act(()=>recordPriceSnapshots(snapshotsFromQuotes('unrelated',collectMarketPriceQuotes({cardmarket:{trend:500}},'fr'))))
+  expect(names()).toEqual(['Dracaufeu','Magicarpe'])
+  expect(host.querySelector('.price-explorer-row[aria-pressed=true]')?.textContent).toContain('Magicarpe')
+  expect(host.querySelector('.history-detail-card h2')?.textContent).toBe('Magicarpe')
+ })
+ it('keeps the same owned cards, filters and selection after navigation and asynchronous price updates',async()=>{
+  await act(async()=>root.render(page()))
   expect(names()).toEqual(['Dracaufeu','Magicarpe'])
   const magicarpe=host.querySelectorAll<HTMLButtonElement>('.price-explorer-row')[1]
   act(()=>magicarpe.click())
   expect(host.querySelector('.history-detail-card h2')?.textContent).toBe('Magicarpe')
   expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalled()
   expect(document.activeElement).toBe(host.querySelector('.history-detail-card'))
-  act(()=>root.render(null))
+  await act(async()=>root.render(null))
   act(()=>recordPriceSnapshots(snapshotsFromQuotes('unrelated-1',collectMarketPriceQuotes({cardmarket:{trend:999}},'fr'))))
-  act(()=>root.render(page()))
+  await act(async()=>root.render(page()))
   expect(names()).toEqual(['Dracaufeu','Magicarpe'])
   expect(host.querySelector('.history-detail-card h2')?.textContent).toBe('Magicarpe')
   expect(host.querySelector('.history-current-price strong')?.textContent).toContain('31')
   expect(host.querySelectorAll('select')).toHaveLength(1) // Only the movement filter, no competing card list.
  })
- it('shows true collection counts and never chooses a promotional card for an empty collection',()=>{
-  act(()=>root.render(createElement(PriceHistoryPage,{...props,entries:[]})))
+ it('shows true collection counts and never chooses a promotional card for an empty collection',async()=>{
+  await act(async()=>root.render(createElement(PriceHistoryPage,{...props,entries:[]})))
   expect(host.textContent).toContain('Ta collection est vide')
   expect(host.querySelector('.history-detail-card')).toBeNull()
   expect(host.querySelectorAll('.history-insight-grid strong')[0].textContent).toBe('0')
  })
- it('keeps unpriced owned cards visible and distinguishes unknown from a personal zero',()=>{
-  act(()=>root.render(createElement(PriceHistoryPage,{...props,entries:[{...entries[0],manualPrice:0},{...entries[1],manualPrice:undefined}]})))
+ it('keeps unpriced owned cards visible and distinguishes unknown from a personal zero',async()=>{
+  await act(async()=>root.render(createElement(PriceHistoryPage,{...props,entries:[{...entries[0],manualPrice:0},{...entries[1],manualPrice:undefined}]})))
   expect(names()).toEqual(['Dracaufeu','Magicarpe'])
   expect(host.textContent).toContain('1/2 valorisées')
   expect(host.textContent).toContain('1 sans prix')
