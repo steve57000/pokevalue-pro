@@ -37,19 +37,53 @@ export function chooseAvailableSetId(
   return preferredId || sameSeries[0]?.id || sets[0]?.id || ''
 }
 const base = (language: string='fr') => `https://api.tcgdex.net/v2/${language}/sets`
+const CATALOG_CACHE_VERSION='v1', CATALOG_TTL_MS=30*60_000
+const requestCache=new Map<string,{savedAt:number;value:unknown}>()
+const pendingCatalogue=new Map<string,Promise<unknown>>()
+const cacheKey=(url:string)=>'pv:catalogue:'+CATALOG_CACHE_VERSION+':'+url
+function cachedCatalogue<T>(url:string):T|undefined{
+  if(import.meta.env.MODE==='test')return undefined
+  const inMemory=requestCache.get(url)
+  if(inMemory && Date.now()-inMemory.savedAt<CATALOG_TTL_MS)return inMemory.value as T
+  try{
+    const stored=sessionStorage.getItem(cacheKey(url))
+    if(!stored)return undefined
+    const parsed=JSON.parse(stored) as {savedAt:number;value:T}
+    if(Date.now()-parsed.savedAt>=CATALOG_TTL_MS)return undefined
+    requestCache.set(url,parsed)
+    return parsed.value
+  }catch{return undefined}
+}
+function rememberCatalogue(url:string,value:unknown){
+  if(import.meta.env.MODE==='test')return
+  const entry={savedAt:Date.now(),value}
+  requestCache.set(url,entry)
+  // An optional cache must never block a successful catalogue request.
+  try{sessionStorage.setItem(cacheKey(url),JSON.stringify(entry))}catch{}
+}
 async function fetchSet<T>(url: string): Promise<T> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 12_000)
-  try {
-    const response = await fetch(url, { signal: controller.signal })
-    if (!response.ok) throw new Error(`Catalogue indisponible (${response.status})`)
-    return await response.json() as T
-  } catch (error) {
-    if (controller.signal.aborted) throw new Error('Le catalogue met trop de temps à répondre. Réessaie dans un instant.')
-    throw error
-  } finally {
-    clearTimeout(timeout)
-  }
+  const cached=cachedCatalogue<T>(url)
+  if(cached!==undefined)return cached
+  const existing=pendingCatalogue.get(url)
+  if(existing)return existing as Promise<T>
+  const request=(async()=>{
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 12_000)
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok) throw new Error(`Catalogue indisponible (${response.status})`)
+      const value=await response.json() as T
+      rememberCatalogue(url,value)
+      return value
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error('Le catalogue met trop de temps à répondre. Réessaie dans un instant.')
+      throw error
+    } finally {
+      clearTimeout(timeout)
+    }
+  })().finally(()=>pendingCatalogue.delete(url))
+  pendingCatalogue.set(url,request)
+  return request
 }
 const rgbMewCards = (set: SetDetail, language: string): SetDetail => {
   if (!set?.id || !Array.isArray(set.cards)) return set
