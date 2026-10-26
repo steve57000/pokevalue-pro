@@ -152,7 +152,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
               <div className="grading-price-line"><span>{usesManual ? 'Ton prix manuel' : asian ? 'Cote locale indisponible' : 'Référence Cardmarket Europe'}</span><strong>{unitPrice === undefined ? (priceState?.status === 'loading' ? 'Chargement…' : 'Indisponible') : money(unitPrice)}</strong></div>
               <div className="grading-meta"><span>Quantité : ×{entry.quantity}</span><span>État enregistré : {conditionLabel(entry.condition)}</span><span>Score indicatif : {interest.score}/100</span></div>
               <ul>{reasons.slice(0, 3).map(reason => <li key={reason}>{reason}</li>)}</ul>
-              <Recommendation price={unitPrice}/>
+              {recommendation === 'skip' ? <p className="grading-company-recommendation">État défavorable : la gradation peut rester utile pour protéger une carte, mais la revente est à examiner avec prudence.</p> : <Recommendation price={unitPrice}/>}
               {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
               <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
             </div>
