@@ -158,3 +158,10 @@ src/
 ```
 
 PokéValue Pro est un projet indépendant, non affilié à Nintendo, Creatures, Game Freak ou The Pokémon Company.
+
+
+### Chargement du catalogue et consultation des ventes gradées
+
+La Collection affiche les cartes par groupes de 36 et charge les prix des cartes visibles en priorité, tout en conservant les prix des cartes possédées nécessaires aux totaux. Les tris par prix ou potentiel de gradation continuent à analyser l'ensemble des références filtrées. Les réponses du catalogue TCGdex sont dédupliquées et mises en cache pendant 30 minutes dans la session ; les scans éloignés du viewport restent différés.
+
+Sans API de transactions gradées autorisée, le comparateur offre des liens **eBay France et eBay international filtrés sur les annonces vendues**, par société et note exacte, ainsi qu'une recherche **PriceCharting**. Ces recherches sont des pistes à vérifier, pas des ventes individuelles automatiquement validées ni des cotations chiffrées garanties. La saisie manuelle sourcée reste disponible.
