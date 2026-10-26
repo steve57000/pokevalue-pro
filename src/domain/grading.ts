@@ -1,4 +1,5 @@
-export type GradedPrice={company:'PSA'|'BGS'|'CGC';grade:string;value:number;currency:string;source:string;updatedAt?:string}
+import type { GradingCompany } from './gradedSales'
+export type GradedPrice={company:GradingCompany;grade:string;value:number;currency:string;source:string;updatedAt?:string}
 export interface GradedPriceProvider {readonly id:string;supportsLanguage(language:string):boolean;getPrices(cardId:string,language:string):Promise<readonly GradedPrice[]>}
 export type GradingInterest={level:'high'|'medium'|'low';score:number;reasons:string[];hasRealGradedData:boolean}
 export function getGradingInterest(input:{rawPrice?:number;rarity?:string;trend?:number;avg30?:number;avg7?:number;low?:number;year?:number;gradedPrices?:readonly GradedPrice[]}):GradingInterest{
