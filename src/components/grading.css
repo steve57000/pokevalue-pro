@@ -86,3 +86,17 @@
 .grading-market-chart svg{max-width:100%;height:auto;display:block}
 .grading-market-chart small{color:var(--muted);font-size:.8rem}
 @media(max-width:700px){.grading-market-panel header{flex-direction:column}.grading-market-history{padding:8px}}
+
+
+/* Visible source state: never imply that unavailable sold prices are zero. */
+.grading-source-status{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 17px;margin:0 0 16px;border:1px solid var(--line);border-radius:15px;background:var(--panel)}
+.grading-source-indicator{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.grading-source-indicator strong{display:block;font-size:1rem;margin:0 0 5px}
+.grading-source-indicator p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.5;max-width:730px}
+.grading-source-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--muted);margin-top:7px}
+.grading-source-dot[data-status=active]{background:#2a9b67}
+.grading-source-dot[data-status=error]{background:#c75546}
+.grading-source-dot[data-status=unconfigured],.grading-source-dot[data-status=empty]{background:#cb9135}
+.grading-source-status>a{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;color:var(--brand);font-size:.85rem;text-decoration:none}
+.grading-source-status>a:hover{text-decoration:underline}
+@media(max-width:700px){.grading-source-status{flex-direction:column;align-items:flex-start;padding:12px}.grading-source-status>a{white-space:normal;margin-left:22px}}
