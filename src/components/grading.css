@@ -63,7 +63,7 @@
 @media(max-width:700px){
  .grading-comparison-heading{flex-direction:column;gap:5px}
  .grading-comparison-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
- .grading-sale-fields{grid-template-columns:repeat(2,minmax(0,1fr)}
+ .grading-sale-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
  .grading-sale-fields .grading-sale-url{grid-column:1/-1}
  .grading-comparison{padding-top:13px}
 }
