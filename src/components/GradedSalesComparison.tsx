@@ -1,4 +1,4 @@
-import {useMemo,useState} from 'react'
+import {useMemo,useState,type FormEvent} from 'react'
 import {ArrowUpRight,BarChart3,Plus,Trash2} from 'lucide-react'
 import type {CollectionEntry} from '../domain/collection'
 import {
@@ -40,7 +40,7 @@ export function GradedSalesComparison({entry,rawPrice,sales,onAdd,onRemove}:Prop
  const selectSale=(company:GradingCompany,grade:string)=>{
   setSaleCompany(company);setSaleGrade(grade);setFormVisible(true);setError('')
  }
- const submit=(event:React.FormEvent<HTMLFormElement>)=>{
+ const submit=(event:FormEvent<HTMLFormElement>)=>{
   event.preventDefault()
   const value=Number(price.replace(',','.'))
   if(!price.trim()||!Number.isFinite(value)||value<=0){setError('Saisis un prix de vente positif.');return}
