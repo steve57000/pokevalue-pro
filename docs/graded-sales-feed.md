@@ -27,10 +27,10 @@ Les 100 appels mensuels et 10/min du forfait gratuit imposent une sélection lim
 
 1. Obtenir une clé CardStand et un accord explicite sur la conservation et l'affichage sur un site public des données dérivées des ventes.
 2. Stocker la clé dans un **GitHub Actions Secret** (`CARDSTAND_API_KEY`), jamais dans le code Vite, `VITE_*`, le JSON public ni les logs.
-3. Dans une **GitHub Action planifiée**, limiter les appels, choisir les cartes prioritaires, résoudre les identifiants fournisseur et vérifier la correspondance de chaque impression. Rejeter tout résultat ambigu.
+3. Dans une **GitHub Action planifiée**, limiter les appels et sélectionner uniquement une **liste publique de cartes suivies** (sans exporter la collection privée ni les quantités possédées). Résoudre les identifiants fournisseur et vérifier la correspondance de chaque impression. Rejeter tout résultat ambigu.
 4. Transformer une réponse authentique vers le format `GradedMarketFeed` décrit par `src/domain/gradedMarket.ts` ; séparer *médiane* (agrégat) de *moyenne journalière pondérée* (historique) et de *vente unitaire*.
 5. Conserver les points de vente dans un **fichier versionné** ou un stockage persistant sous contrat. Le cache temporaire GitHub Actions n'est pas l'historique permanent. Ne jamais écraser l'historique valide sur 429, timeout ou réponse invalide.
-6. Déployer le JSON autorisé en même temps que GitHub Pages via le workflow de build, et fournir des métadonnées d'observation explicites (date, source, calcul, fenêtre, nombre de ventes).
+6. Déployer uniquement les agrégats dont la réutilisation publique a été autorisée, sous forme de JSON, en même temps que GitHub Pages via le workflow de build, et fournir des métadonnées d'observation explicites (date, source, calcul, fenêtre, nombre de ventes).
 7. Le navigateur recharge au plus une fois toutes les six heures, préserve le dernier flux valide et affiche « ancien » si la collecte date de plus de sept jours. La sauvegarde de collection et les ventes manuelles restent séparées.
 
 ## Qualité et tests d'acceptation
