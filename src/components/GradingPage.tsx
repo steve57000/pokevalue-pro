@@ -22,7 +22,7 @@ type Filter = 'all' | 'priority' | 'review'
 const MIN_GRADING_VALUE = 20
 
 export function GradingPage({ entries, onPriceHistory }: Props) {
-  const gradedMarket = useGradedMarket()
+  const {feed:gradedMarket,status:gradedSourceStatus} = useGradedMarket()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [showAllOwned, setShowAllOwned] = useState(false)
@@ -129,6 +129,30 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <button className="grading-history-link" onClick={onPriceHistory}>Ouvrir Stats et prix <ArrowUpRight size={16}/></button>
     </header>
 
+    <section className="grading-source-status" aria-live="polite" aria-label="État des prix gradés">
+      <div className="grading-source-indicator">
+        <span className="grading-source-dot" data-status={gradedSourceStatus} aria-hidden="true"/>
+        <div>
+          <strong>{gradedSourceStatus==='loading'?'Vérification des prix gradés…':
+            gradedSourceStatus==='unconfigured'?'Prix gradés automatiques non configurés':
+            gradedSourceStatus==='error'?'Source de prix gradés inaccessible':
+            gradedSourceStatus==='cached'?'Derniers prix gradés enregistrés':
+            gradedSourceStatus==='empty'?'Source connectée, sans observations':'Prix gradés automatiques disponibles'}</strong>
+          <p>{gradedSourceStatus==='unconfigured'
+            ?'Aucun fournisseur autorisé n’alimente encore les ventes réalisées. Les cases vides ne sont pas des prix à 0 €. Les liens eBay permettent de documenter des ventes manuellement.'
+            :gradedSourceStatus==='error'
+              ?'Le flux de données n’a pas pu être lu. Aucun prix n’est inventé ; les ventes que tu as enregistrées sont conservées.'
+              :gradedSourceStatus==='cached'
+                ?'Le flux actuel ne fournit plus de données. Les dernières observations locales sont conservées et datées ; elles peuvent être anciennes.'
+                :gradedSourceStatus==='active'
+                  ?gradedMarket.quotes.length+' combinaisons carte / société / note suivies. Les cartes non couvertes restent sans cote.'
+                  :gradedSourceStatus==='empty'
+                    ?'Le flux répond, mais il ne contient encore aucune cotation gradée.'
+                    :'Vérification du fichier de marché en cours.'}</p>
+        </div>
+      </div>
+      <a href="https://github.com/steve57000/pokevalue-pro/blob/main/docs/graded-sales-feed.md" target="_blank" rel="noreferrer">Comprendre la connexion <ArrowUpRight size={15}/></a>
+    </section>
     <div className="grading-summary">
       <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Prix ≥ {money(MIN_GRADING_VALUE)} ou rareté majeure à vérifier</span></article>
       <article className="is-priority"><small>À examiner en priorité</small><strong>{counts.priority}</strong><span>Signaux de marché élevés</span></article>
