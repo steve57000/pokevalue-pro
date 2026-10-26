@@ -14,7 +14,7 @@ type Props={
  onAdd:(item:GradedSale)=>boolean
  onRemove:(id:string)=>void
 }
-const groupOptions=['10','9.5','9','8','7'] as const
+const groupOptions=['10','9.5','9','8.5','8','7.5','7','6.5','6','5.5','5','4.5','4','3.5','3','2.5','2','1.5','1'] as const
 const defaultCompany:GradingCompany='PSA'
 
 export function GradedSalesComparison({entry,rawPrice,sales,onAdd,onRemove}:Props){
