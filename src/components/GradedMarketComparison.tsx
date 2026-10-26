@@ -11,7 +11,7 @@ function History({quote}:{quote:GradedMarketQuote}){
  if(!points.length)return <p className="grading-comparison-empty">Pas encore de points de ventes datés pour cette combinaison.</p>
  const min=Math.min(...points.map(p=>p.averageEur)),max=Math.max(...points.map(p=>p.averageEur))
  const low=min===max?min*.95:min,high=max===min?max*1.05:max
- const last=points.at(-1)!
+ const last=points[points.length-1]!
  const start=Date.parse(points[0].date),end=Date.parse(last.date)
  const x=(date:string)=>36+((Date.parse(date)-start)/(end-start||1))*524
  const y=(price:number)=>160-(price-low)/(high-low||1)*124
