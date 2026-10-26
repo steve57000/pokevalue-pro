@@ -66,6 +66,16 @@ de récupération ; **Import JSON** restaure un document versionné.
 3. Cliquer **Vérifier et charger** avant toute modification locale.
 4. Vérifier le compte affiché et les cartes restaurées, effectuer les changements, puis sauvegarder.
 
+## Comparateur de gradation
+
+Dans **Gradation**, sélectionner une carte puis **Comparer les ventes gradées**. Le tableau compare séparément PSA, PCA, CCC, CollectAura, BGS et CGC, par note exacte (les labels 10 premium ne sont pas fusionnés). Il affiche, pour chaque combinaison carte / impression / langue / société / note, les ventes saisies avec leur preuve, la médiane, la fourchette et la date la plus récente, sur 90 ou 365 jours.
+
+Les liens **eBay vendus** ouvrent une recherche de transactions : **les prix eBay ne sont pas importés automatiquement**. Une annonce active, une estimation et un prix affiché ne constituent pas une vente constatée. Pour enregistrer une observation, vérifier que la transaction est conclue, puis saisir son prix en EUR hors port, sa date et une URL justificative. Avec moins de trois observations, le tableau signale un échantillon réduit. Aucun prix n'est inventé lorsque les observations manquent.
+
+La **prime nette** compare la médiane gradée à la valeur brute locale après saisie des frais totaux par société et de la commission de vente ; elle reste vide si l'une des valeurs manque. Le calcul n'est pas une prédiction de note ni un conseil de rentabilité garanti.
+
+Les observations sont enregistrées sous `pv-graded-sales-v1` dans le **stockage local du navigateur**, indépendamment des sauvegardes de collection et de l'historique Cardmarket. Utiliser **Exporter les ventes** pour une sauvegarde JSON et **Importer des ventes** pour les restaurer ailleurs. Aucune synchronisation distante ni API secrète n'a été ajoutée : une intégration de prix gradés automatiquement actualisés nécessiterait une source licenciée et la gestion sécurisée de ses identifiants, à discuter avant toute création de backend.
+
 ## Fonctionnement du scanner
 
 1. Le navigateur demande explicitement l’autorisation d’utiliser la caméra.
