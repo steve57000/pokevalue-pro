@@ -76,8 +76,10 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   ])) as Record<typeof languages[number], string[]>
   const fr = useCardPrices(idsByLanguage.fr, 'fr')
   const en = useCardPrices(idsByLanguage.en, 'en')
-  const ja = useCardPrices(idsByLanguage.ja, 'ja')
-  const zh = useCardPrices(idsByLanguage['zh-tw'], 'zh-tw')
+  // TCGdex has no local graded or raw-market source for these print languages.
+  // Fetching every Asian card only adds latency without yielding a compatible reference.
+  const ja = useCardPrices([], 'ja')
+  const zh = useCardPrices([], 'zh-tw')
   const priceMaps = { fr, en, ja, 'zh-tw': zh }
 
   const candidates = owned.map(entry => {
@@ -191,7 +193,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
               {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
               <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
             </div>
-            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot"><GradedMarketComparison entry={entry} feed={gradedMarket}/><GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
+            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot">{gradedMarket.quotes.some(quote=>quote.cardKey===entry.key)&&<GradedMarketComparison entry={entry} feed={gradedMarket}/>}<GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
           </article>
         })}</div>}
     </section>
