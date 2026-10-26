@@ -52,8 +52,16 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
     if (!file) return
     try {
       const imported = parseGradedSales(JSON.parse(await file.text()))
-      const known = new Set(gradedSales.map(item => item.id))
-      persistSales([...gradedSales, ...imported.filter(item => !known.has(item.id))])
+      const knownIds = new Set(gradedSales.map(item => item.id))
+      const knownSales = new Set(gradedSales.map(item => [item.cardKey,item.company,item.grade,item.sourceUrl].join('|')))
+      const additions = imported.filter(item => {
+        const sourceKey = [item.cardKey,item.company,item.grade,item.sourceUrl].join('|')
+        if (knownIds.has(item.id) || knownSales.has(sourceKey)) return false
+        knownIds.add(item.id)
+        knownSales.add(sourceKey)
+        return true
+      })
+      persistSales([...gradedSales, ...additions])
     } catch (caught) {
       setSaleStorageError(caught instanceof Error ? caught.message : 'Import impossible : fichier invalide.')
     }
