@@ -1,5 +1,8 @@
 # Flux des ventes gradées — état et conditions d’activation (octobre 2026)
 
+> **Décision actuelle : consultation externe gratuite uniquement.** Chaque carte propose des recherches eBay *vendues et terminées* distinctes par société de gradation et note exacte (France / international), ainsi qu'une recherche PriceCharting pour consulter les guides et historiques disponibles. Ce sont des liens vers des **résultats à vérifier**, jamais des observations validées et enregistrées dans PokeValue Pro. Aucun backend, abonnement, clé ou scraping n'est activé. La saisie manuelle sourcée reste facultative. Le reste du document décrit une étude d'architecture reportée.
+
+
 > **État vérifié le 26 octobre 2026 : source non connectée.** Le fichier `public/data/graded-market.json` contient `status: "unconfigured"` et zéro cote. Il n'y a actuellement **aucun prix gradé automatique dans le site**. Le lecteur de données et le cache sont prêts, mais ils n'interrogent aucun fournisseur ; les liens eBay ne remplissent pas les tableaux.
 >
 > **Licence CardStand :** les [conditions de son API](https://www.cardstand.app/developers/terms) interdisent notamment la constitution d'une base de prix concurrente et limitent le cache. PokeValue Pro étant un catalogue public avec statistiques de prix, **ne pas activer CardStand sans accord explicite couvrant cet usage.**

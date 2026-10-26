@@ -3,7 +3,7 @@ import type {SetCard} from '../api/sets'
 import {tcgDexProvider} from '../api/tcgdex'
 import {buildMepPromoImage,normalizeImageLanguage,resolveCardImage,setIdFromCardId,type ResolvedCardImage} from '../domain/image'
 import type {ExternalCard} from '../domain/cards'
-type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string}
+type Props={card:SetCard;quality?:'low'|'high';className?:string;requestedLanguage?:string;priority?:boolean}
 type CacheEntry={status:'pending'|'resolved'|'missing';promise?:Promise<ResolvedCardImage>;image?:ResolvedCardImage;expiresAt?:number}
 const imageCache=new Map<string,CacheEntry>()
 export const imageFallbackOrder=(requested:string)=>{const language=normalizeImageLanguage(requested);return language==='fr'?['fr','en']:language==='en'?['en','fr']:language==='ja'?['ja','en']:['zh-tw','en']}
@@ -243,16 +243,16 @@ function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejecte
  return promise
 }
 const retryUrl=(url:string,attempt:number)=>attempt?url+(url.includes('?')?'&':'?')+'pvRetry='+attempt:url
-export function CatalogueImage({card,quality='low',className='',requestedLanguage='fr'}:Props){
- const [image,setImage]=useState<ResolvedCardImage>(),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high'),[assetLoaded,setAssetLoaded]=useState(false),[rejectedUrls,setRejectedUrls]=useState<string[]>([]),[retryAttempt,setRetryAttempt]=useState(0),[retryNonce,setRetryNonce]=useState(0)
- useEffect(()=>{if(quality==='high'||typeof IntersectionObserver==='undefined'){setVisible(true);return}const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality])
+export function CatalogueImage({card,quality='low',className='',requestedLanguage='fr',priority=false}:Props){
+ const [image,setImage]=useState<ResolvedCardImage>(),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high'||priority),[assetLoaded,setAssetLoaded]=useState(false),[rejectedUrls,setRejectedUrls]=useState<string[]>([]),[retryAttempt,setRetryAttempt]=useState(0),[retryNonce,setRetryNonce]=useState(0)
+ useEffect(()=>{if(quality==='high'||priority||typeof IntersectionObserver==='undefined'){setVisible(true);return}const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality,priority])
  useEffect(()=>{let active=true;setImage(undefined);setAssetLoaded(false);if(!visible)return
   const rejected=new Set(rejectedUrls)
   cachedResolve(card,requestedLanguage,quality,rejected).then(value=>{if(active){setRetryAttempt(0);setImage(value)}})
   return()=>{active=false}
  },[card.id,card.image,card.localId,card.name,requestedLanguage,quality,visible,rejectedUrls,retryNonce])
  useEffect(()=>{if(!image||image.url)return
-  const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},20_000)
+  const timer=window.setTimeout(()=>{setRejectedUrls([]);setRetryAttempt(0);setRetryNonce(value=>value+1)},60_000)
   return()=>window.clearTimeout(timer)
  },[image,card.id])
  const show=image?.url
@@ -264,7 +264,7 @@ export function CatalogueImage({card,quality='low',className='',requestedLanguag
   setRejectedUrls(current=>current.includes(failed)?current:[...current,failed])
   setRetryAttempt(0)
  }
- useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},3500);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
- return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'?'eager':'lazy'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
+ useEffect(()=>{if(!show||assetLoaded||!visible)return;const timer=window.setTimeout(()=>{const failed=cleanUrl(show);setRejectedUrls(current=>current.includes(failed)?current:[...current,failed]);setRetryAttempt(0)},12_000);return()=>window.clearTimeout(timer)},[show,assetLoaded,visible,retryAttempt])
+ return <div ref={container} className={'catalogue-image '+className}>{show?<><img src={retryUrl(show,retryAttempt)} alt={card.name+' '+card.localId+(image.isFallback?' — visuel '+image.language.toUpperCase():'')} loading={quality==='high'||priority?'eager':'lazy'} fetchPriority={priority?'high':'auto'} draggable={false} referrerPolicy="no-referrer" decoding="async" onLoad={()=>setAssetLoaded(true)} onError={failImage}/>{!assetLoaded&&<div className="catalogue-image-loading" role="status"><span className="pv-spinner" aria-hidden="true"/><span>Chargement du visuel…</span></div>}</>:<div className="catalogue-image-empty"><strong>{card.name}</strong><span>Nº {card.localId}</span><small>{!visible?'Le visuel se chargera automatiquement à l’affichage':image?'Visuel indisponible — nouvelle tentative automatique':<span className="loading-feedback"><span className="pv-spinner" aria-hidden="true"/>Chargement du visuel…</span>}</small></div>}{image?.isFallback&&show&&<small className="image-language">Visuel {image.language==='ja'?'JP':image.language.toUpperCase()}</small>}</div>
 }
 export const clearImageCacheForTests=()=>imageCache.clear()

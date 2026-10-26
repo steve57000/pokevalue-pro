@@ -4,6 +4,14 @@ import { chooseAvailableSetId, filterLocalizedSets, getSet, getSeries, listSets,
 afterEach(() => vi.unstubAllGlobals())
 
 describe('localized set catalogue', () => {
+  it('coalesces overlapping TCGdex requests to the same catalogue endpoint', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [] }) as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    const [first, second] = await Promise.all([listSets('fr'), listSets('fr')])
+    expect(first).toEqual(second)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('requests the selected language for set, series and set list', async () => {
     const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => url.includes('/series/') ? { id: 'sv', name: 'Scarlet & Violet', sets: [] } : [] }) as Response)
     vi.stubGlobal('fetch', fetchMock)

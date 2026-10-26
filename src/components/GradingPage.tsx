@@ -76,8 +76,10 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   ])) as Record<typeof languages[number], string[]>
   const fr = useCardPrices(idsByLanguage.fr, 'fr')
   const en = useCardPrices(idsByLanguage.en, 'en')
-  const ja = useCardPrices(idsByLanguage.ja, 'ja')
-  const zh = useCardPrices(idsByLanguage['zh-tw'], 'zh-tw')
+  // TCGdex has no local graded or raw-market source for these print languages.
+  // Fetching every Asian card only adds latency without yielding a compatible reference.
+  const ja = useCardPrices([], 'ja')
+  const zh = useCardPrices([], 'zh-tw')
   const priceMaps = { fr, en, ja, 'zh-tw': zh }
 
   const candidates = owned.map(entry => {
@@ -129,7 +131,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <button className="grading-history-link" onClick={onPriceHistory}>Ouvrir Stats et prix <ArrowUpRight size={16}/></button>
     </header>
 
-    <section className="grading-source-status" aria-live="polite" aria-label="État des prix gradés">
+    {gradedSourceStatus!=='unconfigured'&&<section className="grading-source-status" aria-live="polite" aria-label="État des prix gradés">
       <div className="grading-source-indicator">
         <span className="grading-source-dot" data-status={gradedSourceStatus} aria-hidden="true"/>
         <div>
@@ -152,14 +154,14 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
         </div>
       </div>
       <a href="https://github.com/steve57000/pokevalue-pro/blob/main/docs/graded-sales-feed.md" target="_blank" rel="noreferrer">Comprendre la connexion <ArrowUpRight size={15}/></a>
-    </section>
+    </section>}
     <div className="grading-summary">
       <article><small>Cartes éligibles</small><strong>{candidates.length}</strong><span>Prix ≥ {money(MIN_GRADING_VALUE)} ou rareté majeure à vérifier</span></article>
       <article className="is-priority"><small>À examiner en priorité</small><strong>{counts.priority}</strong><span>Signaux de marché élevés</span></article>
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Les données gradées sont présentées par source : observations personnelles enregistrées localement et éventuelles cotes externes issues d’un flux daté. Aucune valeur n’est inventée lorsqu’une source ne répond pas. La note future n’est jamais garantie.</p></aside>
+    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
     <div className="grading-data-actions">
       <button type="button" onClick={exportSales}>Exporter les ventes ({gradedSales.length})</button>
       <label>Importer des ventes (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
@@ -191,7 +193,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
               {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
               <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
             </div>
-            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot"><GradedMarketComparison entry={entry} feed={gradedMarket}/><GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
+            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot">{gradedMarket.quotes.some(quote=>quote.cardKey===entry.key)&&<GradedMarketComparison entry={entry} feed={gradedMarket}/>}<GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
           </article>
         })}</div>}
     </section>
