@@ -1,6 +1,7 @@
 import type { MarketPriceQuote, PriceBasis, PrintingLanguage, QuoteAggregation, QuoteVariant } from './pricing'
 import { writeStoredJson } from '../utils/storage'
 import { isAsianCatalogLanguage } from './pricing'
+import { openPriceHistoryDatabase, readPriceHistoryDatabase, mergePriceHistoryDatabase } from '../services/priceHistoryDatabase'
 
 /** `language` remains the selected catalog language for backwards compatibility. */
 export type PriceMetricSnapshot = {
@@ -37,6 +38,72 @@ export type PriceHistoryDocument = { schemaVersion: 2; updatedAt: string; snapsh
 export type PriceHistoryStorage = Pick<Storage, 'getItem' | 'setItem'>
 export const PRICE_HISTORY_STORAGE_KEY = 'price-history-v1'
 const MAX = 20000
+let memoryHistory: PriceSnapshot[] | undefined
+let ready: Promise<void> | undefined
+let database: IDBDatabase | undefined
+let pendingWrite: Promise<void> | undefined
+let dirty = false
+export type HistoryPersistence = 'loading' | 'saving' | 'saved' | 'error' | 'local'
+let persistence: HistoryPersistence = 'local'
+export const getHistoryPersistence = () => persistence
+function persistenceChanged(value: HistoryPersistence) {
+  persistence = value
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('pv-history-persistence'))
+}
+function normalizedRows(value: unknown): PriceSnapshot[] {
+  return Array.isArray(value) ? value.map(row => normalizeSnapshot(row)).filter((row): row is PriceSnapshot => Boolean(row)) : []
+}
+
+export function ensurePriceHistoryReady(): Promise<void> {
+  if (ready) return ready
+  if (typeof indexedDB === 'undefined' || typeof localStorage === 'undefined') return Promise.resolve()
+  memoryHistory = readHistory(localStorage)
+  persistenceChanged('loading')
+  ready = (async () => {
+    try {
+      database = await openPriceHistoryDatabase()
+      const saved = await readPriceHistoryDatabase(database)
+      memoryHistory = mergePriceHistory(memoryHistory ?? [], normalizedRows(saved))
+      announceHistoryChange()
+    } catch { persistenceChanged('error') }
+  })()
+  return ready
+}
+
+export async function flushPriceHistory(): Promise<void> {
+  await ensurePriceHistoryReady()
+  if (pendingWrite) return pendingWrite
+  pendingWrite = (async () => {
+    while (dirty) {
+      dirty = false
+      persistenceChanged('saving')
+      try {
+        if (!database) throw new Error('Stockage des prix indisponible')
+        const saved = await mergePriceHistoryDatabase(database, memoryHistory ?? [], (stored, incoming) => mergePriceHistory(incoming, normalizedRows(stored)))
+        const combined = mergePriceHistory(memoryHistory ?? [], saved)
+        if (!samePriceHistory(combined, memoryHistory ?? [])) { memoryHistory = combined; announceHistoryChange() }
+        // Remove the old copy only after the entire migration transaction commits.
+        localStorage.removeItem(PRICE_HISTORY_STORAGE_KEY)
+        persistenceChanged('saved')
+      } catch {
+        // Keep all prices in memory and preserve the previous durable copy on failure.
+        writeStoredJson(PRICE_HISTORY_STORAGE_KEY, memoryHistory ?? [])
+        persistenceChanged('error')
+      }
+    }
+  })().finally(() => { pendingWrite = undefined })
+  return pendingWrite
+}
+
+export async function initializePriceHistory() {
+  await ensurePriceHistoryReady()
+  if (memoryHistory !== undefined) { dirty = true; await flushPriceHistory() }
+}
+
+export async function retryPriceHistoryPersistence() {
+  if (!database) ready = undefined
+  await initializePriceHistory()
+}
 const quoteBases = new Set<PriceBasis>(['listing', 'guide', 'completed-sale', 'unknown'])
 const quoteAggregations = new Set<QuoteAggregation>(['single', 'aggregate', 'unknown'])
 const quoteVariants = new Set<QuoteVariant>(['normal', 'holofoil', 'reverse-holofoil', 'unknown'])
@@ -205,6 +272,7 @@ export function samePriceHistory(a: PriceSnapshot[], b: PriceSnapshot[]) {
 }
 
 function readHistory(storage: Pick<Storage, 'getItem'>): PriceSnapshot[] {
+  if (usesBrowserStorage(storage) && memoryHistory !== undefined) return memoryHistory
   try {
     const parsed = JSON.parse(storage.getItem(PRICE_HISTORY_STORAGE_KEY) ?? '[]')
     if (!Array.isArray(parsed)) return []
@@ -215,12 +283,19 @@ function readHistory(storage: Pick<Storage, 'getItem'>): PriceSnapshot[] {
 function saveHistory(history: PriceSnapshot[], storage: PriceHistoryStorage) {
   const merged = mergePriceHistory(history)
   if (usesBrowserStorage(storage)) {
+    if (typeof indexedDB !== 'undefined') {
+      void ensurePriceHistoryReady()
+      memoryHistory = merged
+      dirty = true
+      void flushPriceHistory()
+      return
+    }
     if (!writeStoredJson(PRICE_HISTORY_STORAGE_KEY, merged)) throw new Error('Échec de sauvegarde de l’historique de prix local')
     return
   }
   storage.setItem(PRICE_HISTORY_STORAGE_KEY, JSON.stringify(merged))
 }
-function usesBrowserStorage(storage: PriceHistoryStorage) { return typeof window !== 'undefined' && storage === window.localStorage }
+function usesBrowserStorage(storage: Pick<Storage, 'getItem'>) { return typeof window !== 'undefined' && storage === window.localStorage }
 function announceHistoryChange() { if (typeof window !== 'undefined') window.dispatchEvent(new Event('pv-price-history-updated')) }
 
 export function recordPriceSnapshots(snapshots: PriceSnapshot[], storage: PriceHistoryStorage = localStorage) {
@@ -240,7 +315,7 @@ export function recordPriceSnapshot(snapshot: PriceSnapshot, storage: PriceHisto
 }
 
 export function replacePriceHistory(history: PriceSnapshot[], storage: PriceHistoryStorage = localStorage, notify = true) {
-  const next = mergePriceHistory(history), before = readHistory(storage)
+  const before = readHistory(storage), next = mergePriceHistory(before, history)
   if (!samePriceHistory(before, next)) { saveHistory(next, storage); if (notify && usesBrowserStorage(storage)) announceHistoryChange() }
 }
 

@@ -16,8 +16,9 @@ function readFilters(): Filters {
 }
 export function PriceHistoryExplorer({ rows, selectedKey, onSelect }: Props) {
   const [filters, setFilters] = useState(readFilters)
-  const [limit, setLimit] = useState(50)
-  const update = (next: Filters) => { setFilters(next); setLimit(50); writeStoredJson(STORAGE_KEY, next, 'session') }
+  const [page, setPage] = useState(0)
+  const pageSize = 20
+  const update = (next: Filters) => { setFilters(next); setPage(0); writeStoredJson(STORAGE_KEY, next, 'session') }
   const { ownedOnly, missingOnly, movement, min, max, search } = filters
   const invalidRange = min !== '' && max !== '' && Number(min) > Number(max)
   const shown = rows.filter(row => (!ownedOnly || row.owned > 0)
@@ -26,6 +27,8 @@ export function PriceHistoryExplorer({ rows, selectedKey, onSelect }: Props) {
     && (min === '' || row.value !== undefined && row.value >= Number(min))
     && (max === '' || row.value !== undefined && row.value <= Number(max))
     && (movement === 'all' || row.delta !== undefined && (movement === 'changed' ? row.delta !== 0 : movement === 'up' ? row.delta > 0 : row.delta < 0)))
+  const pages = Math.max(1,Math.ceil(shown.length/pageSize)), currentPage = Math.min(page,pages-1)
+  const pagination = <nav className="stats-pagination" aria-label="Pages des cartes"><button disabled={currentPage===0} onClick={()=>setPage(currentPage-1)}>Précédent</button><span>{shown.length ? `${currentPage*pageSize+1}–${Math.min(shown.length,(currentPage+1)*pageSize)} sur ${shown.length}` : '0 carte'}</span><button disabled={currentPage+1===pages} onClick={()=>setPage(currentPage+1)}>Suivant</button></nav>
   return <section className="price-explorer" aria-labelledby="price-explorer-title">
     <header className="price-explorer-heading"><div><span className="eyebrow"><SlidersHorizontal size={14}/> Explorer</span><h2 id="price-explorer-title">Mes cartes</h2></div><strong role="status">{shown.length} carte{shown.length === 1 ? '' : 's'}</strong></header>
     <label className="history-search"><Search size={18}/><input aria-label="Rechercher dans les statistiques" placeholder="Pokémon, extension ou numéro…" value={search} onChange={event => update({ ...filters, search: event.target.value })}/></label>
@@ -39,13 +42,14 @@ export function PriceHistoryExplorer({ rows, selectedKey, onSelect }: Props) {
     {invalidRange && <p role="alert" className="negative">Le maximum doit être supérieur ou égal au minimum.</p>}
     {(!ownedOnly || missingOnly || movement !== 'all' || min || max || search) && <button className="stats-reset" onClick={() => update(defaults)}>Réinitialiser les filtres</button>}
     {!ownedOnly && <p className="stats-hint">Collection, favoris et sélection PokéValue.</p>}
+    {pagination}
     <div className="price-explorer-list">
-      {shown.slice(0, limit).map(row => <button key={row.key} className={`price-explorer-row${selectedKey === row.key ? ' selected' : ''}`} aria-pressed={selectedKey === row.key} onClick={() => onSelect(row.key)}>
+      {shown.slice(currentPage*pageSize, (currentPage+1)*pageSize).map(row => <button key={row.key} className={`price-explorer-row${selectedKey === row.key ? ' selected' : ''}`} aria-pressed={selectedKey === row.key} aria-controls="stats-card-detail" onClick={() => onSelect(row.key)}>
         <span><strong>{row.name}</strong><small>{row.setName}{row.number ? ` · nº ${row.number}` : ''} · {row.language.toUpperCase()}{row.variant !== 'normal' ? ` · ${row.variant}` : ''}{row.owned ? ` · ×${row.owned}` : ''}</small></span>
-        <span className="price-explorer-values"><strong>{row.value === undefined ? '—' : money(row.value)}</strong>{row.manual && <small>Prix personnel</small>}{row.delta !== undefined && <small className={row.delta > 0 ? 'positive' : row.delta < 0 ? 'negative' : ''}>{row.delta > 0 ? <TrendingUp size={15}/> : row.delta < 0 ? <TrendingDown size={15}/> : null}{row.delta > 0 ? '+' : ''}{money(row.delta)} <span className="sr-only">sur le marché</span></small>}</span>
+        <span className="price-explorer-values"><strong>{row.value === undefined ? '—' : money(row.value)}</strong>{row.manual && <small>Prix personnel</small>}{row.delta !== undefined && <><small className={row.delta > 0 ? 'positive' : row.delta < 0 ? 'negative' : ''}>{row.delta > 0 ? <TrendingUp size={15}/> : row.delta < 0 ? <TrendingDown size={15}/> : null}{row.delta > 0 ? '+' : ''}{row.deltaPercent?.toFixed(1)} %</small><small>{row.deltaLabel}</small></>}</span>
       </button>)}
     </div>
-    {shown.length > limit && <button className="stats-load-more" onClick={() => setLimit(value => value + 50)}>Afficher la suite · {shown.length - limit} restantes</button>}
+    {shown.length>pageSize && pagination}
     {!shown.length && <div className="history-empty"><Search size={24}/><strong>{rows.some(row => row.owned) ? 'Aucune carte avec ces filtres' : 'Ta collection est vide'}</strong><p>{rows.some(row => row.owned) ? 'Élargis ta recherche ou réinitialise les filtres.' : 'Ajoute tes cartes depuis Collection pour les retrouver ici.'}</p></div>}
   </section>
 }

@@ -34,6 +34,7 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   const writingRef = useRef(false)
   const dirtyRef = useRef(false)
   const lastSavedRef = useRef('')
+  const generationRef = useRef(0)
   documentRef.current = document
   connectionRef.current = connection
   shaRef.current = sha
@@ -44,34 +45,34 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   }, [connection, remember])
 
   const connect = useCallback(async () => {
+    const generation = ++generationRef.current
     const candidate = { ...connectionRef.current }
     connectedRef.current = false; hydratedRef.current = false; activeConnectionRef.current = null
     setConnected(false); setActiveConnection(null)
     setStatus('pending'); setMessage('Chargement de la sauvegarde distante…')
     try {
       const remote = await readRemotePortfolio(candidate)
-      if (remote.document && documentRef.current.entries.some(e => e.quantity > 0) && JSON.stringify(documentRef.current) !== JSON.stringify(remote.document)) {
-        if (!window.confirm('Une collection locale existe. Charger celle de GitHub et remplacer la copie locale ? Exportez-la d’abord si vous souhaitez la conserver.')) {
-          setStatus('local'); setMessage('Collection locale conservée ; connexion annulée'); return
-        }
-      }
+      if (generation !== generationRef.current) return
       setAccount(remote.login); setSha(remote.sha); shaRef.current = remote.sha
       connectedRef.current = true; hydratedRef.current = true
       activeConnectionRef.current = candidate; setActiveConnection(candidate); setConnected(true)
-      const next = remote.document ?? documentRef.current
-      lastSavedRef.current = JSON.stringify(next)
-      if (remote.document) onChange(remote.document)
+      const next = remote.document ? mergeCollections(documentRef.current, remote.document) : documentRef.current
+      lastSavedRef.current = JSON.stringify(remote.document ?? emptyCollection())
+      documentRef.current = next
+      onChange(next)
       const now = new Date(); setLastSavedAt(remote.document ? now : undefined)
       setStatus(remote.document ? 'saved' : 'local')
       setMessage(remote.document ? `Chargée depuis GitHub · ${now.toLocaleString('fr-FR')}` : 'Aucune sauvegarde distante ; le prochain changement sera enregistré')
     } catch (error) {
+      if (generation !== generationRef.current) return
       connectedRef.current = false; activeConnectionRef.current = null; setConnected(false); setActiveConnection(null); setStatus('error'); setMessage((error as Error).message)
     }
   }, [onChange])
 
-  const flush = useCallback(async () => {
+  const flush = useCallback(async (): Promise<void> => {
     if (!connectedRef.current || writingRef.current || !dirtyRef.current) return
     writingRef.current = true; setStatus('pending'); setMessage('Sauvegarde GitHub en cours…')
+    const generation = generationRef.current
     try {
       while (dirtyRef.current && connectedRef.current) {
         dirtyRef.current = false
@@ -79,16 +80,18 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
         const activeConnection = activeConnectionRef.current
         if (!activeConnection) throw new Error('Reconnecte le dépôt privé avant la sauvegarde.')
         const result = await writeRemotePortfolio(activeConnection, snapshot, shaRef.current)
+        if (generation !== generationRef.current) return
         shaRef.current = result.content.sha; setSha(result.content.sha)
         lastSavedRef.current = JSON.stringify(snapshot)
         if (JSON.stringify(documentRef.current) !== lastSavedRef.current) dirtyRef.current = true
       }
       const now = new Date(); setLastSavedAt(now); setStatus('saved'); setMessage(`Sauvegardé automatiquement · ${now.toLocaleString('fr-FR')}`)
     } catch (error) {
+      if (generation !== generationRef.current) return
       dirtyRef.current = true
       const code = (error as { status?: number }).status
       setStatus(code === 409 || code === 422 ? 'conflict' : 'error'); setMessage((error as Error).message)
-    } finally { writingRef.current = false }
+    } finally { writingRef.current = false; if(generation!==generationRef.current&&connectedRef.current&&dirtyRef.current)void flush() }
   }, [])
 
   useEffect(() => {
@@ -101,10 +104,12 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   }, [document, flush])
 
   const resolveConflict = useCallback(async () => {
+    const generation = generationRef.current
     try {
       const activeConnection = activeConnectionRef.current
       if (!activeConnection) throw new Error('Reconnecte le dépôt privé avant la fusion.')
       const remote = await readRemotePortfolio(activeConnection)
+      if (generation !== generationRef.current) return
       shaRef.current = remote.sha; setSha(remote.sha)
       const merged = mergeCollections(documentRef.current, remote.document ?? emptyCollection())
       dirtyRef.current = true; documentRef.current = merged; onChange(merged); await flush()
@@ -112,6 +117,7 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   }, [flush, onChange])
 
   const disconnect = () => {
+    generationRef.current++
     connectedRef.current = false; hydratedRef.current = false; activeConnectionRef.current = null; setConnected(false); setActiveConnection(null); setAccount(''); setConnection(blankConnection)
     setRemember(false); setSha(undefined); setStatus('local'); setMessage('Déconnecté')
   }

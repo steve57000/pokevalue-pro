@@ -1,82 +1,62 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAllPriceHistory, mergePriceHistory, replacePriceHistory, samePriceHistory } from '../domain/priceHistory'
-import type { PriceSnapshot } from '../domain/priceHistory'
+import { useEffect, useRef, useState } from 'react'
+import { ensurePriceHistoryReady, getAllPriceHistory, mergePriceHistory, replacePriceHistory, samePriceHistory } from '../domain/priceHistory'
 import { readRemotePriceHistory, writeRemotePriceHistory, type GitHubConnection } from '../services/githubSync'
 
 export type PriceHistorySyncStatus = 'local' | 'pending' | 'saved' | 'error'
-
 export function useGitHubPriceHistorySync(connection: GitHubConnection | null) {
-  const [status, setStatus] = useState<PriceHistorySyncStatus>(connection ? 'pending' : 'local')
-  const [message, setMessage] = useState(connection
-    ? 'Chargement de l’historique du dépôt privé…'
-    : 'Historique local uniquement · relie le dépôt privé dans Sauvegarde pour le retrouver sur tes appareils.')
+  const [status, setStatus] = useState<PriceHistorySyncStatus>('local')
+  const [message, setMessage] = useState('Historique enregistré sur cet appareil.')
   const [lastSavedAt, setLastSavedAt] = useState<Date>()
-  const runningRef = useRef(false)
-  const needsSyncRef = useRef(false)
-
-  const sync = useCallback(async () => {
-    if (!connection) {
-      setStatus('local')
-      setMessage('Historique local uniquement · relie le dépôt privé dans Sauvegarde pour le retrouver sur tes appareils.')
-      return
-    }
-    needsSyncRef.current = true
-    if (runningRef.current) return
-    runningRef.current = true
-    setStatus('pending')
-    setMessage('Synchronisation de l’historique des prix…')
-    try {
-      while (needsSyncRef.current) {
-        needsSyncRef.current = false
-        let synchronized = false
-        for (let attempt = 0; attempt < 3 && !synchronized; attempt += 1) {
-          const remote = await readRemotePriceHistory(connection)
-          const remoteSnapshots: PriceSnapshot[] = remote.document?.snapshots ?? []
-          const localSnapshots = getAllPriceHistory()
-          const merged = mergePriceHistory(localSnapshots, remoteSnapshots)
-          if (samePriceHistory(merged, remoteSnapshots)) {
-            replacePriceHistory(merged)
-            synchronized = true
-            break
-          }
-          try {
-            await writeRemotePriceHistory(connection, merged, remote.sha)
-            replacePriceHistory(merged)
-            synchronized = true
-          } catch (error) {
-            const code = (error as { status?: number }).status
-            if ((code === 409 || code === 422) && attempt < 2) continue
-            throw error
-          }
-        }
-        if (!synchronized) throw new Error('Conflit GitHub : impossible de fusionner l’historique après trois tentatives.')
-      }
-      const now = new Date()
-      setLastSavedAt(now)
-      setStatus('saved')
-      setMessage(getAllPriceHistory().length
-        ? `Historique sauvegardé dans le dépôt privé · ${now.toLocaleString('fr-FR')}`
-        : 'Dépôt privé connecté · le fichier sera créé au premier relevé de prix.')
-    } catch (error) {
-      setStatus('error')
-      setMessage((error as Error).message)
-    } finally {
-      runningRef.current = false
-      if (needsSyncRef.current) void sync()
-    }
-  }, [connection])
-
+  const retryRef = useRef<() => void>(() => {})
   useEffect(() => {
     if (!connection) {
-      setStatus('local')
-      setMessage('Historique local uniquement · relie le dépôt privé dans Sauvegarde pour le retrouver sur tes appareils.')
+      setStatus('local'); setMessage('Historique enregistré sur cet appareil.')
+      retryRef.current = () => {}
       return
     }
-    const onHistoryUpdate = () => { void sync() }
-    window.addEventListener('pv-price-history-updated', onHistoryUpdate)
+    let cancelled = false, running = false, requested = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const sync = async () => {
+      requested = true
+      if (running || cancelled) return
+      running = true
+      setStatus('pending'); setMessage('Synchronisation des prix…')
+      try {
+        await ensurePriceHistoryReady()
+        while (requested && !cancelled) {
+          requested = false
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const remote = await readRemotePriceHistory(connection)
+            if (cancelled) return
+            const merged = mergePriceHistory(getAllPriceHistory(), remote.document?.snapshots ?? [])
+            try {
+              if (!samePriceHistory(merged, remote.document?.snapshots ?? [])) await writeRemotePriceHistory(connection, merged, remote.sha)
+              if (cancelled) return
+              replacePriceHistory(merged)
+              if (!samePriceHistory(getAllPriceHistory(), merged)) requested = true
+              break
+            } catch (error) {
+              if (cancelled) return
+              const code = (error as { status?: number }).status
+              if ((code === 409 || code === 422) && attempt < 2) continue
+              throw error
+            }
+          }
+        }
+        if (!cancelled) { setLastSavedAt(new Date()); setStatus('saved'); setMessage('Historique synchronisé.') }
+      } catch (error) {
+        if (!cancelled) { setStatus('error'); setMessage((error as Error).message) }
+      } finally { running = false }
+    }
+    const onUpdate = () => {
+      if (running) { requested = true; return }
+      clearTimeout(timer)
+      timer = setTimeout(() => { void sync() }, 1500)
+    }
+    retryRef.current = () => { clearTimeout(timer); void sync() }
+    window.addEventListener('pv-price-history-updated', onUpdate)
     void sync()
-    return () => window.removeEventListener('pv-price-history-updated', onHistoryUpdate)
-  }, [connection, sync])
-
-  return { status, message, lastSavedAt, retry: sync }
+    return () => { cancelled = true; clearTimeout(timer); window.removeEventListener('pv-price-history-updated', onUpdate) }
+  }, [connection])
+  return { status, message, lastSavedAt, retry: () => retryRef.current() }
 }

@@ -1,3 +1,4 @@
+import { initializePriceHistory } from './domain/priceHistory'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck, History,
@@ -89,6 +90,7 @@ function App() {
   const menuRef = useModalDialog(() => setMobileMenuOpen(false), mobileMenuOpen, false)
   const githubSync = useGitHubCollectionSync(portfolio, setPortfolio)
   const priceHistorySync = useGitHubPriceHistorySync(githubSync.activeConnection)
+  useEffect(() => { void initializePriceHistory() }, [])
 
   useEffect(() => {
     const warn = (event: Event) => {
@@ -214,7 +216,7 @@ function App() {
           <button className="icon-btn" aria-label={theme==='dark'?'Activer le thème clair':'Activer le thème sombre'} onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun/>:<Moon/>}</button>
         </header>
 
-        {storageWarning&&<div className="storage-warning" role="alert"><span>{storageWarning === 'collection-recovery' ? 'La sauvegarde locale est invalide. Une copie de récupération a été conservée. Importe une sauvegarde valide.' : storageWarning === PRICE_HISTORY_STORAGE_KEY ? 'L’historique des prix est plein. Les relevés les plus anciens seront réduits automatiquement.' : 'La collection n’a pas pu être sauvegardée. Vérifie l’espace disponible ou exporte une copie.'}</span><button onClick={()=>{setStorageWarning(null);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(null)}><X size={18}/></button></div>}
+        {storageWarning&&<div className="storage-warning" role="alert"><span>{storageWarning === 'collection-recovery' ? 'La sauvegarde locale est invalide. Une copie de récupération a été conservée. Importe une sauvegarde valide.' : storageWarning === PRICE_HISTORY_STORAGE_KEY ? 'L’historique n’a pas pu être enregistré sur cet appareil. Exporte une copie ou réessaie la sauvegarde.' : 'La collection n’a pas pu être sauvegardée. Vérifie l’espace disponible ou exporte une copie.'}</span><button onClick={()=>{setStorageWarning(null);navigate('sync')}}>Ouvrir sauvegarde</button><button className="storage-warning-close" aria-label="Fermer" onClick={()=>setStorageWarning(null)}><X size={18}/></button></div>}
         <div className="content" key={view}>
           {view==='collection'&&<Portfolio document={portfolio} onChange={setPortfolio} isFavorite={isFavorite} onFavorite={toggleFavorite} headerExtra={<details className="challenge-disclosure"><summary>Mon défi de collection</summary><WeeklyCollectionChallenge entries={portfolio.entries}/></details>}/>}
           {view==='featured' && <>
