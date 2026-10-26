@@ -3,19 +3,29 @@ import { EMPTY_GRADED_MARKET,mergeGradedMarket,parseGradedMarketFeed,type Graded
 
 const STORAGE_KEY='pv-graded-market-cache-v1'
 const TTL_MS=6*60*60*1000
+export type GradedMarketStatus='loading'|'unconfigured'|'active'|'empty'|'cached'|'error'
+type Snapshot={feed:GradedMarketFeed;status:GradedMarketStatus}
 let feed:GradedMarketFeed=EMPTY_GRADED_MARKET
+let status:GradedMarketStatus='loading'
 let checkedAt=0
 let loaded=false
 let pending:Promise<void>|undefined
 const listeners=new Set<()=>void>()
+const snapshot=():Snapshot=>({feed,status})
 function notify(){for(const listener of listeners)listener()}
 function restore(){
  if(loaded)return
  loaded=true
  try{
   const saved=localStorage.getItem(STORAGE_KEY)
-  if(saved)feed=parseGradedMarketFeed(JSON.parse(saved))
- }catch{/* Invalid local cache: keep public data as authoritative. */}
+  if(saved){
+   const candidate=parseGradedMarketFeed(JSON.parse(saved))
+   if(candidate.status==='active'&&candidate.quotes.length){
+    feed=candidate
+    status='cached'
+   }
+  }
+ }catch{/* Broken cache must not hide the public feed. */}
 }
 async function refresh(){
  restore()
@@ -24,29 +34,34 @@ async function refresh(){
  checkedAt=Date.now()
  pending=(async()=>{
   try{
-   // Deployed artifact is static, generated outside the browser. Never send API secrets from a client.
+   // Static artifact served by GitHub Pages. No private API credentials in the browser.
    const response=await fetch(import.meta.env.BASE_URL+'data/graded-market.json',{cache:'no-cache'})
-   if(!response.ok)throw new Error('Flux gradation indisponible.')
+   if(!response.ok)throw new Error('Flux gradation indisponible')
    const next=parseGradedMarketFeed(await response.json())
    if(next.status==='active'){
     feed=mergeGradedMarket(feed,next)
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(feed))}catch{/* The fetched feed remains available in memory. */}
-    notify()
+    status=feed.quotes.length?'active':'empty'
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(feed))}catch{/* Keep data in memory. */}
+   }else{
+    // An unconfigured or empty deployment must never erase a previous valid market snapshot.
+    status=feed.quotes.length?'cached':'unconfigured'
    }
-  }catch{/* Preserve last known observations on outages or malformed updates. */}
+  }catch{
+   status=feed.quotes.length?'cached':'error'
+  }finally{notify()}
  })().finally(()=>{pending=undefined})
  return pending
 }
-export function useGradedMarket(){
- const [value,setValue]=useState<GradedMarketFeed>(()=>{restore();return feed})
+export function useGradedMarket():Snapshot{
+ const [value,setValue]=useState<Snapshot>(()=>{restore();return snapshot()})
  useEffect(()=>{
-  const handler=()=>setValue(feed)
-  listeners.add(handler)
-  handler()
+  const listener=()=>setValue(snapshot())
+  listeners.add(listener)
+  listener()
   void refresh()
   const onVisible=()=>{if(document.visibilityState==='visible')void refresh()}
   document.addEventListener('visibilitychange',onVisible)
-  return()=>{listeners.delete(handler);document.removeEventListener('visibilitychange',onVisible)}
+  return()=>{listeners.delete(listener);document.removeEventListener('visibilitychange',onVisible)}
  },[])
  return value
 }
