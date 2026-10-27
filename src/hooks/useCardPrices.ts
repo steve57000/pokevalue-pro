@@ -12,21 +12,22 @@ const CONCURRENCY=7, keyOf=(id:string,language:string)=>`price:${language}:${id}
 export function isCardPriceRefreshDue(checkedAt?:number,now=Date.now()){return checkedAt===undefined||now-checkedAt>=PRICE_REFRESH_INTERVAL_MS}
 // Network batches can complete at once: group updates instead of rerendering entire catalogues
 // once per fetched card.
-let notificationTimer:ReturnType<typeof setTimeout>|undefined
+let notificationQueued=false
 function notify(){
- if(notificationTimer!==undefined)return
- notificationTimer=setTimeout(()=>{
-  notificationTimer=undefined
+ if(notificationQueued)return
+ notificationQueued=true
+ queueMicrotask(()=>{
+  notificationQueued=false
   for(const listener of listeners)listener()
- },32)
+ })
 }
 // Do not re-merge and rewrite up to 20k historical observations for each individual card.
 // Flush the collected observations together, and immediately when the tab becomes hidden.
 let pendingSnapshots:PriceSnapshot[]=[]
-let snapshotTimer:ReturnType<typeof setTimeout>|undefined
+let snapshotFlushQueued=false
 let registeredVisibilityFlush=false
 function flushPriceSnapshotBatch(){
- if(snapshotTimer!==undefined){clearTimeout(snapshotTimer);snapshotTimer=undefined}
+ snapshotFlushQueued=false
  const batch=pendingSnapshots
  pendingSnapshots=[]
  if(!batch.length)return
@@ -35,7 +36,9 @@ function flushPriceSnapshotBatch(){
 function queuePriceSnapshotBatch(snapshots:PriceSnapshot[]){
  if(!snapshots.length)return
  pendingSnapshots.push(...snapshots)
- if(snapshotTimer===undefined)snapshotTimer=setTimeout(flushPriceSnapshotBatch,150)
+ // Commit in the same event-loop turn; never defer history so long that a subsequent
+ // statistics read or a navigation can miss the just-retrieved prices.
+ if(!snapshotFlushQueued){snapshotFlushQueued=true;queueMicrotask(flushPriceSnapshotBatch)}
  if(!registeredVisibilityFlush&&typeof document!=='undefined'){
   registeredVisibilityFlush=true
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPriceSnapshotBatch()})
