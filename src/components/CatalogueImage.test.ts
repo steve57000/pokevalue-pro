@@ -1,8 +1,18 @@
 import {describe,expect,it} from 'vitest'
-import {imageFallbackOrder,resolveCatalogueImage} from './CatalogueImage'
+import {catalogueImageCacheKey,imageFallbackOrder,resolveCatalogueImage} from './CatalogueImage'
 import {cardImageOverrideById} from '../data/cardImageOverrides'
 const card={id:'xy-1',name:'Carte',localId:'1'}
 describe('catalogue image providers',()=>{
+ it('refreshes cached image resolution when the catalogue gains a new scan or changes metadata',()=>{
+  const item={id:'30th-c-001',name:'Carte',localId:'001'}
+  const missing=catalogueImageCacheKey(item,'fr','low')
+  const updated=catalogueImageCacheKey({...item,image:'https://assets.tcgdex.net/fr/me/30th-c/001'},'fr','low')
+  expect(updated).not.toBe(missing)
+  expect(catalogueImageCacheKey({...item,image:'https://assets.tcgdex.net/fr/me/30th-c/001'},'FR','low')).toBe(updated)
+  expect(catalogueImageCacheKey({...item,localId:'002'},'fr','low')).not.toBe(missing)
+  expect(catalogueImageCacheKey(item,'fr','low',new Set(['https://a.fr/image.webp']))).not.toBe(missing)
+ })
+
  it('n’affiche pas le dos générique pour les 30 cartes Classic Collection',async()=>{
   const classic=[...cardImageOverrideById.values()].filter(override=>override.setId==='30th-c')
   expect(classic).toHaveLength(30)

@@ -130,6 +130,23 @@ export function traditionalChineseSc2dScan(card:Pick<SetCard,'id'|'localId'>,req
  return{url,language:'zh-tw',quality,source:'local-override',isFallback:false,verified:true}
 }
 const cleanUrl=(url:string)=>url.replace(/[?&]pvRetry=\d+/g,'').replace(/[?&]$/,'')
+/** A localized card can acquire a verified scan after its initial catalogue fetch.
+ * Image metadata must be part of the key or an old "missing" result will persist.
+ */
+export function catalogueImageCacheKey(card:Pick<SetCard,'id'|'name'|'localId'|'image'>,language:string,quality:'low'|'high',rejectedUrls:ReadonlySet<string>=new Set()){
+ return JSON.stringify([normalizeImageLanguage(language),card.id,card.name,card.localId,card.image??null,quality,[...rejectedUrls].map(cleanUrl).sort()])
+}
+const MAX_IMAGE_CACHE_ENTRIES=650
+function rememberImageCache(key:string,entry:CacheEntry){
+ imageCache.delete(key)
+ imageCache.set(key,entry)
+ if(imageCache.size<=MAX_IMAGE_CACHE_ENTRIES)return
+ for(const [otherKey,otherEntry] of imageCache){
+  if(otherKey!==key&&otherEntry.status!=='pending')imageCache.delete(otherKey)
+  if(imageCache.size<=MAX_IMAGE_CACHE_ENTRIES)break
+ }
+}
+
 const isRejected=(url:string|undefined,rejected:Set<string>)=>!!url&&rejected.has(cleanUrl(url))
 const subsetAssetPaths:Record<string,{serie:string;set:string;languages?:string[]}>={
  'swsh4.5sv':{serie:'swsh',set:'swsh4.5'},
@@ -228,18 +245,17 @@ export async function resolveCatalogueImage(card:SetCard,requestedLanguage:strin
 }
 function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejectedUrls:Set<string>=new Set()){
  language=normalizeImageLanguage(language)
- const rejectedKey=[...rejectedUrls].map(cleanUrl).sort().join(',')
- const key=`image:${language}:${card.id}:${quality}:${rejectedKey}`
+ const key=catalogueImageCacheKey(card,language,quality,rejectedUrls)
  const existing=imageCache.get(key)
  if(existing?.image&&existing.status==='resolved')return Promise.resolve(existing.image)
  if(existing?.status==='missing'&&existing.expiresAt&&existing.expiresAt>Date.now())return Promise.resolve(existing.image!)
  if(existing?.promise)return existing.promise
  imageCache.delete(key)
  const promise=resolveCatalogueImage(card,language,quality,tcgDexProvider.getCard.bind(tcgDexProvider),rejectedUrls).then(image=>{
-  imageCache.set(key,image.url?{status:'resolved',image}:{status:'missing',image,expiresAt:Date.now()+15_000})
+  rememberImageCache(key,image.url?{status:'resolved',image}:{status:'missing',image,expiresAt:Date.now()+15_000})
   return image
  }).catch(()=>({language,quality,source:'none',isFallback:false,verified:false} satisfies ResolvedCardImage)).finally(()=>{const current=imageCache.get(key);if(current?.status==='pending')imageCache.delete(key)})
- imageCache.set(key,{status:'pending',promise})
+ rememberImageCache(key,{status:'pending',promise})
  return promise
 }
 const retryUrl=(url:string,attempt:number)=>attempt?url+(url.includes('?')?'&':'?')+'pvRetry='+attempt:url
