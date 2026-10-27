@@ -16,7 +16,7 @@ export function CollectionSyncSettings({ sync, document, onChange }: { sync: Git
     const link = Object.assign(window.document.createElement('a'), { href: url, download: filename }); link.click(); URL.revokeObjectURL(url)
   }
   return <section className="sync-page tool-page">
-    <span className="eyebrow"><Cloud size={16}/> Synchronisation</span><h1>Sauvegarde</h1><p>Ta collection locale reste disponible hors connexion. Relie un dépôt privé pour la sauvegarder automatiquement.</p>
+    <span className="eyebrow"><Cloud size={16}/> Synchronisation</span><h1>Sauvegarde</h1><p>Cartes, exemplaires gradés, relevés du marché, liens, frais et ventes personnelles sont sauvegardés ensemble dans ton dépôt privé.</p>
     <div className={`sync-state ${sync.status}`}><Cloud size={18}/><strong>{sync.status === 'saved' ? 'Synchronisé' : sync.status === 'pending' ? 'En cours' : sync.status === 'conflict' ? 'Conflit' : sync.status === 'error' ? 'Erreur' : 'Local'}</strong><small>{sync.message}</small></div>
     <div className="github-panel"><h2>Sauvegarde GitHub privée</h2><p>Le jeton doit être limité au dépôt privé avec la permission <b>Contents: Read and write</b>.</p>
       <div className="github-fields"><label>Propriétaire<input value={sync.connection.owner} onChange={e=>sync.setConnection({...sync.connection,owner:e.target.value})}/></label><label>Dépôt privé<input value={sync.connection.repo} onChange={e=>sync.setConnection({...sync.connection,repo:e.target.value})}/></label><label>Jeton<input type="password" autoComplete="off" value={sync.connection.token} onChange={e=>sync.setConnection({...sync.connection,token:e.target.value})}/></label></div>
@@ -25,6 +25,7 @@ export function CollectionSyncSettings({ sync, document, onChange }: { sync: Git
       {sync.status==='error'&&<button onClick={()=>void (sync.account ? sync.retry() : sync.connect())}>Réessayer</button>}
       <p className="last-sync">Dernière sauvegarde : {sync.lastSavedAt ? sync.lastSavedAt.toLocaleString('fr-FR') : 'aucune sauvegarde distante durant cette session'}</p>
     </div>
+    <div className="github-panel"><h2>Contenu de ma sauvegarde</h2><p>{document.entries.reduce((n,e)=>n+(e.gradedCopies?.length??0),0)} exemplaire(s) gradé(s) · {(document.marketObservations??[]).filter(row=>!row.deletedAt).length} relevé(s) de marché · {(document.personalSales??[]).filter(row=>!row.deletedAt).length} vente(s) personnelle(s).</p><p>Les anciens relevés locaux sont repris automatiquement. Leurs liens sources et les suppressions sont conservés lors de la fusion entre appareils.</p></div>
     <div className="github-panel"><h2>Historique des prix</h2><p>{snapshots.length} relevés · {persistence==='error'?'enregistrement local à réessayer':persistence==='loading'?'chargement…':persistence==='saving'?'enregistrement…':'disponibles sur cet appareil'}</p><div className="portfolio-tools">
       <button onClick={()=>download({schemaVersion:2,updatedAt:new Date().toISOString(),snapshots:getAllPriceHistory()},'pokevalue-prices.json')}><Download size={16}/> Exporter les prix</button>
       <button onClick={()=>historyImportRef.current?.click()}><Upload size={16}/> Fusionner un historique</button>

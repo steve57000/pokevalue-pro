@@ -1,9 +1,11 @@
+import { migrateMarketObservations } from './domain/collectionExtras'
+import { SalesPage } from './components/SalesPage'
 import { initializePriceHistory } from './domain/priceHistory'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Search, Heart, Moon, Sun, Sparkles, TrendingUp, ShieldCheck, History,
   SlidersHorizontal, X, ChevronRight, Calculator, BookOpen,
-  Library, ArrowUpRight, AlertTriangle, CheckCircle2, Cloud, Menu, Bell
+  Library, ArrowUpRight, AlertTriangle, CheckCircle2, Cloud, Menu, Bell, Tag
 } from 'lucide-react'
 import { buildPokemonTcgImageFallback } from './api/tcgdex'
 import { cards, rarities, sets } from './data'
@@ -39,11 +41,11 @@ import { SharedChallengePage, WeeklyCollectionChallenge } from './components/Wee
 import type { FavoriteCard, FavoriteInput } from './domain/favorites'
 import './feature-additions.css'
 
-type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'alerts' | 'share' | 'grading' | 'estimator' | 'guide' | 'sync'
+type View = 'collection' | 'featured' | 'scanner' | 'favorites' | 'history' | 'alerts' | 'share' | 'grading' | 'sales' | 'estimator' | 'guide' | 'sync'
 
 const SCANNED_CARDS_STORAGE_KEY = 'pv-scanned-cards-v1'
 const PORTFOLIO_STORAGE_KEY = 'pv-portfolio-v1'
-const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'alerts', 'grading', 'estimator', 'guide', 'sync']
+const validViews: View[] = ['collection', 'featured', 'scanner', 'favorites', 'history', 'alerts', 'grading', 'sales', 'estimator', 'guide', 'sync']
 const routeView = (): View => {
   if (window.location.hash.startsWith('#share=')) return 'share'
   const candidate = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) as View : window.location.hash.slice(1) as View
@@ -68,7 +70,7 @@ function readRecentScans(): ScannerCandidate[] {
 function App() {
   const [theme, setTheme] = useState<'dark'|'light'>(() => readStoredString('pv-theme') === 'light' ? 'light' : 'dark')
   const [view, setView] = useState<View>(routeView)
-  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,alerts:0,share:0,grading:0,estimator:0,guide:0,sync:0})
+  const viewRef=useRef<View>(view), scrollByView=useRef<Record<View,number>>({collection:0,featured:0,scanner:0,favorites:0,history:0,alerts:0,share:0,grading:0,sales:0,estimator:0,guide:0,sync:0})
   const [query, setQuery] = useState('')
   const [setFilter, setSetFilter] = useState('Toutes')
   const [rarityFilter, setRarityFilter] = useState('Toutes')
@@ -80,7 +82,7 @@ function App() {
   const recoveryRef = useRef(false)
   const [portfolio, setPortfolio] = useState<CollectionDocument>(() => {
     const stored=readStoredJson<unknown>(PORTFOLIO_STORAGE_KEY, emptyCollection())
-    try { return parseCollection(stored) } catch { recoveryRef.current=true;writeStoredJson('pv-portfolio-recovery-v1',stored); return emptyCollection() }
+    try { return migrateMarketObservations(parseCollection(stored)) } catch { recoveryRef.current=true;writeStoredJson('pv-portfolio-recovery-v1',stored); return emptyCollection() }
   })
   const [recentScans] = useState<ScannerCandidate[]>(readRecentScans)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -114,7 +116,7 @@ function App() {
   useEffect(() => {
     const titles: Record<View, string> = {
       collection: 'Collection', featured: trendTab==='market'?'Tendances · Recherche marché':'Tendances', scanner: 'Tendances',
-      favorites: 'Favoris', history: 'Statistiques & prix', alerts: 'Alertes de prix', share: 'Défi partagé', grading: 'Gradation',
+      favorites: 'Favoris', history: 'Statistiques & prix', alerts: 'Alertes de prix', share: 'Défi partagé', grading: 'Gradation', sales: 'Ventes',
       estimator: 'Estimer un lot', guide: 'Guide achat', sync: 'Sauvegarde',
     }
     document.title = `${titles[view]} · PokéValue Pro`
@@ -174,6 +176,7 @@ function App() {
   const nav = [
     {id:'collection', label:'Collection', icon:Library,group:'Mon espace'},
     {id:'favorites', label:'Favoris', icon:Heart,group:'Mon espace'},
+    {id:'sales', label:'Ventes', icon:Tag,group:'Mon espace'},
     {id:'grading', label:'Gradation', icon:ShieldCheck,group:'Mon espace'},
     {id:'featured', label:'Tendances', icon:TrendingUp,group:'Marché'},
     {id:'history', label:'Stats', icon:History,group:'Marché'},
@@ -267,9 +270,10 @@ function App() {
           {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
           {view==='alerts'&&<PriceAlertsPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
           {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)} onCreateChallenge={()=>navigate('collection')}/>}
-          {view==='grading'&&<GradingPage entries={portfolio.entries} onPriceHistory={()=>navigate('history')}/> }
+          {view==='grading'&&<GradingPage document={portfolio} onChange={setPortfolio} syncLabel={githubSync.status==='saved'?'Synchronisé avec GitHub':githubSync.status==='pending'?'Sauvegarde en cours…':githubSync.status==='error'||githubSync.status==='conflict'?'Sauvegarde à vérifier':'Enregistré sur cet appareil'} onPriceHistory={()=>navigate('history')}/> }
 
 
+          {view==='sales' && <SalesPage document={portfolio} onChange={setPortfolio} sync={githubSync}/>}
           {view==='estimator' && <Estimator />}
           {view==='guide' && <Guide />}
           {view==='sync' && <CollectionSyncSettings sync={githubSync} document={portfolio} onChange={setPortfolio}/>}
@@ -278,10 +282,10 @@ function App() {
 
       <nav className="bottom-nav">
         {(['collection','favorites','featured','history'] as View[]).map(id=>{const item=nav.find(entry=>entry.id===id)!;const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>navigate(item.id)}><Icon size={20}/><span>{item.id==='history'?'Stats':item.id==='featured'?'Tendances':item.label.split(' ')[0]}</span></button>})}
-        <button className={['sync','estimator','guide','grading','alerts'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
+        <button className={['sync','estimator','guide','grading','sales','alerts'].includes(view)?'active':''} aria-expanded={mobileMenuOpen} aria-controls="mobile-more-menu" onClick={()=>setMobileMenuOpen(true)}><Menu size={20}/><span>Plus</span></button>
       </nav>
 
-      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div ref={menuRef as React.RefObject<HTMLDivElement>} id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['alerts','sync','estimator','guide','grading'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
+      {mobileMenuOpen&&<div className="mobile-menu-backdrop" onMouseDown={()=>setMobileMenuOpen(false)}><div ref={menuRef as React.RefObject<HTMLDivElement>} id="mobile-more-menu" className="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title" onMouseDown={event=>event.stopPropagation()}><div><strong id="mobile-more-title">Plus de services</strong><button aria-label="Fermer le menu" autoFocus onClick={()=>setMobileMenuOpen(false)}><X/></button></div>{nav.filter(item=>['alerts','sync','estimator','guide','grading','sales'].includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} aria-current={view===item.id?'page':undefined} onClick={()=>{navigate(item.id);setMobileMenuOpen(false)}}><Icon size={20}/>{item.label}</button>})}</div></div>}
 
       <ScrollToTop hidden={Boolean(selected)||Boolean(showcase)||mobileMenuOpen}/>
 

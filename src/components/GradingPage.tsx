@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { GradedSalesComparison } from './GradedSalesComparison'
 import { GradedMarketComparison } from './GradedMarketComparison'
 import { useGradedMarket } from '../hooks/useGradedMarket'
-import { parseGradedSales, readGradedSales, saveGradedSales, type GradedSale } from '../domain/gradedSales'
+import { parseGradedSales, type GradedSale } from '../domain/gradedSales'
 import { ArrowUpRight, BadgeCheck, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import { CatalogueImage } from './CatalogueImage'
-import type { CollectionEntry } from '../domain/collection'
+import { saveObservations, saveGradingSettings } from '../domain/collectionExtras'
+import type { CollectionDocument, CollectionEntry } from '../domain/collection'
 import { collectionUnitPrice } from '../domain/collection'
 import { getGradingInterest } from '../domain/grading'
 import { isAsianCatalogLanguage } from '../domain/pricing'
@@ -14,25 +15,27 @@ import { money } from '../utils/money'
 import './grading.css'
 
 type Props = {
-  entries: CollectionEntry[]
+  document: CollectionDocument
+  onChange: (document: CollectionDocument) => void
+  syncLabel: string
   onPriceHistory: () => void
 }
 const languages = ['fr', 'en', 'ja', 'zh-tw'] as const
 type Filter = 'all' | 'priority' | 'review'
 const MIN_GRADING_VALUE = 20
 
-export function GradingPage({ entries, onPriceHistory }: Props) {
+export function GradingPage({ document, onChange, syncLabel, onPriceHistory }: Props) {
+  const entries = document.entries
+  const gradedSales = (document.marketObservations ?? []).filter(row => !row.deletedAt)
   const {feed:gradedMarket,status:gradedSourceStatus} = useGradedMarket()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [showAllOwned, setShowAllOwned] = useState(false)
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
-  const [gradedSales, setGradedSales] = useState<GradedSale[]>(readGradedSales)
   const [saleStorageError, setSaleStorageError] = useState('')
   const persistSales = (next: GradedSale[]) => {
     try {
-      saveGradedSales(next)
-      setGradedSales(next)
+      onChange(saveObservations(document,next))
       setSaleStorageError('')
       return true
     } catch {
@@ -43,10 +46,10 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   const exportSales = () => {
     const blob = new Blob([JSON.stringify(gradedSales, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const link = window.document.createElement('a')
     link.href = url
     link.download = 'pokevalue-ventes-gradees.json'
-    document.body.appendChild(link)
+    window.document.body.appendChild(link)
     link.click()
     link.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -101,7 +104,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       : interest.reasons
     return { entry, priceState, unitPrice, interest, recommendation, reasons, majorRarity, needsPriceCheck, asian }
   }).filter(item =>
-    showAllOwned || (item.recommendation !== 'skip'
+    showAllOwned || gradedSales.some(sale=>sale.cardKey===item.entry.key) || (item.recommendation !== 'skip'
     && ((item.unitPrice !== undefined && item.unitPrice >= MIN_GRADING_VALUE) || (item.needsPriceCheck && item.majorRarity)))
   )
 
@@ -126,8 +129,8 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
   return <section className="grading-page">
     <header className="grading-heading">
       <span className="eyebrow"><BadgeCheck size={16}/> Atelier de collection</span>
-      <h1>Préparer une gradation</h1>
-      <p>Compare les notes et les ventes conclues, carte par carte, avant de choisir une société de gradation.</p>
+      <h1>Gradation</h1>
+      <p>Compare les ventes constatées de tes cartes.</p>
       <button className="grading-history-link" onClick={onPriceHistory}>Ouvrir Stats et prix <ArrowUpRight size={16}/></button>
     </header>
 
@@ -159,14 +162,15 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
+    <details className="compact-section"><summary>Sources et sauvegarde</summary><div className="compact-section-body"><aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
     <div className="grading-data-actions">
-      <button type="button" onClick={exportSales}>Exporter les ventes ({gradedSales.length})</button>
-      <label>Importer des ventes (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
-      <p>Sauvegarde locale distincte de ta collection : exporte ce fichier pour conserver les observations.</p>
+      <button type="button" onClick={exportSales}>Exporter les relevés ({gradedSales.length})</button>
+      <label>Importer des relevés (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
+      <p>{syncLabel} · Relevés, liens et frais inclus dans la sauvegarde.</p>
       {saleStorageError&&<p role="alert" className="grading-data-error">{saleStorageError}</p>}
     </div>
 
+    </div></details>
     <section className="grading-candidates">
       <div className="grading-list-heading"><div><h2>Comparer mes cartes</h2><span>{analyzed.length} carte{analyzed.length === 1 ? '' : 's'} · {showAllOwned?'collection complète':'sélection à examiner'}</span></div><label className="grading-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nom, extension ou numéro"/></label></div>
       <div className="grading-filters" aria-label="Filtrer les cartes">
@@ -185,17 +189,20 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
             <div className="grading-card-content">
               <div className="grading-card-title"><div><span>{entry.setName} · Nº {entry.number ?? '—'}</span><h3>{entry.name}</h3></div><span className={`grading-tag ${recommendation} ${needsPriceCheck ? 'price-check' : ''}`}>{label}</span></div>
               <div className="grading-price-line"><span>{usesManual ? 'Ton prix manuel' : asian ? 'Cote locale indisponible' : 'Référence Cardmarket Europe'}</span><strong>{unitPrice === undefined ? (priceState?.status === 'loading' ? 'Chargement…' : 'Indisponible') : money(unitPrice)}</strong></div>
-              <div className="grading-meta"><span>Quantité : ×{entry.quantity}</span><span>État enregistré : {conditionLabel(entry.condition)}</span><span>Score indicatif : {interest.score}/100</span></div>
-              <ul>{reasons.slice(0, 3).map(reason => <li key={reason}>{reason}</li>)}</ul>
-              {recommendation === 'skip' ? <p className="grading-company-recommendation">État défavorable : la gradation peut rester utile pour protéger une carte, mais la revente est à examiner avec prudence.</p> : <Recommendation price={unitPrice}/>}
-              {!usesManual && <small className="grading-price-note">{asian?'Aucune cote locale intégrée.':'Prix Cardmarket Europe non filtré par langue.'} · {entry.language.toUpperCase()}</small>}
-              <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' vente(s)':''}</button>
+              <details className="card-analysis"><summary>État et potentiel · ×{entry.quantity}</summary>
+              <div className="grading-meta"><span>{conditionLabel(entry.condition)}</span><span>Score : {interest.score}/100</span></div>
+              <ul>{reasons.slice(0,3).map(reason=><li key={reason}>{reason}</li>)}</ul>
+              <Recommendation price={unitPrice}/>
+              {!usesManual&&<small className="grading-price-note">{asian?'Cote locale indisponible.':'Référence Europe, toutes langues.'}</small>}
+              </details>
+              <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' relevé(s)':''}</button>
             </div>
-            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot">{gradedMarket.quotes.some(quote=>quote.cardKey===entry.key)&&<GradedMarketComparison entry={entry} feed={gradedMarket}/>}<GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onAdd={sale=>persistSales([...gradedSales,sale])} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
+            {expandedCard===entry.key&&<div id={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} className="grading-comparison-slot">{gradedMarket.quotes.some(quote=>quote.cardKey===entry.key)&&<GradedMarketComparison entry={entry} feed={gradedMarket}/>}<GradedSalesComparison entry={entry} rawPrice={unitPrice} sales={gradedSales} onSave={sale=>persistSales([...gradedSales.filter(row=>row.id!==sale.id),sale])} settings={document.gradingSettings?.find(row=>row.cardKey===entry.key)} onSettings={setting=>onChange(saveGradingSettings(document,setting))} onRemove={id=>persistSales(gradedSales.filter(sale=>sale.id!==id))}/></div>}
           </article>
         })}</div>}
     </section>
 
+    <details className="compact-section grading-general-guide"><summary>Guide de gradation et préparation</summary><div className="compact-section-body">
     <section className="grading-advice">
       <div className="grading-section-title"><span className="eyebrow"><Sparkles size={15}/> Décider sans mauvaise surprise</span><h2>Quel service choisir ?</h2><p>Ce sont des repères de marché, pas une promesse de plus-value. Les frais et délais changent : vérifie toujours les tarifs officiels avant l’envoi.</p></div>
       <div className="grading-service-grid">
@@ -238,6 +245,7 @@ export function GradingPage({ entries, onPriceHistory }: Props) {
       </div>
       <div className="grading-official-links"><span>Références officielles :</span><a href="https://pcagrade.com/fr/ressources" target="_blank" rel="noreferrer">PCA · échelle, FAQ et envoi <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/gradingstandards" target="_blank" rel="noreferrer">PSA · standards <ArrowUpRight size={14}/></a><a href="https://www.psacard.com/en-DE/info/shipguide" target="_blank" rel="noreferrer">PSA · préparation <ArrowUpRight size={14}/></a><a href="https://www.beckett.com/grading/scale" target="_blank" rel="noreferrer">BGS · échelle <ArrowUpRight size={14}/></a><a href="https://www.cgccards.com/card-grading/grading-scale/" target="_blank" rel="noreferrer">CGC · échelle <ArrowUpRight size={14}/></a><a href="https://www.cccgrading.com/fr/echelle-notation" target="_blank" rel="noreferrer">CCC · échelle <ArrowUpRight size={14}/></a><a href="https://www.collectaura.com/pages/grading-scale" target="_blank" rel="noreferrer">CollectAura · échelle <ArrowUpRight size={14}/></a></div>
     </section>
+    </div></details>
   </section>
 }
 

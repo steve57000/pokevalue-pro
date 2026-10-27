@@ -1,3 +1,4 @@
+import { mergeExtras, reconcilePersonalSales, validateCopies, validateExtras, type CollectionExtras, type GradedCopy } from './collectionExtras'
 export const COLLECTION_SCHEMA = 1 as const
 
 export type CardCondition = 'mint' | 'near-mint' | 'excellent' | 'good' | 'played' | 'poor'
@@ -18,6 +19,7 @@ export type CollectionEntry = PrintingIdentity & {
   image?: string
   rarity?: string
   quantity: number
+  gradedCopies?: GradedCopy[]
   condition: CardCondition
   notes: string
   manualPrice?: number
@@ -30,7 +32,7 @@ export function collectionUnitPrice(entry: Pick<CollectionEntry, 'manualPrice' |
   return mode === 'manual' ? entry.manualPrice : marketPrice
 }
 
-export type CollectionDocument = {
+export type CollectionDocument = CollectionExtras & {
   schemaVersion: typeof COLLECTION_SCHEMA
   revision: number
   updatedAt: string
@@ -54,10 +56,11 @@ export function setIdFromCardId(cardId: string): string {
 export function upsertEntry(document: CollectionDocument, input: Omit<CollectionEntry, 'key' | 'updatedAt'>): CollectionDocument {
   const key = printingKey(input)
   const now = new Date().toISOString()
-  const entry = { ...input, quantity: Math.max(0, Math.floor(input.quantity)), key, updatedAt: now }
+  const quantity = Math.max(0, Math.floor(input.quantity))
+  const entry = { ...input, quantity, gradedCopies: input.gradedCopies?.slice(0, quantity), key, updatedAt: now }
   // Keep zero quantity as a tombstone so a second device cannot resurrect a removal.
   const entries = [...document.entries.filter((item) => item.key !== key), entry]
-  return { ...document, revision: document.revision + 1, updatedAt: now, entries }
+  return reconcilePersonalSales({ ...document, revision: document.revision + 1, updatedAt: now, entries }, document.entries.find(item => item.key === key))
 }
 
 export type CollectionCard = PrintingIdentity & Pick<CollectionEntry, 'name' | 'setName' | 'number' | 'image' | 'rarity'>
@@ -68,7 +71,7 @@ export function findCollectionEntry(document: CollectionDocument, identity: Prin
 }
 
 /** Quantity controls must retain the user's condition, notes and price choice. */
-export function updateCollectionCard(document: CollectionDocument, card: CollectionCard, changes: Partial<Pick<CollectionEntry, 'quantity' | 'condition' | 'notes' | 'manualPrice' | 'priceMode'>>) {
+export function updateCollectionCard(document: CollectionDocument, card: CollectionCard, changes: Partial<Pick<CollectionEntry, 'quantity' | 'condition' | 'notes' | 'manualPrice' | 'priceMode' | 'gradedCopies'>>) {
   const previous = findCollectionEntry(document, card)
   return upsertEntry(document, {
     ...previous, ...card,
@@ -89,6 +92,7 @@ export function mergeCollections(local: CollectionDocument, remote: CollectionDo
     revision: Math.max(local.revision, remote.revision) + 1,
     updatedAt: new Date().toISOString(),
     entries: [...entries.values()],
+    ...mergeExtras(local, remote),
   }
 }
 
@@ -113,8 +117,10 @@ export function parseCollection(value: unknown): CollectionDocument {
       || entry.manualPrice !== undefined && (typeof entry.manualPrice !== 'number' || !Number.isFinite(entry.manualPrice) || entry.manualPrice < 0)
       || entry.priceMode !== undefined && entry.priceMode !== 'manual' && entry.priceMode !== 'market'
       || entry.key !== printingKey(entry) || keys.has(entry.key)) throw new Error('Le fichier contient une carte invalide ou en double. Import annulé.')
+    validateCopies(entry.gradedCopies, entry.quantity)
     keys.add(entry.key)
   }
+  validateExtras(candidate as CollectionDocument)
   return candidate as CollectionDocument
 }
 

@@ -101,7 +101,7 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
   useEffect(() => {
     if (!hydratedRef.current || !connectedRef.current || JSON.stringify(document) === lastSavedRef.current) return
     dirtyRef.current = true; void flush()
-  }, [document, flush])
+  }, [document, connected, flush])
 
   const resolveConflict = useCallback(async () => {
     const generation = generationRef.current
