@@ -380,22 +380,38 @@ describe('localized set catalogue', () => {
     expect(sets[0].cardCount).toMatchObject({ total: 206, official: 160 })
   })
 
-  it('lists the announced Delta Reign expansion as upcoming until TCGdex adds it', async () => {
+  it('lists released Delta Reign even when upstream omits it', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => [] }) as Response))
 
     const sets = await listSets('fr')
     const delta = sets.find(set => set.id === 'me06')
 
-    expect(delta).toMatchObject({ name: 'Méga-Évolution – Règne Delta', upcoming: true, releaseDate: '2026-11-06' })
-    expect(delta?.cardCount).toEqual({ total: 135, official: 103 })
+    expect(delta).toMatchObject({ name: 'Méga-Évolution – Règne Delta', upcoming: false, releaseDate: '2026-11-06' })
+    expect(delta?.cardCount).toEqual({ total: 141, official: 103 })
   })
 
-  it('returns an upcoming Delta Reign detail placeholder if TCGdex has no record yet', async () => {
+  it('returns the full released Delta Reign snapshot if TCGdex is unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, json: async () => ({}) }) as Response))
 
     const set = await getSet('me06', 'fr')
+    expect(set.cards).toHaveLength(141)
+    expect(set.cards[140]).toMatchObject({id:'me06-141',localId:'141'})
+    expect(set.logo).toContain('R%C3%A8gne_Delta')
 
-    expect(set).toMatchObject({ id: 'me06', name: 'Méga-Évolution – Règne Delta', upcoming: true, releaseDate: '2026-11-06', cards: [] })
+    expect(set).toMatchObject({ id: 'me06', name: 'Méga-Évolution – Règne Delta', upcoming: false, releaseDate: '2026-11-06' })
+  })
+
+  it('does not insert Delta Reign into unrelated series', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok:true,json:async()=>({id:'sv',sets:[]})}) as Response))
+    expect((await getSeries('sv','fr')).sets).toEqual([])
+  })
+
+  it('repairs incomplete upstream Delta data without losing existing card images', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok:true,json:async()=>({id:'me06',upcoming:true,cards:[{id:'me06-001',localId:'001',name:'Scarhino',image:'https://example.org/scan.png'}]})}) as Response))
+    const set=await getSet('me06','fr')
+    expect(set.cards).toHaveLength(141)
+    expect(set.cards[0].image).toBe('https://example.org/scan.png')
+    expect(set.upcoming).toBe(false)
   })
 
   it('uses the Japanese Mew name for the Japanese anniversary cards', async () => {

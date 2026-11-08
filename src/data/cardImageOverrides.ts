@@ -1,3 +1,4 @@
+import deltaReignCards from './deltaReignCards.json'
 export type CardImageOverride={
  cardId:string
  setId:string
@@ -103,11 +104,14 @@ const mepPromoScans:Record<string,string>={
  'mep-099':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-099_greninja-ex.webp',
  'mep-101':'https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-101_nidorina.webp',
 }
-export const cardImageOverrides:readonly CardImageOverride[]=baseCardImageOverrides.map(item=>{
+export const cardImageOverrides:readonly CardImageOverride[]= [...baseCardImageOverrides.map(item=>{
  const promoImage=mepPromoScans[item.cardId]
  const classicImage=classicCollectionImageFor(item.cardId)
  const url=promoImage??classicImage
  if(!url)return item
  return {...item,verified:true,image:{localPath:url,language:'en',source:promoImage?'Bill’s Archive / TCGdex original scan':'PokemonCard.io / English ME55C front scan',verified:true as const}}
-})
+}), ...deltaReignCards.fr.map(card => ({
+ cardId:card.id,setId:'me06',name:card.name,printedNumber:card.localId+'/103',verified:true,
+ image:{localPath:'https://pika-collect.fr/img/card-images/me06/'+card.localId+'-480.webp',language:'fr',source:'Pika-collect / Pokécardex French DLR front scan',verified:true as const},
+}))]
 export const cardImageOverrideById=new Map(cardImageOverrides.map(item=>[item.cardId,item]))

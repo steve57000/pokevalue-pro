@@ -1,3 +1,4 @@
+import { deltaReignLogo } from '../data/deltaReign'
 const anniversaryLogo='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniversaire_JCC.png/800px-Logo_30e_Anniversaire_JCC.png'
 
 /**
@@ -5,6 +6,7 @@ const anniversaryLogo='https://www.pokepedia.fr/images/thumb/0/0c/Logo_30e_Anniv
  * Never infer a logo from a translated name, symbol, or neighboring set.
  */
 const curatedSetLogosById:Record<string,string[]>={
+ me06:[deltaReignLogo],
  mep:['https://data.eyevo.app/eyevo/logos/sets/mep.png'],
  me01:['https://www.pokepedia.fr/images/thumb/8/83/Logo_Méga-%C3%89volution_JCC.png/800px-Logo_Méga-%C3%89volution_JCC.png'],
  me02:['https://www.pokepedia.fr/images/thumb/1/18/Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png/800px-Logo_Méga-%C3%89volution_Flammes_Fantasmagoriques_JCC.png'],

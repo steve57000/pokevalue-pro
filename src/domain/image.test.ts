@@ -2,6 +2,21 @@ import {describe,expect,it} from 'vitest'
 import {cardImageOverrideById} from '../data/cardImageOverrides'
 import {buildCardAssetCandidates,buildCardAssetUrl,buildMepPromoImage,isPokemonCardBackUrl,isSamePrinting,normalizeImageLanguage,resolveCardImage} from './image'
 describe('image resolver',()=>{
+ it('resolves all 141 exact French DLR fronts even for cached cards without an image',()=>{
+  const cards=[...cardImageOverrideById.values()].filter(card=>card.setId==='me06')
+  expect(cards).toHaveLength(141)
+  const urls=new Set<string>()
+  for(const card of cards){
+   const result=resolveCardImage({card:{id:card.cardId,name:card.name,language:'fr'},requestedLanguage:'fr'})
+   expect(result.language).toBe('fr')
+   expect(result.isFallback).toBe(false)
+   expect(result.url).toContain('/'+card.cardId.split('-')[1]+'-480.webp')
+   urls.add(result.url!)
+  }
+  expect(urls.size).toBe(141)
+  const rejected='https://pika-collect.fr/img/card-images/me06/001-480.webp'
+  expect(resolveCardImage({card:{id:'me06-001',name:'Scarhino',language:'fr'},requestedLanguage:'fr',rejectedUrls:new Set([rejected])}).url).toBeUndefined()
+ })
  it('normalise les codes de langue de l’interface avant de résoudre les images',()=>{expect(normalizeImageLanguage('JP')).toBe('ja');expect(normalizeImageLanguage('JA')).toBe('ja');expect(normalizeImageLanguage('ZH')).toBe('zh-tw');expect(normalizeImageLanguage('zh-TW')).toBe('zh-tw');expect(normalizeImageLanguage('EN')).toBe('en');expect(normalizeImageLanguage('FR')).toBe('fr')})
  it('construit un asset de carte depuis la racine du catalogue sans doubler une extension',()=>{
   expect(buildCardAssetUrl('https://assets.tcgdex.net/ja/sv/sv8a/001','low')).toBe('https://assets.tcgdex.net/ja/sv/sv8a/001/low.webp')

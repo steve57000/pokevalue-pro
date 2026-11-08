@@ -17,3 +17,11 @@ Les aperçus utilisés dans l’interface sont les versions 800 px des mêmes fi
 ## Scans recto des cartes Énergie
 
 Les 16 scans de face de Méga-Évolution Énergie sont ceux de la catégorie [Poképédia « Scan de carte de Méga-Évolution Énergie de base »](https://www.pokepedia.fr/Cat%C3%A9gorie:Scan_de_carte_de_M%C3%A9ga-%C3%89volution_%C3%89nergie_de_base). La fiche de chaque scan attribue l’illustration à The Pokémon Company et cite Limitless comme source. Le site utilise le numéro imprimé de la carte (001 à 016) pour choisir le scan correspondant.
+
+## Règne Delta (ME06 / DLR) — mise à jour du 8 novembre 2026
+
+- Sortie : 6 novembre 2026. 141 cartes, dont 103 dans la numérotation principale.
+- Identités FR/EN : snapshots de https://api.tcgdex.net/v2/fr/sets/me06 et https://api.tcgdex.net/v2/en/sets/me06 ; aucun prix figé.
+- Logo français : https://www.pokepedia.fr/Fichier:Logo_M%C3%A9ga-%C3%89volution_R%C3%A8gne_Delta_JCC.png
+- Rectos français : https://pika-collect.fr/cartes/me06-regne-delta (scans portant le crédit Pokécardex). Correspondance exacte 001–141, sans substitution japonaise.
+- Le catalogue local complète les réponses amont incomplètes et conserve les identifiants me06-XXX des cartes possédées. Les images sont résolues aussi pour les anciennes fiches sans image en cache.
