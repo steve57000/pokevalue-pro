@@ -1,3 +1,4 @@
+import { collectionMarketValue } from '../domain/pricing'
 import { useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { getSet, type SetDetail, type SetSummary } from '../api/sets'
@@ -41,8 +42,8 @@ export function SeriesComparison({ sets, currentSet, entries, prices, language, 
     const owned = entries.filter(entry => entry.setId === id && entry.language === language && entry.quantity > 0)
     const catalogue = details[id]?.cards ?? []
     const source = mode === 'market'
-      ? catalogue.map(card => ({ name: card.name, id: card.id, quantity: 1, value: asian || id === 'jumbo' || marketPrices[card.id]?.price?.basis !== 'guide' ? undefined : marketPrices[card.id]?.price?.value }))
-      : owned.map(entry => ({ name: entry.name, id: entry.cardId, quantity: entry.quantity, value: collectionUnitPrice(entry, asian || id === 'jumbo' || entry.variant !== 'normal' || prices[entry.cardId]?.price?.basis !== 'guide' ? undefined : prices[entry.cardId]?.price?.value) }))
+      ? catalogue.map(card => ({ name: card.name, id: card.id, quantity: 1, value: asian || id === 'jumbo' ? undefined : collectionMarketValue(marketPrices[card.id]?.price,language) }))
+      : owned.map(entry => ({ name: entry.name, id: entry.cardId, quantity: entry.quantity, value: collectionUnitPrice(entry, asian || id === 'jumbo' || entry.variant !== 'normal' ? undefined : collectionMarketValue(prices[entry.cardId]?.price,language,entry.condition)) }))
     const valued = source.filter((item): item is typeof item & { value: number } => item.value !== undefined)
     const values = valued.map(item => item.value)
     const top = [...valued].sort((a, b) => b.value - a.value)

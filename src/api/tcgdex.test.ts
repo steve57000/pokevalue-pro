@@ -46,6 +46,16 @@ describe('buildPokemonTcgImageFallback', () => {
   it('does not build a generic card-back URL for the 30th Classic Collection', () => {
     expect(buildPokemonTcgImageFallback('30th-c-001')).toBeUndefined()
   })
+  it.each([['sv08.5-161','sv8pt5/161'],['swsh4.5sv-SV062','swsh45sv/SV062']])('maps %s to the actual English provider set', (id,path) => {
+    expect(buildPokemonTcgImageFallback(id)?.low).toBe(`https://images.pokemontcg.io/${path}.png`)
+  })
+  it.each([['me06-138','me6-138'],['me05-115','me5-115'],['30th-152','me55-152'],['30th-R','me55-R']])('uses the published image host and exact identity for %s',(id,providerId)=>{
+    expect(buildPokemonTcgImageFallback(id)?.low).toBe(`https://images.scrydex.com/pokemon/${providerId}/small`)
+    expect(buildPokemonTcgImageFallback(id)?.high).toBe(`https://images.scrydex.com/pokemon/${providerId}/large`)
+  })
+  it.each(['unknown-001','mep-096','M6-001','me06-999','30th-c-022'])('does not guess an unsupported English image for %s',id=>{
+    expect(buildPokemonTcgImageFallback(id)).toBeUndefined()
+  })
 })
 
 import { TcgDexProvider } from './tcgdex'

@@ -8,17 +8,17 @@ describe('market price display by catalogue language', () => {
     const html = renderToStaticMarkup(createElement(MarketPriceDisplay, {
       language: 'en',
       status: 'success',
-      cardmarket: { value: 12, currency: 'EUR', label: 'Tendance Cardmarket', provider: 'cardmarket' },
-      tcgplayer: { value: 8, currency: 'USD', label: 'Marché TCGplayer', provider: 'tcgplayer', region: 'Amérique du Nord' },
+      cardmarket: { printingLanguage:'en',identityVerified:true,value: 12, currency: 'EUR', label: 'Tendance Cardmarket', provider: 'cardmarket' },
+      tcgplayer: { printingLanguage:'en',identityVerified:true,value: 8, currency: 'USD', label: 'Marché TCGplayer', provider: 'tcgplayer', region: 'Amérique du Nord' },
     }))
     expect(html).toContain('Cardmarket')
-    expect(html).toContain('Europe · EUR · guide · impression et état non renseignés')
+    expect(html).toContain('Europe · EUR · EN · guide · état non renseigné')
     expect(html).toContain('12')
     expect(html).toContain('8,00 $US')
     expect(html).toContain('TCGplayer')
-    expect(html).toContain('Amérique du Nord · USD · guide · impression et état non renseignés · Marché TCGplayer')
+    expect(html).toContain('Amérique du Nord · USD · EN · guide · état non renseigné · Marché TCGplayer')
     expect(html).toContain('8')
-    expect(html).toContain('pas le Royaume-Uni')
+    expect(html).toContain('Prix vérifié pour cette édition et cette langue')
     expect(html).toContain('Les moyennes de ventes sont agrégées par période')
   })
 
@@ -28,8 +28,8 @@ describe('market price display by catalogue language', () => {
       status: 'success',
       cardmarket: { value: 12, currency: 'EUR', label: 'Tendance Cardmarket', provider: 'cardmarket' },
     }))
-    expect(html).toContain('langue et impression non filtrées : pas une cote française')
-    expect(html).toContain('12,00 €')
+    expect(html).toContain('Aucun prix automatique vérifié')
+    expect(html).not.toContain('12,00 €')
     expect(html).not.toContain('TCGplayer')
   })
 
@@ -37,7 +37,7 @@ describe('market price display by catalogue language', () => {
     const html = renderToStaticMarkup(createElement(MarketPriceDisplay, {
       language: 'en',
       status: 'success',
-      tcgplayer: { value: 4.25, currency: 'USD', label: 'Prix intermédiaire TCGplayer', provider: 'tcgplayer', region: 'Amérique du Nord' },
+      tcgplayer: { printingLanguage:'en',identityVerified:true,value: 4.25, currency: 'USD', label: 'Prix intermédiaire TCGplayer', provider: 'tcgplayer', region: 'Amérique du Nord' },
     }))
     expect(html).toContain('TCGplayer')
     expect(html).toContain('Prix intermédiaire TCGplayer')
@@ -54,7 +54,7 @@ describe('market price display by catalogue language', () => {
     expect(html).toContain('Cote locale')
     expect(html).toContain('Japon')
     expect(html).toContain('Indisponible')
-    expect(html).toContain('Référence Cardmarket')
-    expect(html).toContain('Cardmarket Europe est séparé du marché asiatique')
+    expect(html).not.toContain('12,00 €')
+    expect(html).toContain('Aucun prix automatique vérifié')
   })
 })

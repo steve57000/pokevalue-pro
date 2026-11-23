@@ -12,9 +12,10 @@ export type PriceAlert = {
   createdAt: string
   triggeredAt?: string
   triggeredPrice?: number
+  verifiedTrigger?: boolean
 }
 
-export type PriceAlertInput = Omit<PriceAlert, 'id' | 'createdAt' | 'triggeredAt' | 'triggeredPrice'>
+export type PriceAlertInput = Omit<PriceAlert, 'id' | 'createdAt' | 'triggeredAt' | 'triggeredPrice' | 'verifiedTrigger'>
 
 export const PRICE_ALERTS_STORAGE_KEY = 'pv-price-alerts-v1'
 
@@ -44,6 +45,7 @@ export function parsePriceAlerts(value: unknown): PriceAlert[] {
       targetPrice: candidate.targetPrice,
       createdAt: candidate.createdAt,
       triggeredAt: typeof candidate.triggeredAt === 'string' && Number.isFinite(Date.parse(candidate.triggeredAt)) ? candidate.triggeredAt : undefined,
+      verifiedTrigger: candidate.verifiedTrigger === true ? true : undefined,
       triggeredPrice: typeof candidate.triggeredPrice === 'number' && Number.isFinite(candidate.triggeredPrice) ? candidate.triggeredPrice : undefined,
     }
     alerts.set(alert.id, alert)
@@ -68,7 +70,7 @@ export function markReachedPriceAlerts(alerts: PriceAlert[], currentPrices: Map<
     const price = currentPrices.get(priceAlertKey(alert))
     if (alert.triggeredAt || price === undefined || !Number.isFinite(price) || price <= 0 || !isPriceAlertReached(alert, price)) return alert
     changed = true
-    return { ...alert, triggeredAt: now.toISOString(), triggeredPrice: price }
+    return { ...alert, triggeredAt: now.toISOString(), triggeredPrice: price, verifiedTrigger: true }
   })
   return changed ? next : alerts
 }

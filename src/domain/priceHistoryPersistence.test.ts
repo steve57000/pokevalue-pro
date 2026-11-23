@@ -18,7 +18,8 @@ describe('durable price history',()=>{
     const cold=await import('./priceHistory')
     await cold.initializePriceHistory()
     expect(cold.getAllPriceHistory()).toHaveLength(801)
-    expect(cold.getPriceHistory('card-0','fr').map(point=>point.value)).toEqual([1,20])
+    expect(cold.getPriceHistory('card-0','fr')).toEqual([]) // Preserved for audit, never reused as French quotes.
+    expect(cold.getAllPriceHistory().filter(p=>p.cardId==='card-0').map(p=>p.value)).toEqual([1,20])
   })
   it('merges prices arriving while the database opens and an older remote write completes',async()=>{
     const history=await import('./priceHistory')

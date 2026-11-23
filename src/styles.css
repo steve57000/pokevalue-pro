@@ -827,7 +827,8 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 .binder-price-info-content{display:grid;gap:6px;padding:8px;margin-top:5px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 .binder-price-info-content .binder-price-row{grid-template-columns:minmax(0,1fr) max-content}
 .binder-price-info-content .binder-price-provider small{font-size:9px}
-.binder-price-info-content .binder-price-note{font-size:9px}
+.binder-price-info-content .binder-price-note{font-size:10px;line-height:1.4}
+.binder-price-info-content a{font-size:11px;line-height:1.4;min-height:28px;display:flex;align-items:center}
 .collection-summary.has-tcgplayer{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:900px){.collection-summary.has-tcgplayer{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){
@@ -867,3 +868,7 @@ main{margin-left:260px}.topbar{height:78px;position:sticky;top:0;z-index:15;back
 
 .series-progress-row.upcoming{opacity:.72;cursor:default}
 .series-progress-row.upcoming .series-progress-name small{display:block;margin-top:.2rem;color:var(--muted,#94a3b8);font-size:.82em;font-weight:500}
+
+/* Explicit face visibility prevents a composited verso covering the recto on mobile. */
+.showcase-card[data-facing="front"]>.showcase-back,.showcase-card[data-facing="back"]>.showcase-front{visibility:hidden}
+.showcase-face .catalogue-image,.showcase-face img{backface-visibility:hidden;-webkit-backface-visibility:hidden}

@@ -1,9 +1,11 @@
+import { localizedMarketData } from '../domain/localizedPricing'
+import { reviewedMarketData } from '../domain/reviewedPrices'
 import { useEffect, useReducer } from 'react'
 import { tcgDexProvider } from '../api/tcgdex'
 import { comparablePriceHistory, ensurePriceHistoryReady, getAllPriceHistory, recordPriceSnapshots, snapshotsFromQuotes, type PriceSnapshot } from '../domain/priceHistory'
-import { collectMarketPriceQuotes, getPriceStats, selectCardmarketPrice, selectTcgplayerPrice, type CardMarketStats, type MarketPriceQuote, type PriceReference, type TcgPlayerQuote, type TcgPlayerStats } from '../domain/pricing'
+import { isVerifiedLocalQuote, type CardMarketStats, type MarketPriceQuote, type PriceReference, type TcgPlayerQuote, type TcgPlayerStats } from '../domain/pricing'
 
-export type CardPriceState={status:'loading'|'success'|'error';price?:PriceReference|null;tcgplayerQuote?:TcgPlayerQuote;quotes?:MarketPriceQuote[];cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;tcgplayerHolo?:TcgPlayerStats;tcgplayerReverse?:TcgPlayerStats;language:string;checkedAt?:number;quoteObservedAt?:number;retained?:boolean}
+export type CardPriceState={verification?:'verified'|'unverified';status:'loading'|'success'|'error';price?:PriceReference|null;tcgplayerQuote?:TcgPlayerQuote;quotes?:MarketPriceQuote[];cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;tcgplayerHolo?:TcgPlayerStats;tcgplayerReverse?:TcgPlayerStats;language:string;checkedAt?:number;quoteObservedAt?:number;retained?:boolean}
 const PRICE_REFRESH_INTERVAL_MS=24*60*60*1000
 type PriceTask={id:string;language:string;force:boolean}
 const cache=new Map<string,CardPriceState>(),listeners=new Set<()=>void>(),queue:PriceTask[]=[],queued=new Set<string>()
@@ -46,20 +48,23 @@ function queuePriceSnapshotBatch(snapshots:PriceSnapshot[]){
 }
 /** A missing response is not a new zero-price observation. */
 export function retainKnownPrices(previous:CardPriceState|undefined,next:CardPriceState):CardPriceState {
+ if(next.price?.aggregator==='manakodex')return {...next,retained:false}
+ if(next.verification==='unverified')return {...next,price:null,tcgplayerQuote:undefined,retained:false}
+ if(previous?.language!==next.language||!isVerifiedLocalQuote(previous?.price,next.language))previous=undefined
  const keepGuide=previous?.price?.basis==='guide'&&(next.price?.basis!=='guide'||Boolean(next.retained))
- return {...next,price:keepGuide?previous.price:next.price??previous?.price,tcgplayerQuote:next.tcgplayerQuote??previous?.tcgplayerQuote,
+ return {...next,price:keepGuide?previous?.price:next.price??previous?.price,tcgplayerQuote:next.tcgplayerQuote??previous?.tcgplayerQuote,
   quoteObservedAt:keepGuide||!next.price?previous?.quoteObservedAt:next.quoteObservedAt,
   retained:next.retained||keepGuide||Boolean((!next.price&&previous?.price)||(!next.tcgplayerQuote&&previous?.tcgplayerQuote))}
 }
 function restorePrice(point:PriceSnapshot|undefined,language:string):CardPriceState|undefined {
- return point?{status:'loading',language,retained:true,quoteObservedAt:Date.parse(point.recordedAt??point.date),price:{value:point.value,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',updatedAt:point.sourceUpdatedAt??point.recordedAt??point.date}}:undefined
+ return point?.identityVerified&&point.printingLanguage===language?{verification:'verified',status:'loading',language,retained:true,quoteObservedAt:Date.parse(point.recordedAt??point.date),price:{value:point.value,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',printingLanguage:point.printingLanguage,identityVerified:true,updatedAt:point.sourceUpdatedAt??point.recordedAt??point.date}}:undefined
 }
 function drain(){
  while(running<CONCURRENCY&&queue.length){
   const task=queue.shift()!,key=keyOf(task.id,task.language),previous=cache.get(key)
   queued.delete(key);running++;cache.set(key,{...previous,status:'loading',language:task.language});notify()
   tcgDexProvider.getCard(task.id,task.language,task.force).then(card=>{
-   const observedAt=new Date().toISOString(),stats=getPriceStats(card.pricing),price=selectCardmarketPrice(card.pricing)??null,tcgplayerQuote=selectTcgplayerPrice(card.pricing),quotes=collectMarketPriceQuotes(card.pricing,task.language,observedAt)
+   const observedAt=new Date().toISOString(),{price,tcgplayerQuote,quotes,...stats}=localizedMarketData(card,observedAt,{id:task.id,language:task.language})
    cache.set(key,retainKnownPrices(previous,{status:card.fromStaleCache?'error':'success',price,tcgplayerQuote,quotes,language:task.language,...stats,checkedAt:Date.now(),quoteObservedAt:Date.parse(observedAt),retained:card.fromStaleCache}))
    if(!card.fromStaleCache)queuePriceSnapshotBatch(snapshotsFromQuotes(task.id,quotes))
   }).catch(()=>cache.set(key,{...cache.get(key),status:'error',language:task.language,checkedAt:Date.now()})).finally(()=>{running--;notify();drain()})
@@ -75,6 +80,14 @@ function enqueue(ids:string[],language:string,force=false){
  const priority:PriceTask[]=[]
  for(const id of ids){
   const key=keyOf(id,language)
+  const reviewed=reviewedMarketData(id,language)
+  if(reviewed){
+   if(force||cache.get(key)?.price?.updatedAt!==reviewed.price.updatedAt){
+    cache.set(key,{...reviewed,status:'success',language,checkedAt:Date.now(),quoteObservedAt:Date.parse(reviewed.quotes[0].observedAt)})
+    queuePriceSnapshotBatch(snapshotsFromQuotes(id,reviewed.quotes));notify()
+   }
+   continue
+  }
   if(!cache.has(key)){const restored=restorePrice(saved.get(id),language);if(restored)cache.set(key,{...restored,status:'success'})}
   const state=cache.get(key)
   if(queued.has(key)){
@@ -106,7 +119,7 @@ export function useCardPrices(cardIds:string[],language='fr'){
    }
    for(const point of latest.values()){
     const key=keyOf(point.cardId,language),state=cache.get(key)
-    if(!state?.price||Date.parse(point.recordedAt??point.date)>(state.quoteObservedAt??0)){const restored=restorePrice(point,language);if(restored)cache.set(key,{...restored,...state,price:restored.price,quoteObservedAt:restored.quoteObservedAt,retained:true})}
+    if(state?.verification!=='unverified'&&(!state?.price||Date.parse(point.recordedAt??point.date)>(state.quoteObservedAt??0))){const restored=restorePrice(point,language);if(restored)cache.set(key,{...restored,...state,price:restored.price,quoteObservedAt:restored.quoteObservedAt,retained:true})}
    }
    render()
   }

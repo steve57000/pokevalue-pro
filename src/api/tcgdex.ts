@@ -11,7 +11,7 @@ import {
 import { compareCardImageToCandidates } from '../services/cardVisualMatcher'
 import { getCached, setCached } from '../utils/cache'
 import { normalizeApiDate } from '../utils/dates'
-import { buildCardAssetUrl } from '../domain/image'
+import { buildCardAssetUrl, supportedEnglishImageSets, modernEnglishImageIds, modernEnglishImageSets, scrydexEnglishImageIds } from '../domain/image'
 
 const BASE_URL = 'https://api.tcgdex.net/v2'
 const REQUEST_TIMEOUT_MS = 8000
@@ -39,24 +39,45 @@ export function buildTcgDexImageUrl(image: string | undefined, quality: 'low' | 
 
 const POKEMON_TCG_SET_IDS: Record<string, string> = {
   'sm3.5': 'sm35',
+  'sm7.5': 'sm75',
+  'sm11.5': 'sm115',
   'swsh3.5': 'swsh35',
+  'swsh4.5': 'swsh45',
+  'swsh4.5sv': 'swsh45sv',
+  'swsh9.5tg': 'swsh9tg',
+  'swsh10.5tg': 'swsh10tg',
+  'swsh11.5tg': 'swsh11tg',
+  'swsh12.5tg': 'swsh12tg',
   'swsh12.5': 'swsh12pt5',
   'swsh12.5gg': 'swsh12pt5gg',
   'sv03.5': 'sv3pt5',
+  'sv04.5': 'sv4pt5',
+  'sv06.5': 'sv6pt5',
+  'sv08.5': 'sv8pt5',
+  'me02.5': 'me2pt5',
+  '30th': 'me55',
 }
 
 export function buildPokemonTcgImageFallback(id: string): ExternalCard['fallbackImage'] {
   const separator = id.lastIndexOf('-')
   if (separator <= 0 || separator === id.length - 1) return undefined
 
-  const tcgDexSetId = id.slice(0, separator)
+  const tcgDexSetId = id.slice(0, separator).toLowerCase()
   const rawLocalId = id.slice(separator + 1)
   // TCGdex's 30th-c IDs are not Pokémon TCG API IDs; the generic image path can return a card back.
   if (tcgDexSetId.toLocaleLowerCase('en') === '30th-c') return undefined
   const setId = POKEMON_TCG_SET_IDS[tcgDexSetId]
-    ?? tcgDexSetId.replace(/^sv0+(\d+)$/, 'sv$1')
+    ?? tcgDexSetId.replace(/^(sv|me)0+(\d+)$/, '$1$2')
   const localId = /^\d+$/.test(rawLocalId) ? String(Number(rawLocalId)) : rawLocalId
-  if (!setId || !localId) return undefined
+  const providerId = `${setId}-${localId}`
+  if (!supportedEnglishImageSets.has(setId) || !localId) return undefined
+  if (modernEnglishImageSets.has(setId) && !modernEnglishImageIds.has(providerId)) return undefined
+  if (scrydexEnglishImageIds.has(providerId)) return {
+    low: `https://images.scrydex.com/pokemon/${providerId}/small`,
+    high: `https://images.scrydex.com/pokemon/${providerId}/large`,
+    source: 'Pokémon TCG API',
+  }
+  if (!/^(?=[a-z0-9]*\d)[a-z0-9]+$/i.test(localId)) return undefined
 
   const base = `https://images.pokemontcg.io/${encodeURIComponent(setId)}/${encodeURIComponent(localId)}`
   return {

@@ -260,6 +260,9 @@ function cachedResolve(card:SetCard,language:string,quality:'low'|'high',rejecte
 }
 const retryUrl=(url:string,attempt:number)=>attempt?url+(url.includes('?')?'&':'?')+'pvRetry='+attempt:url
 export function CatalogueImage({card,quality='low',className='',requestedLanguage='fr',priority=false}:Props){
+ return <CatalogueImageLoader key={JSON.stringify([card.id,normalizeImageLanguage(requestedLanguage),quality,card.image??null])} card={card} quality={quality} className={className} requestedLanguage={requestedLanguage} priority={priority}/>
+}
+function CatalogueImageLoader({card,quality='low',className='',requestedLanguage='fr',priority=false}:Props){
  const [image,setImage]=useState<ResolvedCardImage>(),container=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(quality==='high'||priority),[assetLoaded,setAssetLoaded]=useState(false),[rejectedUrls,setRejectedUrls]=useState<string[]>([]),[retryAttempt,setRetryAttempt]=useState(0),[retryNonce,setRetryNonce]=useState(0)
  useEffect(()=>{if(quality==='high'||priority||typeof IntersectionObserver==='undefined'){setVisible(true);return}const observer=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:'250px'});if(container.current)observer.observe(container.current);return()=>observer.disconnect()},[quality,priority])
  useEffect(()=>{let active=true;setImage(undefined);setAssetLoaded(false);if(!visible)return

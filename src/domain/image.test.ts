@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest'
 import {cardImageOverrideById} from '../data/cardImageOverrides'
-import {buildCardAssetCandidates,buildCardAssetUrl,buildMepPromoImage,isPokemonCardBackUrl,isSamePrinting,normalizeImageLanguage,resolveCardImage} from './image'
+import {buildCardAssetCandidates,buildCardAssetUrl,buildMepPromoImage,isPokemonCardBackUrl,isUsableCardFrontUrl,isSamePrinting,normalizeImageLanguage,resolveCardImage} from './image'
 describe('image resolver',()=>{
  it('resolves all 141 exact French DLR fronts even for cached cards without an image',()=>{
   const cards=[...cardImageOverrideById.values()].filter(card=>card.setId==='me06')
@@ -64,6 +64,21 @@ describe('image resolver',()=>{
  it('marque un fallback anglais exact',()=>{const result=resolveCardImage({card:{id:'set-1',name:'X',language:'en',image:'https://x'},requestedLanguage:'fr'});expect(result.isFallback).toBe(true);expect(result.language).toBe('en')})
  it('refuse implicitement une autre impression',()=>expect(isSamePrinting({id:'set-1'},{id:'set-2'})).toBe(false))
  it('identifie les URLs connues du dos Pokémon',()=>{expect(isPokemonCardBackUrl('/images/pokemon-card-back.jpg')).toBe(true);expect(isPokemonCardBackUrl('https://images.pokemontcg.io/card-back.png?x=1')).toBe(true);expect(isPokemonCardBackUrl('https://img.example/pikachu/high.webp')).toBe(false)})
+ it.each(['/images/pokemon-card-back.webp?cache=2','https://assets.tcgdex.net/card-back/high.png','https://img.example/CardBack.jpg','https://img.example/card%2Dback.png','https://img.example/verso.png','https://img.example/placeholder.webp'])('rejects back and placeholder asset %s',url=>{
+  expect(isUsableCardFrontUrl(url)).toBe(false)
+  expect(resolveCardImage({card:{id:'unknown-1',name:'Carte',language:'fr',image:url},requestedLanguage:'fr'}).url).toBeUndefined()
+ })
+ it('rejects obsolete guessed provider paths in cached records without rejecting known sets',()=>{
+  for(const set of ['me06','me6','me55','30th','30th-c','mep','does-not-exist'])expect(isUsableCardFrontUrl(`https://images.pokemontcg.io/${set}/1.png`)).toBe(false)
+  for(const set of ['me1','base1','sv8pt5'])expect(isUsableCardFrontUrl(`https://images.pokemontcg.io/${set}/1.png`)).toBe(true)
+  expect(isUsableCardFrontUrl('https://images.scrydex.com/pokemon/me6-138/small')).toBe(true)
+  expect(isUsableCardFrontUrl('https://images.scrydex.com/pokemon/me6-999/small')).toBe(false)
+ })
+ it('uses the exact English front ahead of a French override for an English card',()=>{
+  const url='https://images.scrydex.com/pokemon/me6-138/small'
+  const image=resolveCardImage({card:{id:'me06-138',name:'Mega Rayquaza ex',language:'en',fallbackImage:{low:url,high:url.replace('small','large'),source:'Pokémon TCG API'}},requestedLanguage:'en'})
+  expect(image).toMatchObject({url,language:'en',isFallback:false})
+ })
  it('construit un visuel de secours ciblé pour une promo MEP anglaise',()=>{expect(buildMepPromoImage({id:'mep-037',localId:'037',name:'Bulbasaur'})).toBe('https://bills-archive.nyc3.cdn.digitaloceanspaces.com/tcgdex_cards/mep/mep-037_bulbasaur.webp');expect(buildMepPromoImage({id:'sv1-1',localId:'1',name:'Bulbasaur'})).toBeUndefined()})
  it('refuse le dos comme fallback ou source de recto',()=>{const fallback=resolveCardImage({card:{id:'set-1',name:'X',language:'fr',fallbackImage:{low:'/images/pokemon-card-back.jpg',high:'/images/pokemon-card-back.jpg',source:'Pokémon TCG API'}},requestedLanguage:'fr'});const direct=resolveCardImage({card:{id:'set-2',name:'Y',language:'fr',image:'/images/pokemon-card-back.jpg'},requestedLanguage:'fr'});expect(fallback.url).toBeUndefined();expect(direct.url).toBeUndefined();expect(fallback.source).toBe('none');expect(direct.source).toBe('none')})
  it.each([

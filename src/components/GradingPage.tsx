@@ -162,7 +162,7 @@ export function GradingPage({ document, onChange, syncLabel, onPriceHistory }: P
       <article><small>Prix à vérifier</small><strong>{counts.missingPrice}</strong><span>Référence automatique indisponible</span></article>
     </div>
 
-    <details className="compact-section"><summary>Sources et sauvegarde</summary><div className="compact-section-body"><aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les prix bruts Cardmarket ne sont pas filtrés par langue. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
+    <details className="compact-section"><summary>Sources et sauvegarde</summary><div className="compact-section-body"><aside className="grading-disclaimer"><ShieldCheck size={20}/><p>Les références brutes sans langue et édition vérifiées sont exclues. Les annonces datées restent distinctes des ventes conclues. Pour les cartes gradées, consulte les liens vers les ventes terminées eBay et les guides externes, puis vérifie la langue, la note exacte et la variante. Aucun prix gradé automatique n'est déduit d'une annonce. La note future n'est jamais garantie.</p></aside>
     <div className="grading-data-actions">
       <button type="button" onClick={exportSales}>Exporter les relevés ({gradedSales.length})</button>
       <label>Importer des relevés (.json)<input type="file" accept=".json,application/json" hidden onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';void importSales(file)}}/></label>
@@ -193,7 +193,7 @@ export function GradingPage({ document, onChange, syncLabel, onPriceHistory }: P
               <div className="grading-meta"><span>{conditionLabel(entry.condition)}</span><span>Score : {interest.score}/100</span></div>
               <ul>{reasons.slice(0,3).map(reason=><li key={reason}>{reason}</li>)}</ul>
               <Recommendation price={unitPrice}/>
-              {!usesManual&&<small className="grading-price-note">{asian?'Cote locale indisponible.':'Référence Europe, toutes langues.'}</small>}
+              {!usesManual&&<small className="grading-price-note">{asian?'Cote locale indisponible.':'Référence vérifiée pour cette langue.'}</small>}
               </details>
               <button type="button" className="grading-compare-toggle" aria-expanded={expandedCard===entry.key} aria-controls={'compare-'+entry.key.replace(/[^a-z0-9_-]/gi,'-')} onClick={()=>setExpandedCard(current=>current===entry.key?null:entry.key)}><ArrowUpRight size={16}/> {expandedCard===entry.key?'Fermer le comparatif':'Comparer les ventes gradées'}{gradedSales.some(row=>row.cardKey===entry.key)?' · '+gradedSales.filter(row=>row.cardKey===entry.key).length+' relevé(s)':''}</button>
             </div>

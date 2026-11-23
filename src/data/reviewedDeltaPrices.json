@@ -1,0 +1,2394 @@
+{
+  "schemaVersion": 1,
+  "setId": "me06",
+  "source": "cardmarket",
+  "aggregator": "manakodex",
+  "sourceUrl": "https://manakodex.com/fr/sets/regne-delta",
+  "capturedAt": "2026-11-23T11:04:53.116Z",
+  "basis": "listing",
+  "condition": "near-mint",
+  "variant": "normal",
+  "currency": "EUR",
+  "cards": [
+    {
+      "id": "me06-001",
+      "number": "001",
+      "name": "Scarhino",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Heracross-DLR001",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T18:09:44.522Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T18:09:44.522Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-002",
+      "number": "002",
+      "name": "Arakdo",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Surskit-DLR002",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-12T01:08:51.599Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-12T01:08:51.599Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-003",
+      "number": "003",
+      "name": "Maskadra",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Masquerain-V1-DLR003",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:21:56.547Z",
+        "offers": 17
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:21:56.547Z",
+        "offers": 17
+      }
+    },
+    {
+      "id": "me06-004",
+      "number": "004",
+      "name": "Cacnea",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Cacnea-DLR004",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T10:06:45.601Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T10:06:45.601Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-005",
+      "number": "005",
+      "name": "Cacturne",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Cacturne-DLR005",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:32:28.455Z",
+        "offers": 9
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:32:28.455Z",
+        "offers": 21
+      }
+    },
+    {
+      "id": "me06-006",
+      "number": "006",
+      "name": "Apitrini",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Combee-DLR006",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:32:54.753Z",
+        "offers": 12
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:32:54.753Z",
+        "offers": 17
+      }
+    },
+    {
+      "id": "me06-007",
+      "number": "007",
+      "name": "Apireine",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Vespiquen-DLR007",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T22:18:24.680Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T22:18:24.680Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-008",
+      "number": "008",
+      "name": "Shaymin",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Shaymin-DLR008",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:32:57.049Z",
+        "offers": 11
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:17:05.680Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-009",
+      "number": "009",
+      "name": "Viridium",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Virizion-DLR009",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:10:23.498Z",
+        "offers": 42
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:10:23.498Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-010",
+      "number": "010",
+      "name": "Sovkipou",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Wimpod-DLR010",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-11T08:27:12.687Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-11T08:27:12.687Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-011",
+      "number": "011",
+      "name": "Méga-Sarmuraï ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golisopod-ex-V1-DLR011",
+      "fr": {
+        "value": 0.5,
+        "updatedAt": "2026-11-06T15:38:25.693Z",
+        "offers": 4
+      },
+      "en": {
+        "value": 0.3,
+        "updatedAt": "2026-11-06T15:38:25.693Z",
+        "offers": 17
+      }
+    },
+    {
+      "id": "me06-012",
+      "number": "012",
+      "name": "Poussacha",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sprigatito-V1-DLR012",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T16:35:29.247Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T16:35:29.247Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-013",
+      "number": "013",
+      "name": "Matourgeon",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Floragato-DLR013",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:17:12.638Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:08:57.859Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-014",
+      "number": "014",
+      "name": "Miascarade ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Meowscarada-ex-DLR014",
+      "fr": {
+        "value": 0.5,
+        "updatedAt": "2026-11-06T15:38:55.247Z",
+        "offers": 2
+      },
+      "en": {
+        "value": 0.3,
+        "updatedAt": "2026-11-06T15:38:55.247Z",
+        "offers": 14
+      }
+    },
+    {
+      "id": "me06-015",
+      "number": "015",
+      "name": "Olivini",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Smoliv-DLR015",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T06:06:00.380Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T06:08:08.593Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-016",
+      "number": "016",
+      "name": "Olivado",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Dolliv-DLR016",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:43:31.233Z",
+        "offers": 12
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:43:31.233Z",
+        "offers": 22
+      }
+    },
+    {
+      "id": "me06-017",
+      "number": "017",
+      "name": "Arboliva",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Arboliva-DLR017",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T10:26:46.096Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T10:26:46.096Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-018",
+      "number": "018",
+      "name": "Caninos",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Growlithe-V1-DLR018",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T16:18:50.689Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-10T16:18:50.689Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-019",
+      "number": "019",
+      "name": "Arcanin",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Arcanine-DLR019",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T16:35:19.045Z",
+        "offers": 11
+      },
+      "en": {
+        "value": 0.03,
+        "updatedAt": "2026-11-06T16:35:19.045Z",
+        "offers": 17
+      }
+    },
+    {
+      "id": "me06-020",
+      "number": "020",
+      "name": "Magmar",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Magmar-DLR020",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T00:15:51.347Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T00:15:51.347Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-021",
+      "number": "021",
+      "name": "Maganon",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Magmortar-V1-DLR021",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-22T18:16:14.589Z",
+        "offers": 46
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-22T18:16:14.589Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-022",
+      "number": "022",
+      "name": "Chartor",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Torkoal-DLR022",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T02:17:54.181Z",
+        "offers": 45
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T02:17:54.181Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-023",
+      "number": "023",
+      "name": "Motisma Chaleur ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Heat-Rotom-ex-V1-DLR023",
+      "fr": {
+        "value": 0.2,
+        "updatedAt": "2026-11-08T06:34:56.051Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.2,
+        "updatedAt": "2026-11-08T06:34:56.051Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-024",
+      "number": "024",
+      "name": "Aflamanoir",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Heatmor-DLR024",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:45:05.139Z",
+        "offers": 13
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:45:05.139Z",
+        "offers": 17
+      }
+    },
+    {
+      "id": "me06-025",
+      "number": "025",
+      "name": "Démanta",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mantine-DLR025",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-08T02:12:34.238Z",
+        "offers": 45
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-08T02:12:34.238Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-026",
+      "number": "026",
+      "name": "Kyogre",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Kyogre-DLR026",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-09T15:40:17.633Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T15:44:57.518Z",
+        "offers": 23
+      }
+    },
+    {
+      "id": "me06-027",
+      "number": "027",
+      "name": "Viskuse",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Frillish-DLR027",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:14:11.619Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:14:11.619Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-028",
+      "number": "028",
+      "name": "Moyade",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Jellicent-DLR028",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T22:30:45.446Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-19T22:30:45.446Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-029",
+      "number": "029",
+      "name": "Froussardine ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Wishiwashi-ex-V1-DLR029",
+      "fr": {
+        "value": 0.09,
+        "updatedAt": "2026-11-22T02:17:40.155Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.2,
+        "updatedAt": "2026-11-06T19:10:09.708Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-030",
+      "number": "030",
+      "name": "Élektek",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Electabuzz-DLR030",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T10:08:47.462Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T10:08:47.462Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-031",
+      "number": "031",
+      "name": "Élekable",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Electivire-V1-DLR031",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:47:25.793Z",
+        "offers": 41
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:59:38.947Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-032",
+      "number": "032",
+      "name": "Voltali",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Jolteon-DLR032",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-18T15:14:02.658Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T16:47:45.729Z",
+        "offers": 20
+      }
+    },
+    {
+      "id": "me06-033",
+      "number": "033",
+      "name": "Raikou-ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Raikou-ex-V1-DLR033",
+      "fr": {
+        "value": 0.19,
+        "updatedAt": "2026-11-18T15:05:29.326Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.2,
+        "updatedAt": "2026-11-07T10:13:52.611Z",
+        "offers": 57
+      }
+    },
+    {
+      "id": "me06-034",
+      "number": "034",
+      "name": "Motisma",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Rotom-DLR034",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:13:09.858Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:16:59.407Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-035",
+      "number": "035",
+      "name": "Fulguris",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Thundurus-DLR035",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-22T22:21:46.370Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-22T22:21:46.370Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-036",
+      "number": "036",
+      "name": "Wattapik",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pincurchin-V1-DLR036",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:24:11.537Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:24:11.537Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-037",
+      "number": "037",
+      "name": "Pohm",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pawmi-DLR037",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:02:39.767Z",
+        "offers": 37
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:02:39.767Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-038",
+      "number": "038",
+      "name": "Pohmotte",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pawmo-DLR038",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:15:13.764Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:15:13.764Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-039",
+      "number": "039",
+      "name": "Pohmarmotte",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pawmot-DLR039",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:24:55.872Z",
+        "offers": 41
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:00:54.958Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-040",
+      "number": "040",
+      "name": "Zapétrel",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Wattrel-DLR040",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:10:30.981Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:10:30.981Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-041",
+      "number": "041",
+      "name": "Fulgulairo",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Kilowattrel-DLR041",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:49:34.608Z",
+        "offers": 42
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:49:34.608Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-042",
+      "number": "042",
+      "name": "Miraidon",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Miraidon-DLR042",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:32:35.224Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:32:35.224Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-043",
+      "number": "043",
+      "name": "Soporifik",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Drowzee-DLR043",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:08:25.475Z",
+        "offers": 32
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:08:25.475Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-044",
+      "number": "044",
+      "name": "Hypnomade",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Hypno-DLR044",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:53:47.576Z",
+        "offers": 37
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:16:49.681Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-045",
+      "number": "045",
+      "name": "Giratina",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Giratina-DLR045",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:54:37.739Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:54:37.739Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-046",
+      "number": "046",
+      "name": "Gringolem",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Golett-DLR046",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:50:20.200Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:50:20.200Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-047",
+      "number": "047",
+      "name": "Méga-Golemastoc ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golurk-ex-V1-DLR047",
+      "fr": {
+        "value": 0.9,
+        "updatedAt": "2026-11-06T19:39:09.716Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.35,
+        "updatedAt": "2026-11-06T19:39:09.716Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-048",
+      "number": "048",
+      "name": "Amovénus",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Enamorus-V1-DLR048",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:51:18.183Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:17:09.793Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-049",
+      "number": "049",
+      "name": "Sabelette",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sandshrew-DLR049",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:19:04.444Z",
+        "offers": 42
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:19:04.444Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-050",
+      "number": "050",
+      "name": "Sablaireau",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sandslash-DLR050",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T11:50:03.297Z",
+        "offers": 83
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:40:42.584Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-051",
+      "number": "051",
+      "name": "Onix",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Onix-DLR051",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:49:55.930Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:49:55.930Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-052",
+      "number": "052",
+      "name": "Steelix",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Steelix-DLR052",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:15:20.914Z",
+        "offers": 45
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:15:20.914Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-053",
+      "number": "053",
+      "name": "Groudon",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Groudon-V1-DLR053",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-11T21:08:07.563Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:07:40.628Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-054",
+      "number": "054",
+      "name": "Démétéros",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Landorus-DLR054",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:44:02.673Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:44:02.673Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-055",
+      "number": "055",
+      "name": "Nidoran ♀",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Nidoran-F-DLR055",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:45:53.602Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:45:53.602Z",
+        "offers": 43
+      }
+    },
+    {
+      "id": "me06-056",
+      "number": "056",
+      "name": "Nidorina",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Nidorina-DLR056",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:03:49.160Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:03:49.160Z",
+        "offers": 43
+      }
+    },
+    {
+      "id": "me06-057",
+      "number": "057",
+      "name": "Nidoqueen",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Nidoqueen-DLR057",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:10:17.361Z",
+        "offers": 33
+      },
+      "en": {
+        "value": 0.03,
+        "updatedAt": "2026-11-06T20:10:17.361Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-058",
+      "number": "058",
+      "name": "Mimigal",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Spinarak-DLR058",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:49:34.853Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:39:29.288Z",
+        "offers": 43
+      }
+    },
+    {
+      "id": "me06-059",
+      "number": "059",
+      "name": "Migalos",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Ariados-DLR059",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:29:00.446Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:29:00.446Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-060",
+      "number": "060",
+      "name": "Ténéfix",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sableye-DLR060",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:34:06.842Z",
+        "offers": 32
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:16:56.449Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-061",
+      "number": "061",
+      "name": "Carvanha",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Carvanha-DLR061",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:14:58.525Z",
+        "offers": 35
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:14:58.525Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-062",
+      "number": "062",
+      "name": "Sharpedo",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sharpedo-DLR062",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:07:13.271Z",
+        "offers": 33
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:07:13.271Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-063",
+      "number": "063",
+      "name": "Darkrai",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Darkrai-DLR063",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:01:28.192Z",
+        "offers": 29
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:01:28.192Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-064",
+      "number": "064",
+      "name": "Chacripan",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Purrloin-DLR064",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:55:32.148Z",
+        "offers": 37
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:39:39.728Z",
+        "offers": 41
+      }
+    },
+    {
+      "id": "me06-065",
+      "number": "065",
+      "name": "Léopardus",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Liepard-DLR065",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:34:12.784Z",
+        "offers": 31
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:34:12.784Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-066",
+      "number": "066",
+      "name": "Zorua",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zorua-V1-DLR066",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:51:35.978Z",
+        "offers": 36
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:51:35.978Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-067",
+      "number": "067",
+      "name": "Zoroark ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zoroark-ex-DLR067",
+      "fr": {
+        "value": 0.99,
+        "updatedAt": "2026-11-06T20:46:33.781Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.3,
+        "updatedAt": "2026-11-06T20:46:33.781Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-068",
+      "number": "068",
+      "name": "Sepiatop",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Inkay-V1-DLR068",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:44:46.059Z",
+        "offers": 24
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:44:46.059Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-069",
+      "number": "069",
+      "name": "Méga-Sépiatroce ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Malamar-ex-V1-DLR069",
+      "fr": {
+        "value": 0.9,
+        "updatedAt": "2026-11-06T19:56:53.772Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 0.45,
+        "updatedAt": "2026-11-06T19:56:53.772Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-070",
+      "number": "070",
+      "name": "Morpeko",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Morpeko-DLR070",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:28:02.650Z",
+        "offers": 37
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:17:13.390Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-071",
+      "number": "071",
+      "name": "Zarude",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zarude-DLR071",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:57:08.166Z",
+        "offers": 35
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:57:08.166Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-072",
+      "number": "072",
+      "name": "Drakkarmin",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Druddigon-DLR072",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:53:47.582Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:53:47.582Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-073",
+      "number": "073",
+      "name": "Bébécaille",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Jangmo-o-DLR073",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:28:11.376Z",
+        "offers": 42
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-20T06:58:11.298Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-074",
+      "number": "074",
+      "name": "Écaïd",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Hakamo-o-DLR074",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:00:09.760Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:00:09.760Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-075",
+      "number": "075",
+      "name": "Ékaïser",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Kommo-o-DLR075",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-11T22:30:00.401Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:16:45.562Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-076",
+      "number": "076",
+      "name": "Motorizard",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Cyclizar-DLR076",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:20:06.588Z",
+        "offers": 35
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:20:06.588Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-077",
+      "number": "077",
+      "name": "Tauros",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Tauros-DLR077",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T18:53:51.513Z",
+        "offers": 48
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T18:51:43.734Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-078",
+      "number": "078",
+      "name": "Évoli",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Eevee-V1-DLR078",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:17:51.242Z",
+        "offers": 31
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:17:51.242Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-079",
+      "number": "079",
+      "name": "Cadoizo",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Delibird-DLR079",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:01:27.873Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:01:27.873Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-080",
+      "number": "080",
+      "name": "Azurill",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Azurill-V1-DLR080",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-23T08:16:53.599Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:28:42.935Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-081",
+      "number": "081",
+      "name": "Tylton",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Swablu-DLR081",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:06:35.873Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:06:35.873Z",
+        "offers": 6
+      }
+    },
+    {
+      "id": "me06-082",
+      "number": "082",
+      "name": "Altaria",
+      "rarity": "Holo Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Altaria-V1-DLR082",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:20:09.229Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:20:09.229Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-083",
+      "number": "083",
+      "name": "Kecleon",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Kecleon-V1-DLR083",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:28:28.524Z",
+        "offers": 41
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:28:28.524Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-084",
+      "number": "084",
+      "name": "Méga-Rayquaza ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Rayquaza-ex-V1-DLR084",
+      "fr": {
+        "value": 1.5,
+        "updatedAt": "2026-11-18T15:05:21.046Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.5,
+        "updatedAt": "2026-11-21T01:08:39.363Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-085",
+      "number": "085",
+      "name": "Boréas",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Tornadus-DLR085",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:52:44.584Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T19:52:44.584Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-086",
+      "number": "086",
+      "name": "Passerouge",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Fletchling-DLR086",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:00:53.010Z",
+        "offers": 38
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:00:53.010Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-087",
+      "number": "087",
+      "name": "Braisillon",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Fletchinder-DLR087",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:02:11.185Z",
+        "offers": 30
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:25:00.120Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-088",
+      "number": "088",
+      "name": "Flambusard ex",
+      "rarity": "Double Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Talonflame-ex-V1-DLR088",
+      "fr": {
+        "value": 1.9,
+        "updatedAt": "2026-11-20T19:26:30.130Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.79,
+        "updatedAt": "2026-11-20T19:26:30.130Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-089",
+      "number": "089",
+      "name": "Millepertuis",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Aarune-V1-DLR089",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:15:27.288Z",
+        "offers": 43
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:15:27.288Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-090",
+      "number": "090",
+      "name": "Lanterne Aventure",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Adventure-Lantern-V1-DLR090",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:41:38.032Z",
+        "offers": 42
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:07:21.568Z",
+        "offers": 43
+      }
+    },
+    {
+      "id": "me06-091",
+      "number": "091",
+      "name": "Veste Personnalisée",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Custom-Vest-V1-DLR091",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:55:51.165Z",
+        "offers": 38
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:55:51.165Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-092",
+      "number": "092",
+      "name": "Engouement de la MC",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Emcees-Hype-V1-DLR092",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:00:53.021Z",
+        "offers": 38
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T21:00:53.021Z",
+        "offers": 46
+      }
+    },
+    {
+      "id": "me06-093",
+      "number": "093",
+      "name": "Cendro",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Grisham-DLR093",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:56:44.227Z",
+        "offers": 34
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:56:44.227Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-094",
+      "number": "094",
+      "name": "Pyroconduit Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Pyroduct-DLR094",
+      "fr": {
+        "value": 0.05,
+        "updatedAt": "2026-11-06T19:49:26.796Z",
+        "offers": 16
+      },
+      "en": {
+        "value": 0.15,
+        "updatedAt": "2026-11-06T20:05:56.426Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-095",
+      "number": "095",
+      "name": "Pyroconduit Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Pyroduct-DLR095",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:06:03.569Z",
+        "offers": 17
+      },
+      "en": {
+        "value": 0.15,
+        "updatedAt": "2026-11-06T20:06:03.569Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-096",
+      "number": "096",
+      "name": "Sommet Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Summit-DLR096",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:36:25.959Z",
+        "offers": 16
+      },
+      "en": {
+        "value": 0.03,
+        "updatedAt": "2026-11-06T18:36:25.959Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-097",
+      "number": "097",
+      "name": "Sommet Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Summit-DLR097",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:13:47.555Z",
+        "offers": 16
+      },
+      "en": {
+        "value": 0.05,
+        "updatedAt": "2026-11-06T18:13:47.555Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-098",
+      "number": "098",
+      "name": "Fosse Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Trench-DLR098",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:44:16.259Z",
+        "offers": 19
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:34:02.515Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-099",
+      "number": "099",
+      "name": "Fosse Légendaire",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Legendary-Trench-DLR099",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:20:25.893Z",
+        "offers": 19
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-21T20:00:03.699Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-100",
+      "number": "100",
+      "name": "Chapeau Méga-Rayquaza",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Rayquaza-Cap-DLR100",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:10:18.509Z",
+        "offers": 33
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T20:10:18.509Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-101",
+      "number": "101",
+      "name": "Boulete de Riz Savoureuse",
+      "rarity": "Common",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Tasty-Rice-Ball-DLR101",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:44:51.708Z",
+        "offers": 28
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:08:40.042Z",
+        "offers": 34
+      }
+    },
+    {
+      "id": "me06-102",
+      "number": "102",
+      "name": "Entraînement de Lévy et Tatia",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Tate-Lizas-Training-V1-DLR102",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:23:05.374Z",
+        "offers": 32
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T19:23:05.374Z",
+        "offers": 44
+      }
+    },
+    {
+      "id": "me06-103",
+      "number": "103",
+      "name": "Confiance d’Amaryllis",
+      "rarity": "Uncommon",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zinnias-Trust-V1-DLR103",
+      "fr": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:38:03.419Z",
+        "offers": 27
+      },
+      "en": {
+        "value": 0.02,
+        "updatedAt": "2026-11-06T18:38:03.419Z",
+        "offers": 45
+      }
+    },
+    {
+      "id": "me06-104",
+      "number": "104",
+      "name": "Maskadra",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Masquerain-V2-DLR104",
+      "fr": {
+        "value": 1.27,
+        "updatedAt": "2026-11-18T04:21:42.412Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1.61,
+        "updatedAt": "2026-11-18T04:21:42.412Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-105",
+      "number": "105",
+      "name": "Poussacha",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Sprigatito-V2-DLR105",
+      "fr": {
+        "value": 6.9,
+        "updatedAt": "2026-11-21T04:53:36.325Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 6.99,
+        "updatedAt": "2026-11-21T04:53:36.325Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-106",
+      "number": "106",
+      "name": "Caninos",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Growlithe-V2-DLR106",
+      "fr": {
+        "value": 8.2,
+        "updatedAt": "2026-11-22T09:59:53.280Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 9.95,
+        "updatedAt": "2026-11-22T09:59:53.280Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-107",
+      "number": "107",
+      "name": "Maganon",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Magmortar-V2-DLR107",
+      "fr": {
+        "value": 3.7,
+        "updatedAt": "2026-11-18T08:25:12.923Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.75,
+        "updatedAt": "2026-11-18T08:25:12.923Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-108",
+      "number": "108",
+      "name": "Élekable",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Electivire-V2-DLR108",
+      "fr": {
+        "value": 3.7,
+        "updatedAt": "2026-11-18T07:44:34.726Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.99,
+        "updatedAt": "2026-11-18T07:44:34.726Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-109",
+      "number": "109",
+      "name": "Wattapik",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pincurchin-V2-DLR109",
+      "fr": {
+        "value": 2.5,
+        "updatedAt": "2026-11-23T02:04:57.083Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1.5,
+        "updatedAt": "2026-11-23T02:04:57.083Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-110",
+      "number": "110",
+      "name": "Amovénus",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Enamorus-V2-DLR110",
+      "fr": {
+        "value": 2,
+        "updatedAt": "2026-11-18T06:20:36.021Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.7,
+        "updatedAt": "2026-11-18T06:20:36.021Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-111",
+      "number": "111",
+      "name": "Groudon",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Groudon-V2-DLR111",
+      "fr": {
+        "value": 19.99,
+        "updatedAt": "2026-11-16T10:50:01.791Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 14.79,
+        "updatedAt": "2026-11-18T16:12:18.609Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-112",
+      "number": "112",
+      "name": "Zorua",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zorua-V2-DLR112",
+      "fr": {
+        "value": 6.1,
+        "updatedAt": "2026-11-20T01:06:19.199Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 5.95,
+        "updatedAt": "2026-11-20T01:06:19.199Z",
+        "offers": 47
+      }
+    },
+    {
+      "id": "me06-113",
+      "number": "113",
+      "name": "Sepiatop",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Inkay-V2-DLR113",
+      "fr": {
+        "value": 2.4,
+        "updatedAt": "2026-11-18T07:58:35.758Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 3.5,
+        "updatedAt": "2026-11-18T07:45:38.348Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-114",
+      "number": "114",
+      "name": "Évoli",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Eevee-V2-DLR114",
+      "fr": {
+        "value": 19,
+        "updatedAt": "2026-11-19T02:10:31.637Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 15,
+        "updatedAt": "2026-11-19T02:08:27.759Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-115",
+      "number": "115",
+      "name": "Azurill",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Azurill-V2-DLR115",
+      "fr": {
+        "value": 5,
+        "updatedAt": "2026-11-20T08:22:51.777Z",
+        "offers": 36
+      },
+      "en": {
+        "value": 5.5,
+        "updatedAt": "2026-11-20T08:22:51.777Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-116",
+      "number": "116",
+      "name": "Altaria",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Altaria-V2-DLR116",
+      "fr": {
+        "value": 4.99,
+        "updatedAt": "2026-11-21T16:11:55.801Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 4,
+        "updatedAt": "2026-11-21T16:11:55.801Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-117",
+      "number": "117",
+      "name": "Kecleon",
+      "rarity": "Illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Kecleon-V2-DLR117",
+      "fr": {
+        "value": 12,
+        "updatedAt": "2026-11-19T03:50:55.833Z",
+        "offers": 44
+      },
+      "en": {
+        "value": 9,
+        "updatedAt": "2026-11-19T03:50:55.833Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-118",
+      "number": "118",
+      "name": "Méga-Sarmuraï ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golisopod-ex-V2-DLR118",
+      "fr": {
+        "value": 2.5,
+        "updatedAt": "2026-11-20T23:05:35.429Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 2.49,
+        "updatedAt": "2026-11-20T23:05:35.429Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-119",
+      "number": "119",
+      "name": "Motisma Chaleur ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Heat-Rotom-ex-V2-DLR119",
+      "fr": {
+        "value": 1.99,
+        "updatedAt": "2026-11-20T18:58:50.170Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1,
+        "updatedAt": "2026-11-20T18:46:44.528Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-120",
+      "number": "120",
+      "name": "Froussardine ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Wishiwashi-ex-V2-DLR120",
+      "fr": {
+        "value": 1.4,
+        "updatedAt": "2026-11-16T20:21:30.520Z",
+        "offers": 47
+      },
+      "en": {
+        "value": 1.5,
+        "updatedAt": "2026-11-14T00:08:40.958Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-121",
+      "number": "121",
+      "name": "Raikou ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Raikou-ex-V2-DLR121",
+      "fr": {
+        "value": 3.8,
+        "updatedAt": "2026-11-21T11:51:18.374Z",
+        "offers": 70
+      },
+      "en": {
+        "value": 2,
+        "updatedAt": "2026-11-20T22:18:46.610Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-122",
+      "number": "122",
+      "name": "Méga-Golemastoc ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golurk-ex-V2-DLR122",
+      "fr": {
+        "value": 4.5,
+        "updatedAt": "2026-11-17T14:41:49.827Z",
+        "offers": 49
+      },
+      "en": {
+        "value": 1.9,
+        "updatedAt": "2026-11-20T20:04:46.309Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-123",
+      "number": "123",
+      "name": "Méga-Sépiatroce ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Malamar-ex-V2-DLR123",
+      "fr": {
+        "value": 2.5,
+        "updatedAt": "2026-11-20T18:26:15.304Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2.39,
+        "updatedAt": "2026-11-20T18:24:08.900Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-124",
+      "number": "124",
+      "name": "Flambusard ex",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Talonflame-ex-V2-DLR124",
+      "fr": {
+        "value": 4.5,
+        "updatedAt": "2026-11-20T20:19:44.044Z",
+        "offers": 39
+      },
+      "en": {
+        "value": 6,
+        "updatedAt": "2026-11-20T19:47:38.501Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-125",
+      "number": "125",
+      "name": "Millepertuis",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Aarune-V2-DLR125",
+      "fr": {
+        "value": 2.49,
+        "updatedAt": "2026-11-20T18:10:55.786Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 3.5,
+        "updatedAt": "2026-11-20T18:10:55.786Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-126",
+      "number": "126",
+      "name": "Lanterne Aventure",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Adventure-Lantern-V2-DLR126",
+      "fr": {
+        "value": 1.98,
+        "updatedAt": "2026-11-20T19:23:49.488Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 2,
+        "updatedAt": "2026-11-20T19:23:49.488Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-127",
+      "number": "127",
+      "name": "Veste Personnalisée",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Custom-Vest-V2-DLR127",
+      "fr": {
+        "value": 1.3,
+        "updatedAt": "2026-11-17T12:42:42.259Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.85,
+        "updatedAt": "2026-11-17T12:42:42.259Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-128",
+      "number": "128",
+      "name": "Engouement de la MC",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Emcees-Hype-V2-DLR128",
+      "fr": {
+        "value": 1.89,
+        "updatedAt": "2026-11-20T19:05:56.884Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1.5,
+        "updatedAt": "2026-11-20T19:05:56.884Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-129",
+      "number": "129",
+      "name": "Attrape-Pokémon",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Pokemon-Catcher-DLR129",
+      "fr": {
+        "value": 1,
+        "updatedAt": "2026-11-20T23:36:36.407Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 0.75,
+        "updatedAt": "2026-11-20T23:34:25.881Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-130",
+      "number": "130",
+      "name": "Entraînement de Lévy et Tatia",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Tate-Lizas-Training-V2-DLR130",
+      "fr": {
+        "value": 1.5,
+        "updatedAt": "2026-11-20T18:30:39.432Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1.95,
+        "updatedAt": "2026-11-20T18:30:39.432Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-131",
+      "number": "131",
+      "name": "Confiance d’Amaryllis",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zinnias-Trust-V2-DLR131",
+      "fr": {
+        "value": 2.5,
+        "updatedAt": "2026-11-17T12:55:23.437Z",
+        "offers": 40
+      },
+      "en": {
+        "value": 2.9,
+        "updatedAt": "2026-11-17T12:55:23.437Z",
+        "offers": 48
+      }
+    },
+    {
+      "id": "me06-133",
+      "number": "133",
+      "name": "Énergie Plante Croisante",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Growing-G-Energy-DLR133",
+      "fr": {
+        "value": 1.4,
+        "updatedAt": "2026-11-17T15:13:32.023Z",
+        "offers": 32
+      },
+      "en": {
+        "value": 1.25,
+        "updatedAt": "2026-11-20T18:29:54.920Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-134",
+      "number": "134",
+      "name": "Énergie Feu Nitro",
+      "rarity": "Ultra Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Nitro-R-Energy-DLR134",
+      "fr": {
+        "value": 1.5,
+        "updatedAt": "2026-11-20T19:34:14.986Z",
+        "offers": 50
+      },
+      "en": {
+        "value": 1.68,
+        "updatedAt": "2026-11-20T19:34:14.986Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-135",
+      "number": "135",
+      "name": "Méga-Sarmuraï ex",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golisopod-ex-V3-DLR135",
+      "fr": {
+        "value": 19,
+        "updatedAt": "2026-11-22T16:20:57.629Z",
+        "offers": 44
+      },
+      "en": {
+        "value": 14.5,
+        "updatedAt": "2026-11-22T16:20:57.629Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-136",
+      "number": "136",
+      "name": "Raikou ex",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Raikou-ex-V3-DLR136",
+      "fr": {
+        "value": 149.99,
+        "updatedAt": "2026-11-18T07:38:23.429Z",
+        "offers": 4
+      },
+      "en": {
+        "value": 66.81,
+        "updatedAt": "2026-11-18T07:38:23.429Z",
+        "offers": 49
+      }
+    },
+    {
+      "id": "me06-137",
+      "number": "137",
+      "name": "Méga-Golemastoc ex",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Golurk-ex-V3-DLR137",
+      "fr": {
+        "value": 24,
+        "updatedAt": "2026-11-21T20:47:34.130Z",
+        "offers": 28
+      },
+      "en": {
+        "value": 20,
+        "updatedAt": "2026-11-21T20:45:30.560Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-138",
+      "number": "138",
+      "name": "Méga-Rayquaza ex",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Rayquaza-ex-V2-DLR138",
+      "fr": {
+        "value": 430,
+        "updatedAt": "2026-11-23T03:37:49.808Z",
+        "offers": 26
+      },
+      "en": {
+        "value": 245.81,
+        "updatedAt": "2026-11-23T03:37:49.808Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-139",
+      "number": "139",
+      "name": "Millepertuis",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Aarune-V3-DLR139",
+      "fr": {
+        "value": 14.99,
+        "updatedAt": "2026-11-18T04:28:53.893Z",
+        "offers": 23
+      },
+      "en": {
+        "value": 12,
+        "updatedAt": "2026-11-18T04:31:08.560Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-140",
+      "number": "140",
+      "name": "Confiance d’Amaryllis",
+      "rarity": "Special illustration rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Zinnias-Trust-V3-DLR140",
+      "fr": {
+        "value": 30,
+        "updatedAt": "2026-11-18T15:34:41.824Z",
+        "offers": 24
+      },
+      "en": {
+        "value": 16.5,
+        "updatedAt": "2026-11-18T15:34:41.824Z",
+        "offers": 50
+      }
+    },
+    {
+      "id": "me06-141",
+      "number": "141",
+      "name": "Méga-Rayquaza ex",
+      "rarity": "Mega Hyper Rare",
+      "marketUrl": "https://www.cardmarket.com/en/Pokemon/Products/Singles/Delta-Reign/Mega-Rayquaza-ex-V3-DLR141",
+      "fr": {
+        "value": 223,
+        "updatedAt": "2026-11-16T15:18:57.526Z",
+        "offers": 30
+      },
+      "en": {
+        "value": 189,
+        "updatedAt": "2026-11-18T06:11:54.820Z",
+        "offers": 47
+      }
+    }
+  ]
+}

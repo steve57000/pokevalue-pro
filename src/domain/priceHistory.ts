@@ -22,6 +22,7 @@ export type PriceSnapshot = {
   aggregator: string
   market: string
   currency: string
+  identityVerified?: boolean
   printingLanguage: PrintingLanguage
   variant: QuoteVariant
   condition: string
@@ -32,6 +33,9 @@ export type PriceSnapshot = {
   externalProductId?: string
   sourceUpdatedAt?: string
   recordedAt?: string
+  sourceUrl?: string
+  listingUrl?: string
+  validUntil?: string
 }
 
 export type PriceHistoryDocument = { schemaVersion: 2; updatedAt: string; snapshots: PriceSnapshot[] }
@@ -192,13 +196,14 @@ export function snapshotsFromQuotes(cardId: string, quotes: MarketPriceQuote[], 
     return {
       cardId,
       language: primary.catalogLanguage,
-      date,
+      date: primary.aggregator === 'manakodex' && primary.sourceUpdatedAt ? primary.sourceUpdatedAt.slice(0,10) : date,
       value: primary.value,
       source: primary.source,
       aggregator: primary.aggregator,
       market: primary.market,
       currency: primary.currency,
       printingLanguage: primary.printingLanguage,
+      identityVerified: primary.identityVerified === true,
       variant: primary.variant,
       condition: primary.condition,
       basis: primary.basis,
@@ -215,6 +220,9 @@ export function snapshotsFromQuotes(cardId: string, quotes: MarketPriceQuote[], 
       ...(primary.externalProductId ? { externalProductId: primary.externalProductId } : {}),
       ...(primary.sourceUpdatedAt ? { sourceUpdatedAt: primary.sourceUpdatedAt } : {}),
       recordedAt: group.map(quote => quote.observedAt).sort().slice(-1)[0],
+      ...(primary.sourceUrl ? { sourceUrl: primary.sourceUrl } : {}),
+      ...(primary.listingUrl ? { listingUrl: primary.listingUrl } : {}),
+      ...(primary.validUntil ? { validUntil: primary.validUntil } : {}),
     }
   })
 }
@@ -327,7 +335,7 @@ export function todayPriceDate() {
 export function comparablePriceHistory(snapshots: PriceSnapshot[]): PriceSnapshot[] {
   const daily = new Map<string, PriceSnapshot>()
   for (const point of snapshots) {
-    if (isAsianCatalogLanguage(point.language) || point.source !== 'cardmarket' || point.market !== 'cardmarket-europe'
+    if (point.identityVerified !== true || point.printingLanguage !== point.language || isAsianCatalogLanguage(point.language) || point.source !== 'cardmarket' || point.market !== 'cardmarket-europe'
       || point.currency !== 'EUR' || point.variant !== 'normal' || point.basis !== 'guide') continue
     const key = `${point.language}:${point.cardId}:${point.date}`
     const previous = daily.get(key)

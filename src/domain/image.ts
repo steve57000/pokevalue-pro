@@ -1,5 +1,12 @@
 import type { ExternalCard } from './cards'
 import {cardImageOverrideById,rgbMewImageByNumber} from '../data/cardImageOverrides'
+import englishImageSets from '../data/englishImageSets.json'
+import modernEnglishImages from '../data/modernEnglishImageIds.json'
+export const supportedEnglishImageSets = new Set(englishImageSets.setIds)
+export const modernEnglishImageIds = new Set(modernEnglishImages.cardIds)
+export const scrydexEnglishImageIds = new Set(modernEnglishImages.scrydexCardIds)
+export const modernEnglishImageSets = new Set(modernEnglishImages.cardIds.map(id=>id.slice(0,id.lastIndexOf('-'))))
+const scrydexEnglishImageSets = new Set(modernEnglishImages.scrydexCardIds.map(id=>id.slice(0,id.lastIndexOf('-'))))
 export function normalizeImageLanguage(language:string='fr'){
  const normalized=language.trim().toLowerCase().replace(/_/g,'-')
  if(normalized==='jp'||normalized==='ja')return 'ja'
@@ -40,10 +47,25 @@ const languageFromAssetUrl=(url:string,fallback:string)=>{
 }
 export function isPokemonCardBackUrl(url?:string){
  if(!url)return false
- const normalized=url.toLowerCase().split(/[?#]/,1)[0].replace(/%2f/g,'/').replace(/\\/g,'/')
- return normalized.endsWith('/images/pokemon-card-back.jpg')||normalized.endsWith('/pokemon-card-back.jpg')||normalized.endsWith('/pokemon-card-back.png')||normalized.includes('images.pokemontcg.io/card-back')
+ let normalized=url.toLowerCase().split(/[?#]/,1)[0].replace(/\\/g,'/')
+ try{normalized=decodeURIComponent(normalized)}catch{/* Keep the original malformed URL. */}
+ return normalized.split('/').some(part=>/^(?:(?:pokemon|card)[-_ ]*)*(?:back|verso|dos)(?:[-_ ](?:en|fr|jp|ja|zh|default))?(?:\.[a-z0-9]+)?$/.test(part)||/^(?:cardback|back[-_ ]card|placeholder|no[-_ ]image)(?:[-_ ][a-z0-9]+)?(?:\.[a-z0-9]+)?$/.test(part))
 }
-const frontImage=(image:ResolvedCardImage):ResolvedCardImage=>image.url&&!isPokemonCardBackUrl(image.url)?image:{language:image.language,quality:image.quality,source:'none',isFallback:false,verified:false}
+/** Reject old cached guesses for provider set IDs that do not exist. Some image
+ * servers answer those paths with a generic back instead of an HTTP error. */
+export function isUsableCardFrontUrl(url?:string):url is string{
+ if(!url||isPokemonCardBackUrl(url))return false
+ try{
+  const parsed=new URL(url,'https://pokevalue.invalid')
+  if(parsed.hostname==='images.pokemontcg.io'){
+   const set=parsed.pathname.split('/')[1]
+   return supportedEnglishImageSets.has(set)&&!scrydexEnglishImageSets.has(set)
+  }
+  if(parsed.hostname==='images.scrydex.com')return parsed.pathname.split('/')[1]==='pokemon'&&scrydexEnglishImageIds.has(parsed.pathname.split('/')[2])
+ }catch{return false}
+ return true
+}
+const frontImage=(image:ResolvedCardImage):ResolvedCardImage=>isUsableCardFrontUrl(image.url)?image:{language:image.language,quality:image.quality,source:'none',isFallback:false,verified:false}
 export function resolveCardImage({card,requestedLanguage,quality='low',rejectedUrls}:{card:ExternalCard;requestedLanguage:string;quality?:'low'|'high';rejectedUrls?:ReadonlySet<string>}):ResolvedCardImage{
  requestedLanguage=normalizeImageLanguage(requestedLanguage)
  let fallback:ResolvedCardImage|undefined
@@ -72,7 +94,7 @@ export function resolveCardImage({card,requestedLanguage,quality='low',rejectedU
    fallback??=image
   }
  }
- if(card.id&&card.image&&!isPokemonCardBackUrl(card.image)){
+ if(card.id&&isUsableCardFrontUrl(card.image)){
   const imageLanguage=languageFromAssetUrl(card.image,card.language||requestedLanguage)
   const url=buildCardAssetCandidates(card.image,quality).find(candidate=>!rejectedUrls?.has(candidate))
   if(url){
@@ -83,8 +105,8 @@ export function resolveCardImage({card,requestedLanguage,quality='low',rejectedU
  }
  const fallbackUrl=card.fallbackImage?.[quality]
  if(fallbackUrl&&!rejectedUrls?.has(fallbackUrl)){
-  const image=frontImage({url:fallbackUrl,language:'en',quality,source:'Pokémon TCG API',isFallback:true,verified:true})
-  if(image.url)return fallback??image
+  const image=frontImage({url:fallbackUrl,language:'en',quality,source:'Pokémon TCG API',isFallback:requestedLanguage!=='en',verified:true})
+  if(image.url)return image.language===requestedLanguage?image:fallback??image
  }
  return fallback??{language:requestedLanguage,quality,source:'none',isFallback:false,verified:false}
 }

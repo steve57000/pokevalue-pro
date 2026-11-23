@@ -17,6 +17,8 @@ export type ExternalCard = {
   language: string
   updatedAt?: string
   pricing?: TcgDexPricing
+  // Internal evidence, never inferred from a localized TCGdex endpoint.
+  priceVerification?: { cardId: string; printingLanguage: 'fr'|'en'|'ja'|'zh-tw'; variant: 'normal'; identityVerified: true }
   fromStaleCache?: boolean
 }
 

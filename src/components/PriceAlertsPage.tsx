@@ -7,7 +7,7 @@ import type { FavoriteCard } from '../domain/favorites'
 import type { Card } from '../types'
 import { readStoredJson, writeStoredJson } from '../utils/storage'
 import { money } from '../utils/money'
-import { isAsianCatalogLanguage } from '../domain/pricing'
+import { collectionMarketValue, isAsianCatalogLanguage } from '../domain/pricing'
 
 type TrackedCard = { id: string; language: string; name: string; setName: string; number?: string }
 type Props = { cards: Card[]; entries: CollectionEntry[]; favorites: FavoriteCard[] }
@@ -68,7 +68,8 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
   useEffect(() => {
     const values = new Map<string, number>()
     for (const alert of alerts) {
-      const value = getPrice(alert.cardId, alert.language)?.price?.value
+      const state=getPrice(alert.cardId, alert.language)
+      const value = state?.status==='success' ? collectionMarketValue(state.price,alert.language) : undefined
       if (typeof value === 'number') values.set(priceAlertKey(alert), value)
     }
     setAlerts((currentAlerts) => markReachedPriceAlerts(currentAlerts, values))
@@ -122,7 +123,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
         {trackedCards.length ? <>
           <label>Carte<select value={selected ? identity(selected) : ''} onChange={(event) => setSelectedKey(event.target.value)}>{trackedCards.map((card) => <option key={identity(card)} value={identity(card)}>{card.name} · {card.setName} ({languageLabel(card.language)})</option>)}</select></label>
           <div className="alert-current-price" role="status">
-            <span>Prix Cardmarket Europe · EUR</span>
+            <span>Dernier relevé Cardmarket · EUR</span>
             <strong>{current?.status === 'success' && current.price ? money(current.price.value) : current?.status === 'error' || current?.status === 'success' ? 'Prix indisponible' : 'Chargement…'}</strong>
             {current?.status === 'success' && !current.price && <small>Aucun prix Cardmarket disponible pour cette carte.</small>}
             {selected && isAsianCatalogLanguage(selected.language) && <small>Référence européenne uniquement; elle ne représente pas le marché local asiatique.</small>}
@@ -133,7 +134,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
           </div>
           <button className="feature-primary" type="submit"><BellRing size={17}/> Créer l’alerte</button>
         </> : <p className="alert-no-cards">Ajoute d’abord une carte à ta collection ou à tes favoris pour la surveiller.</p>}
-        <p className="alerts-note">Vérification à l’ouverture et à l’actualisation. Les alertes s’affichent dans l’application.</p>
+        <p className="alerts-note">Les références d’annonces datées ne sont pas des ventes conclues ni des prix en direct. Vérification à l’ouverture et à l’actualisation. Les alertes s’affichent dans l’application.</p>
         {message && <p className="feature-feedback" role="status" aria-live="polite">{message}</p>}
       </form>
 
@@ -143,12 +144,12 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
           const state = getPrice(alert.cardId, alert.language), value = state?.price?.value
           return <article className={`price-alert-row${alert.triggeredAt ? ' triggered' : ''}`} key={alert.id}>
             <div className="price-alert-icon">{alert.triggeredAt ? <CheckCircle2 size={20}/> : <Bell size={20}/>}</div>
-            <div className="price-alert-copy"><strong>{alert.name}</strong><span>{alert.setName}{alert.number ? ` · nº ${alert.number}` : ''} · {languageLabel(alert.language)}</span><small>{alert.direction === 'below' ? 'Alerte Cardmarket Europe sous' : 'Alerte Cardmarket Europe au-dessus de'} {money(alert.targetPrice)} · {value !== undefined ? `actuellement ${money(value)}` : state?.status === 'loading' ? 'prix en chargement' : 'prix indisponible'}</small>{isAsianCatalogLanguage(alert.language)&&<small>Référence européenne, non locale.</small>}{alert.triggeredAt && <b className="price-alert-hit">Objectif atteint à {money(alert.triggeredPrice ?? alert.targetPrice)} · {new Date(alert.triggeredAt).toLocaleString('fr-FR')}</b>}</div>
+            <div className="price-alert-copy"><strong>{alert.name}</strong><span>{alert.setName}{alert.number ? ` · nº ${alert.number}` : ''} · {languageLabel(alert.language)}</span><small>{alert.direction === 'below' ? 'Alerte Cardmarket Europe sous' : 'Alerte Cardmarket Europe au-dessus de'} {money(alert.targetPrice)} · {value !== undefined ? `dernier relevé ${money(value)}` : state?.status === 'loading' ? 'prix en chargement' : 'prix indisponible'}</small>{isAsianCatalogLanguage(alert.language)&&<small>Référence européenne, non locale.</small>}{alert.triggeredAt && <b className="price-alert-hit">{alert.verifiedTrigger?`Seuil atteint à ${money(alert.triggeredPrice??0)}`:'Ancien déclenchement · prix à revérifier'} · {new Date(alert.triggeredAt).toLocaleString('fr-FR')}</b>}</div>
             <button className="alert-delete" type="button" aria-label={`Supprimer l’alerte pour ${alert.name}`} onClick={() => removeAlert(alert.id)}><Trash2 size={17}/></button>
           </article>
         }) : <div className="feature-empty"><Bell size={28}/><strong>Aucune alerte pour l’instant</strong><span>Crée un seuil pour voir apparaître ici son suivi.</span></div>}
       </div>
     </div>
-    <p className="alerts-disclaimer">Source : prix Cardmarket Europe fournis par TCGdex lorsqu’ils sont disponibles, sans filtre de langue. Les alertes ne sont pas des notifications en arrière-plan ; garde l’application ouverte pour voir les objectifs atteints.</p>
+    <p className="alerts-disclaimer">Seules les références vérifiées pour la carte et sa langue déclenchent les alertes. Un relevé daté de plus de 14 jours est exclu. Les alertes ne sont pas des notifications en arrière-plan ; garde l’application ouverte pour voir les objectifs atteints.</p>
   </section>
 }

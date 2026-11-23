@@ -3,6 +3,7 @@ import { collectionUnitPrice, printingKey, setIdFromCardId, type CollectionEntry
 import type { FavoriteCard } from './favorites'
 import { comparablePriceHistory, todayPriceDate, type PriceSnapshot } from './priceHistory'
 import { normalizeImageLanguage } from './image'
+import { isPriceReferenceStale } from './pricing'
 
 export type StatsRow = {
   key: string; id: string; setId: string; language: string; variant: string
@@ -10,6 +11,7 @@ export type StatsRow = {
   owned: number; value?: number; manual: boolean; history: PriceSnapshot[]; delta?: number
   deltaPercent?: number; deltaLabel?: string
   averages?: { day?: number; week?: number; month?: number }
+  reference?: PriceSnapshot
 }
 
 export function currentCollectionPrice(latest: number | undefined, entries: CollectionEntry[]) {
@@ -47,7 +49,7 @@ export function buildStatsRows(cards: Card[], entries: CollectionEntry[], favori
   const histories = new Map<string, PriceSnapshot[]>()
   const references = new Map<string, PriceSnapshot>()
   for(const point of snapshots) {
-    if(!['fr','en'].includes(point.language)||point.source!=='cardmarket'||point.market!=='cardmarket-europe'||point.currency!=='EUR'||point.variant!=='normal')continue
+    if(point.identityVerified!==true||point.printingLanguage!==point.language||!['fr','en'].includes(point.language)||point.source!=='cardmarket'||point.market!=='cardmarket-europe'||point.currency!=='EUR'||point.variant!=='normal')continue
     const key=`${point.language}:${point.cardId}`, previous=references.get(key)
     if(!previous||(point.recordedAt??point.date)>(previous.recordedAt??previous.date))references.set(key,point)
   }
@@ -63,8 +65,10 @@ export function buildStatsRows(cards: Card[], entries: CollectionEntry[], favori
     row.history = row.history.filter(point=>point.externalProductId===latest?.externalProductId&&point.metric===latest?.metric)
     const period = range==='all' ? row.history : row.history.filter(point=>Date.parse(point.date)>=cutoff)
     const first = period[0], last = period[period.length-1]
-    Object.assign(row, currentCollectionPrice(latest?.value, ownedByKey.get(row.key) ?? []))
     const reference = row.setId==='jumbo'||row.variant!=='normal' ? undefined : references.get(`${row.language}:${row.id}`)
+    const eligible = reference && !isPriceReferenceStale(reference) && !(reference.condition === 'near-mint' && (ownedByKey.get(row.key) ?? []).some(entry=>!['mint','near-mint'].includes(entry.condition))) ? reference : undefined
+    row.reference = eligible
+    Object.assign(row, currentCollectionPrice(eligible?.value, ownedByKey.get(row.key) ?? []))
     const metric = (name: string) => reference?.quotes.find(quote=>quote.metric===name&&quote.basis==='completed-sale')?.value
     row.averages = {day:metric('avg1'),week:metric('avg7'),month:metric('avg30')}
     if (period.length>1 && first.externalProductId===last.externalProductId && first.metric===last.metric) {

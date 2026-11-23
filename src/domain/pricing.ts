@@ -9,13 +9,14 @@ export type PrintingLanguage = 'fr' | 'en' | 'ja' | 'zh-tw' | 'unknown'
 export type MarketPriceQuote = {
   value: number
   source: 'cardmarket' | 'tcgplayer'
-  aggregator: 'tcgdex'
+  aggregator: 'tcgdex' | 'manakodex'
   market: 'cardmarket-europe' | 'tcgplayer-north-america'
   currency: string
   catalogLanguage: string
+  identityVerified?: boolean
   printingLanguage: PrintingLanguage
   variant: QuoteVariant
-  condition: 'unknown'
+  condition: 'unknown' | 'near-mint'
   basis: PriceBasis
   aggregation: QuoteAggregation
   metric: string
@@ -23,18 +24,30 @@ export type MarketPriceQuote = {
   externalProductId?: string
   sourceUpdatedAt?: string
   observedAt: string
+  sourceUrl?: string
+  listingUrl?: string
+  validUntil?: string
 }
 
 export type PriceReference = {
+  printingLanguage?: PrintingLanguage
+  identityVerified?: boolean
   value: number
   currency: 'EUR'
   label: 'Annonce la moins chère Cardmarket' | 'Tendance Cardmarket' | 'Moyenne des ventes 30 jours' | 'Moyenne des ventes 7 jours' | 'Moyenne des ventes 1 jour' | 'Prix de vente moyen Cardmarket'
   provider: 'cardmarket'
   basis?: PriceBasis
   updatedAt?: string
+  condition?: 'unknown' | 'near-mint'
+  aggregator?: 'tcgdex' | 'manakodex'
+  sourceUrl?: string
+  listingUrl?: string
+  validUntil?: string
 }
 
 export type TcgPlayerQuote = {
+  printingLanguage?: PrintingLanguage
+  identityVerified?: boolean
   value: number
   currency: 'USD'
   label: 'Marché TCGplayer' | 'Prix intermédiaire TCGplayer' | 'Prix bas TCGplayer'
@@ -349,4 +362,21 @@ export function getPriceStats(pricing?: TcgDexPricing | null): {
     tcgplayerHolo: tcgPlayerStats(tcgplayer, 'holofoil'),
     tcgplayerReverse: tcgPlayerStats(tcgplayer, 'reverse-holofoil'),
   }
+}
+
+export function isVerifiedLocalQuote(quote: {printingLanguage?: PrintingLanguage; identityVerified?: boolean} | null | undefined, language: string) {
+  return quote?.identityVerified === true && quote.printingLanguage === language
+}
+
+export function isPriceReferenceStale(quote: {validUntil?: string} | null | undefined, now = Date.now()) {
+  if (!quote?.validUntil) return false
+  const expiry = Date.parse(quote.validUntil)
+  return !Number.isFinite(expiry) || expiry <= now
+}
+
+/** A dated NM offer may value an NM copy, never a worn or reverse copy. */
+export function collectionMarketValue(quote: PriceReference | null | undefined, language: string, condition?: string, now = Date.now()) {
+  if (!quote || !isVerifiedLocalQuote(quote, language) || isPriceReferenceStale(quote, now)) return undefined
+  if (quote.condition === 'near-mint' && condition && !['mint', 'near-mint'].includes(condition)) return undefined
+  return quote.value
 }

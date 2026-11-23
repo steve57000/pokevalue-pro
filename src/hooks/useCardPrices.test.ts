@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { isCardPriceRefreshDue, retainKnownPrices, type CardPriceState } from './useCardPrices'
 
 describe('daily market price refresh', () => {
-  const known:CardPriceState={status:'success',language:'fr',price:{value:150,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',updatedAt:'2026-10-18'}}
+  const known:CardPriceState={status:'success',language:'fr',price:{printingLanguage:'fr',identityVerified:true,value:150,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',updatedAt:'2026-10-18'}}
   it('retains the last known quote and its date when a successful response has no price',()=>{
     expect(retainKnownPrices(known,{status:'success',language:'fr',price:null})).toMatchObject({price:known.price,retained:true})
   })

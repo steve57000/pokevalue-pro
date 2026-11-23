@@ -88,7 +88,7 @@ describe('price history',()=>{
  })
 
  it('allows graph history to select one stable European normal guide series',()=>{
-  const rows=[snapshot({value:10}),snapshot({date:'2026-10-02',source:'tcgplayer',market:'tcgplayer-north-america',currency:'USD'}),snapshot({date:'2026-10-02',variant:'holofoil',value:15}),snapshot({date:'2026-10-03',basis:'listing',value:12})]
+  const rows=[snapshot({value:10,printingLanguage:'fr',identityVerified:true}),snapshot({date:'2026-10-02',source:'tcgplayer',market:'tcgplayer-north-america',currency:'USD'}),snapshot({date:'2026-10-02',variant:'holofoil',value:15}),snapshot({date:'2026-10-03',basis:'listing',value:12})]
   const history=getPriceHistory('x','fr',{getItem:()=>JSON.stringify(rows)})
   expect(history.map(x=>x.value)).toEqual([10])
  })

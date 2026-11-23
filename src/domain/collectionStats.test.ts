@@ -6,7 +6,7 @@ import { createFavorite } from './favorites'
 import { cards } from '../data'
 
 const saved = (overrides = {}) => upsertEntry(emptyCollection(), { source: 'tcgdex', setId: '30th-c', cardId: '30th-c-4', language: 'fr', variant: 'normal', name: 'Dracaufeu', setName: 'Collection Classique', quantity: 2, condition: 'excellent', notes: 'À conserver', ...overrides }).entries[0]
-const point = (overrides: Partial<PriceSnapshot> = {}): PriceSnapshot => ({ cardId: '30th-c-4', language: 'fr', date: '2026-10-18', value: 20, source: 'cardmarket', market: 'cardmarket-europe', currency: 'EUR', variant: 'normal', basis: 'guide', aggregator: 'tcgdex', condition: 'unknown', printingLanguage: 'unknown', aggregation: 'aggregate', metric: 'trend', quotes: [], ...overrides })
+const point = (overrides: Partial<PriceSnapshot> = {}): PriceSnapshot => ({ cardId: '30th-c-4', language: 'fr', date: '2026-10-18', value: 20, source: 'cardmarket', market: 'cardmarket-europe', currency: 'EUR', variant: 'normal', basis: 'guide', aggregator: 'tcgdex', condition: 'unknown', printingLanguage: 'fr', identityVerified:true, aggregation: 'aggregate', metric: 'trend', quotes: [], ...overrides })
 describe('collection statistics regressions', () => {
   it('keeps Dracaufeu and Magicarpe before, during and after unrelated price loading', () => {
     const entries = [saved(), saved({cardId: '30th-c-9', name: 'Magicarpe'})]

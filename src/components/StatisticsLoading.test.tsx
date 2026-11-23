@@ -6,7 +6,7 @@ import { expect, it, vi } from 'vitest'
 import { PriceHistoryPage } from './PriceHistoryPage'
 import { emptyCollection, upsertEntry } from '../domain/collection'
 import { flushPriceHistory, getAllPriceHistory, initializePriceHistory } from '../domain/priceHistory'
-vi.mock('../api/tcgdex',()=>({tcgDexProvider:{getCard:vi.fn(async(id:string)=>({id,pricing:{cardmarket:{trend:id.endsWith('001')?100:20,avg7:12,avg30:10}}}))}}))
+vi.mock('../api/tcgdex',()=>({tcgDexProvider:{getCard:vi.fn(async(id:string)=>({id,language:'fr',name:id,priceVerification:{cardId:id,printingLanguage:'fr',variant:'normal',identityVerified:true},pricing:{cardmarket:{trend:id.endsWith('001')?100:20,avg7:12,avg30:10}}}))}}))
 vi.mock('./CatalogueImage',()=>({CatalogueImage:()=>null}))
 it('keeps real hook prices and manual values through loading, navigation and persistence',async()=>{
   Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});localStorage.clear();sessionStorage.clear()

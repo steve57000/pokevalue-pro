@@ -1,3 +1,5 @@
+import { collectionMarketValue } from './domain/pricing'
+import { localizedMarketData } from './domain/localizedPricing'
 import { migrateMarketObservations } from './domain/collectionExtras'
 import { SalesPage } from './components/SalesPage'
 import { initializePriceHistory } from './domain/priceHistory'
@@ -19,7 +21,7 @@ import { GradingPage } from './components/GradingPage'
 import { CollectionSyncSettings } from './components/CollectionSyncSettings'
 import { ScrollToTop } from './components/ScrollToTop'
 import { LivePrice } from './components/LivePrice'
-import { isAsianCatalogLanguage, selectCardmarketPrice } from './domain/pricing'
+import { isAsianCatalogLanguage } from './domain/pricing'
 import { useCardPrices } from './hooks/useCardPrices'
 import { normalizeSearch } from './domain/catalogue'
 import { sortFavoritesByPrice } from './domain/favorites'
@@ -146,9 +148,10 @@ function App() {
     const matchesText = `${card.name} ${card.pokemon} ${card.set} ${card.number}`.toLowerCase().includes(query.toLowerCase())
     const matchesSet = setFilter === 'Toutes' || card.set === setFilter
     const matchesRarity = rarityFilter === 'Toutes' || card.rarity === rarityFilter
-    const matchesValue = card.rawMax >= minValue
+    const quote = liveCards[card.id]?.data ? localizedMarketData(liveCards[card.id].data!).price : undefined
+    const matchesValue = minValue===0 || (quote?.value!==undefined && quote.value>=minValue)
     return matchesText && matchesSet && matchesRarity && matchesValue
-  }), [query, setFilter, rarityFilter, minValue])
+  }), [query, setFilter, rarityFilter, minValue, liveCards])
   const editorialFavorite=(card:Card):FavoriteInput=>({source:'editorial',cardId:card.id,setId:card.tcgdexId?.slice(0,card.tcgdexId.lastIndexOf('-')),language:normalizeImageLanguage(card.language),name:card.name,setName:card.set,localId:card.number,image:liveCards[card.id]?.data?.image})
 
   const collectionCard = (card: Card, favorite?: FavoriteInput | null): CollectionCard => ({
@@ -296,7 +299,7 @@ function App() {
 }
 
 function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,onFavorite,onCollect}:{card:Card,liveEntry?:{status:'idle'|'loading'|'success'|'error';data?:import('./domain/cards').ExternalCard;error?:string},favorite:boolean,collected:boolean,onShowcase:()=>void,onOpen:()=>void,onRetry:()=>void,onFavorite:()=>void,onCollect:()=>void}) {
-  const livePrice = selectCardmarketPrice(liveEntry?.data?.pricing)
+  const livePrice = liveEntry?.data ? localizedMarketData(liveEntry.data).price : undefined
   const hasLive = liveEntry?.status === 'success' && !!livePrice
   return <article className="poke-card">
     <div className={`card-visual ${card.tcgdexId ? 'with-real-image' : ''}`} onClick={onShowcase} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onShowcase()}}} role="button" tabIndex={0} aria-label={`Voir ${card.name} en 3D`} style={{background:`radial-gradient(circle at 70% 20%, ${card.accent}55, transparent 35%), linear-gradient(135deg, ${card.color}, #111827)`}}>
@@ -309,10 +312,10 @@ function CardTile({card,liveEntry,favorite,collected,onShowcase,onOpen,onRetry,o
       <div className="card-meta"><span>{card.year}</span><span>{card.language}</span><span className={`trend ${card.trend}`}>{card.trend==='up'?'↗':card.trend==='down'?'↘':'→'}</span></div>
       <h3>{card.name}</h3>
       <p>{card.set}</p>
-      <div className="source-badge">{hasLive ? 'Référence Cardmarket (langue non filtrée)' : 'Estimation indicative'}</div>
+      <div className="source-badge">{hasLive ? 'Prix vérifié' : 'Prix non vérifié'}</div>
       {liveEntry?.status === 'loading' && <div className="price-skeleton"/>}
       {liveEntry?.status === 'error' && <div className="api-error"><span>Donnée API indisponible</span><button onClick={(e)=>{e.stopPropagation();onRetry()}}>Réessayer</button></div>}
-      {hasLive ? <LivePrice live={liveEntry?.data} compact /> : <div className="price-row"><div><small>Brute estimée</small><strong>{money(card.rawMin)} – {money(card.rawMax)}</strong></div><div className="score">{card.score.toFixed(1)}</div></div>}
+      <LivePrice live={liveEntry?.data} compact />
       <div className="card-actions"><button onClick={onOpen}>Voir la fiche <ArrowUpRight size={15}/></button><button className={collected?'collected':''} onClick={onCollect}>{collected?<CheckCircle2 size={16}/>:<Library size={16}/>}</button></div>
     </div>
   </article>
@@ -325,7 +328,7 @@ function FavoritesPage({document,favorites,editorialCards,onShowcase,onToggle}:{
   const identity=(favorite:FavoriteCard)=>{const id=favorite.source==='editorial'?editorialCards.find(card=>card.id===favorite.cardId)?.tcgdexId??favorite.cardId:favorite.cardId;return {source:'tcgdex' as const,cardId:id,setId:favorite.setId??setIdFromCardId(id),language:normalizeImageLanguage(favorite.language),variant:'normal'}}
   const ids=(language:string)=>favorites.filter(favorite=>identity(favorite).language===language&&favorite.setId!=='jumbo').map(favorite=>identity(favorite).cardId)
   const fr=useCardPrices(ids('fr'),'fr'),en=useCardPrices(ids('en'),'en')
-  const priceValues=new Map(favorites.map(favorite=>{const card=identity(favorite),entry=findCollectionEntry(document,card),quote=(card.language==='en'?en:fr)[card.cardId]?.price,market=card.setId==='jumbo'||isAsianCatalogLanguage(card.language)||quote?.basis!=='guide'?undefined:quote.value;return [favorite.key,entry?.quantity?collectionUnitPrice(entry,market):market]}))
+  const priceValues=new Map(favorites.map(favorite=>{const card=identity(favorite),entry=findCollectionEntry(document,card),quote=(card.language==='en'?en:fr)[card.cardId]?.price,market=card.setId==='jumbo'||isAsianCatalogLanguage(card.language)?undefined:collectionMarketValue(quote,card.language,entry?.condition);return [favorite.key,entry?.quantity?collectionUnitPrice(entry,market):market]}))
   const needle=normalizeSearch(search)
   const ordered=sort==='price-asc'||sort==='price-desc'?sortFavoritesByPrice(favorites,priceValues,sort==='price-desc'):[...favorites].sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'fr'):sort==='set'?a.setName.localeCompare(b.setName,'fr'):b.addedAt.localeCompare(a.addedAt))
   const shown=ordered
