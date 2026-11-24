@@ -2,7 +2,8 @@ import { localizedMarketData } from '../domain/localizedPricing'
 import { reviewedMarketData } from '../domain/reviewedPrices'
 import { useEffect, useReducer } from 'react'
 import { tcgDexProvider } from '../api/tcgdex'
-import { comparablePriceHistory, ensurePriceHistoryReady, getAllPriceHistory, recordPriceSnapshots, snapshotsFromQuotes, type PriceSnapshot } from '../domain/priceHistory'
+import { ensurePriceHistoryReady, getAllPriceHistory, recordPriceSnapshots, snapshotsFromQuotes, type PriceSnapshot } from '../domain/priceHistory'
+import { latestCollectionReferences, priceIdentityKey, priceReferenceFromSnapshot } from '../domain/collectionPricing'
 import { isVerifiedLocalQuote, type CardMarketStats, type MarketPriceQuote, type PriceReference, type TcgPlayerQuote, type TcgPlayerStats } from '../domain/pricing'
 
 export type CardPriceState={verification?:'verified'|'unverified';status:'loading'|'success'|'error';price?:PriceReference|null;tcgplayerQuote?:TcgPlayerQuote;quotes?:MarketPriceQuote[];cardmarket?:CardMarketStats;tcgplayer?:TcgPlayerStats;tcgplayerHolo?:TcgPlayerStats;tcgplayerReverse?:TcgPlayerStats;language:string;checkedAt?:number;quoteObservedAt?:number;retained?:boolean}
@@ -48,16 +49,20 @@ function queuePriceSnapshotBatch(snapshots:PriceSnapshot[]){
 }
 /** A missing response is not a new zero-price observation. */
 export function retainKnownPrices(previous:CardPriceState|undefined,next:CardPriceState):CardPriceState {
- if(next.price?.aggregator==='manakodex')return {...next,retained:false}
- if(next.verification==='unverified')return {...next,price:null,tcgplayerQuote:undefined,retained:false}
  if(previous?.language!==next.language||!isVerifiedLocalQuote(previous?.price,next.language))previous=undefined
+ if(next.verification==='unverified')return previous?.price
+  ? {...next,verification:'verified',price:previous.price,tcgplayerQuote:previous.tcgplayerQuote,quoteObservedAt:previous.quoteObservedAt,retained:true}
+  : {...next,price:null,tcgplayerQuote:undefined,retained:false}
+ if(previous?.price && next.price && Date.parse(previous.price.updatedAt??'') > Date.parse(next.price.updatedAt??''))
+  return {...next,price:previous.price,quoteObservedAt:previous.quoteObservedAt,retained:true}
+ if(next.price?.aggregator==='manakodex')return {...next,retained:false}
  const keepGuide=previous?.price?.basis==='guide'&&(next.price?.basis!=='guide'||Boolean(next.retained))
  return {...next,price:keepGuide?previous?.price:next.price??previous?.price,tcgplayerQuote:next.tcgplayerQuote??previous?.tcgplayerQuote,
   quoteObservedAt:keepGuide||!next.price?previous?.quoteObservedAt:next.quoteObservedAt,
   retained:next.retained||keepGuide||Boolean((!next.price&&previous?.price)||(!next.tcgplayerQuote&&previous?.tcgplayerQuote))}
 }
 function restorePrice(point:PriceSnapshot|undefined,language:string):CardPriceState|undefined {
- return point?.identityVerified&&point.printingLanguage===language?{verification:'verified',status:'loading',language,retained:true,quoteObservedAt:Date.parse(point.recordedAt??point.date),price:{value:point.value,currency:'EUR',provider:'cardmarket',basis:'guide',label:'Tendance Cardmarket',printingLanguage:point.printingLanguage,identityVerified:true,updatedAt:point.sourceUpdatedAt??point.recordedAt??point.date}}:undefined
+ return point?.identityVerified&&point.printingLanguage===language?{verification:'verified',status:'success',language,retained:true,quoteObservedAt:Date.parse(point.recordedAt??point.date),price:priceReferenceFromSnapshot(point)}:undefined
 }
 function drain(){
  while(running<CONCURRENCY&&queue.length){
@@ -65,30 +70,30 @@ function drain(){
   queued.delete(key);running++;cache.set(key,{...previous,status:'loading',language:task.language});notify()
   tcgDexProvider.getCard(task.id,task.language,task.force).then(card=>{
    const observedAt=new Date().toISOString(),{price,tcgplayerQuote,quotes,...stats}=localizedMarketData(card,observedAt,{id:task.id,language:task.language})
-   cache.set(key,retainKnownPrices(previous,{status:card.fromStaleCache?'error':'success',price,tcgplayerQuote,quotes,language:task.language,...stats,checkedAt:Date.now(),quoteObservedAt:Date.parse(observedAt),retained:card.fromStaleCache}))
+   cache.set(key,retainKnownPrices(cache.get(key),{status:card.fromStaleCache?'error':'success',price,tcgplayerQuote,quotes,language:task.language,...stats,checkedAt:Date.now(),quoteObservedAt:Date.parse(observedAt),retained:card.fromStaleCache}))
    if(!card.fromStaleCache)queuePriceSnapshotBatch(snapshotsFromQuotes(task.id,quotes))
   }).catch(()=>cache.set(key,{...cache.get(key),status:'error',language:task.language,checkedAt:Date.now()})).finally(()=>{running--;notify();drain()})
  }
 }
 function enqueue(ids:string[],language:string,force=false){
- const saved=new Map<string,PriceSnapshot>()
- if(typeof localStorage!=='undefined'&&ids.some(id=>!cache.has(keyOf(id,language)))){
-  for(const point of comparablePriceHistory(getAllPriceHistory()))if(point.language===language)saved.set(point.cardId,point)
- }
+ const saved=typeof localStorage!=='undefined' ? latestCollectionReferences(getAllPriceHistory()) : new Map<string,PriceSnapshot>()
  // Each newly opened set should move its pending prices in front of older unstarted work.
  // Preserve the requested card order; never abort a request already in flight.
  const priority:PriceTask[]=[]
  for(const id of ids){
   const key=keyOf(id,language)
+  const point=saved.get(priceIdentityKey(id,language))
+  const restored=restorePrice(point,language)
+  if(restored && (!cache.get(key)?.price || Date.parse(restored.price!.updatedAt!)>Date.parse(cache.get(key)!.price!.updatedAt??'')))cache.set(key,{...cache.get(key),...restored})
   const reviewed=reviewedMarketData(id,language)
   if(reviewed){
+   if(point && Date.parse(restored!.price!.updatedAt!) > Date.parse(reviewed.price.updatedAt!)){notify();continue}
    if(force||cache.get(key)?.price?.updatedAt!==reviewed.price.updatedAt){
     cache.set(key,{...reviewed,status:'success',language,checkedAt:Date.now(),quoteObservedAt:Date.parse(reviewed.quotes[0].observedAt)})
     queuePriceSnapshotBatch(snapshotsFromQuotes(id,reviewed.quotes));notify()
    }
    continue
   }
-  if(!cache.has(key)){const restored=restorePrice(saved.get(id),language);if(restored)cache.set(key,{...restored,status:'success'})}
   const state=cache.get(key)
   if(queued.has(key)){
    const pendingIndex=queue.findIndex(task=>keyOf(task.id,task.language)===key)
@@ -112,14 +117,11 @@ export function useCardPrices(cardIds:string[],language='fr'){
   const restore=()=>{
    if(!active)return
    const requested=new Set(ids)
-   const latest=new Map<string,PriceSnapshot>()
-   for(const point of comparablePriceHistory(getAllPriceHistory())){
+   for(const point of latestCollectionReferences(getAllPriceHistory()).values()){
     if(point.language!==language||!requested.has(point.cardId))continue
-    latest.set(point.cardId,point)
-   }
-   for(const point of latest.values()){
     const key=keyOf(point.cardId,language),state=cache.get(key)
-    if(state?.verification!=='unverified'&&(!state?.price||Date.parse(point.recordedAt??point.date)>(state.quoteObservedAt??0))){const restored=restorePrice(point,language);if(restored)cache.set(key,{...restored,...state,price:restored.price,quoteObservedAt:restored.quoteObservedAt,retained:true})}
+    const restored=restorePrice(point,language)
+    if(restored&&(!state?.price||Date.parse(restored.price!.updatedAt!)>Date.parse(state.price.updatedAt??'')))cache.set(key,{...state,...restored,status:state?.status??'success',retained:true})
    }
    render()
   }

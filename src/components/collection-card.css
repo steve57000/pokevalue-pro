@@ -1,0 +1,107 @@
+/* Quantity and secondary actions share one layout in every collection view.
+   Adapt to the tile's width, not the viewport's number of columns. */
+.binder-grid > article {
+  container-type: inline-size;
+  container-name: collection-card;
+}
+
+.binder-grid .card-quick-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-self: end;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.binder-grid .collection-quantity {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.binder-grid .collection-quantity span {
+  min-width: 0;
+  color: var(--text);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.binder-grid .card-utility-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(44px, 1fr));
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.binder-grid .card-quick-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  height: auto;
+  margin: 0;
+  padding: 8px !important;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel2);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.binder-grid .collection-quantity button { width: 44px; height: 44px; }
+.binder-grid .card-utility-actions > button { width: 100%; }
+.binder-grid .card-quick-actions button svg { flex: none; width: 18px; height: 18px; }
+.binder-grid .card-quick-actions button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.binder-grid .collection-quantity button:first-child { color: #ff7777; border-color: color-mix(in srgb, #ff7777 40%, var(--line)); }
+.binder-grid .card-utility-actions .favorite-button.is-favorite { color: #ef5c67; background: color-mix(in srgb, #ef5c67 10%, var(--panel2)); }
+.binder-grid .add-card-action { width: 100%; white-space: normal; font-size: 12px; line-height: 1.3; }
+.binder-grid .add-card-action span { display: inline; }
+
+@container collection-card (min-width: 280px) {
+  .binder-grid .card-quick-actions { grid-template-columns: minmax(0, 1fr) 96px; gap: 12px; }
+  .binder-grid .collection-quantity { max-width: 180px; }
+}
+
+@container collection-card (max-width: 200px) {
+  .binder-grid .add-card-action .add-card-long-label { display: none; }
+  .binder-grid .collection-quantity span { font-size: 12px; }
+}
+
+.binder-grid.view-list article {
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto auto;
+  gap: 5px 12px;
+  padding: 12px;
+}
+.binder-grid.view-list .binder-preview { grid-column: 1; grid-row: 1 / 6; width: 60px; max-height: none; }
+.binder-grid.view-list .binder-title { grid-column: 2; grid-row: 1; }
+.binder-grid.view-list .binder-meta { grid-column: 2; grid-row: 2; }
+.binder-grid.view-list .binder-price { grid-column: 2; grid-row: 3; }
+.binder-grid.view-list .holding-badge { grid-column: 2; grid-row: 4; }
+.binder-grid.view-list .tile-grading-badge { grid-column: 2; grid-row: 5; }
+.binder-grid.view-list .card-quick-actions { grid-column: 1 / -1; grid-row: 6; }
+
+@media (min-width: 800px) {
+  .binder-grid.view-list article { grid-template-columns: 72px minmax(0, 1fr) 240px; }
+  .binder-grid.view-list .card-quick-actions { grid-column: 3; grid-row: 1 / 6; grid-template-columns: minmax(0, 1fr); margin: 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid var(--line); }
+  .binder-grid.view-list .collection-quantity { max-width: none; }
+}
+
+.binder-grid.view-grid .binder-preview > .grid-price-badge { max-width: calc(100% - 62px); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.binder-grid.view-grid .binder-preview > .grid-price-badge.is-indicative { border-style: dashed; background: #26374de6; box-shadow: 0 3px 9px #0006; }
+.binder-grid.view-grid .binder-preview > .grid-owned-badge { max-width: 44px; overflow: hidden; }

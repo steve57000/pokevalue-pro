@@ -270,7 +270,7 @@ function App() {
           </>}
 
           {view==='favorites'&&<FavoritesPage document={portfolio} favorites={favorites} editorialCards={cards} onShowcase={favorite=>{const editorial=cards.find(card=>card.id===favorite.cardId);setShowcaseFavorite(favorite);setShowcase(editorial??{id:favorite.cardId,name:favorite.name,pokemon:favorite.name,set:favorite.setName,year:0,number:favorite.localId??'',rarity:'',language:(favorite.language==='ja'?'JP':favorite.language==='en'?'EN':'FR'),rawMin:0,rawMax:0,graded10:0,trend:'stable',score:0,color:'#17233b',accent:'#6384bb',note:'',tcgdexId:favorite.source==='tcgdex'?favorite.cardId:undefined})}} onToggle={toggleFavorite}/>}
-          {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync}/>}
+          {view==='history'&&<PriceHistoryPage cards={cards} entries={portfolio.entries} favorites={favorites} historySync={priceHistorySync} onChangeEntry={entry=>setPortfolio(current=>updateCollectionCard(current,entry,entry))}/>}
           {view==='alerts'&&<PriceAlertsPage cards={cards} entries={portfolio.entries} favorites={favorites}/>}
           {view==='share'&&<SharedChallengePage token={window.location.hash.slice('#share='.length)} onCreateChallenge={()=>navigate('collection')}/>}
           {view==='grading'&&<GradingPage document={portfolio} onChange={setPortfolio} syncLabel={githubSync.status==='saved'?'Synchronisé avec GitHub':githubSync.status==='pending'?'Sauvegarde en cours…':githubSync.status==='error'||githubSync.status==='conflict'?'Sauvegarde à vérifier':'Enregistré sur cet appareil'} onPriceHistory={()=>navigate('history')}/> }

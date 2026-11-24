@@ -3,8 +3,11 @@ import type { CatalogLanguage } from '../api/sets'
 import type { PriceBasis, PriceReference, TcgPlayerQuote } from '../domain/pricing'
 import { money } from '../utils/money'
 import { Info } from 'lucide-react'
+import type { PriceSnapshot } from '../domain/priceHistory'
+import { indicativePriceLabel } from '../domain/collectionPricing'
 
 type Props = {
+  indicative?: PriceSnapshot
   personalPrice?: number
   jumbo?: boolean
   language: CatalogLanguage
@@ -35,7 +38,7 @@ function QuoteRow({ provider, context, value, currency = 'EUR', status, updatedA
   </div>
 }
 
-export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, personalPrice, jumbo }: Props) {
+export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, personalPrice, jumbo, indicative }: Props) {
   cardmarket = isVerifiedLocalQuote(cardmarket,language) ? cardmarket : undefined
   tcgplayer = isVerifiedLocalQuote(tcgplayer,language) ? tcgplayer : undefined
   const asian = language === 'ja' || language === 'zh-tw'
@@ -59,9 +62,11 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, pe
   return <div className={`binder-price${asian ? ' has-local-market-gap' : ''}`} aria-label="Prix par marché">
     <span className="binder-price-compact-row" aria-label={primaryValue ? `${personalPrice!==undefined?'Prix personnel':'Prix indicatif'} ${compactAmount}` : 'Prix non vérifié'}><strong>{compactAmount}</strong></span>
     {personalPrice===undefined&&cardmarket?.aggregator==='manakodex'&&<small className="binder-price-note">Annonce {language.toUpperCase()} · {new Date(cardmarket.updatedAt!).toLocaleDateString('fr-FR')}{isPriceReferenceStale(cardmarket)?' · à actualiser':''}</small>}
+    {indicative && <small className="binder-price-note">Indicatif : {money(indicative.value)} · {indicativePriceLabel(indicative)}</small>}
     <details className="binder-price-info">
       <summary aria-label="Afficher les informations sur les prix" title="Informations sur les prix"><Info size={15}/><span>Informations</span></summary>
       <div className="binder-price-info-content">
+        {indicative && <p>Référence indicative Cardmarket du {new Date(indicative.sourceUpdatedAt ?? indicative.date).toLocaleDateString('fr-FR')} · {indicativePriceLabel(indicative)}. Comptée uniquement dans le total indicatif séparé.</p>}
         {personalPrice!==undefined&&<QuoteRow provider="Prix personnel" context="Valeur de ma collection" value={personalPrice}/>}
         {jumbo&&<p>Pas de cote Jumbo disponible. Renseigne ton prix dans les paramètres.</p>}
         {asian && <QuoteRow provider="Cote locale" context={language === 'ja' ? 'Japon' : 'Chinois traditionnel'} status="error" />}

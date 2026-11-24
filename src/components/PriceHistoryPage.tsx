@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, CalendarDays, Library, Layers, RefreshCw, Wallet, TrendingDown, TrendingUp } from 'lucide-react'
 import { useCardPrices, refreshCardPrices } from '../hooks/useCardPrices'
 import { retryPriceHistoryPersistence, todayPriceDate, type PriceSnapshot } from '../domain/priceHistory'
-import { buildStatsRows } from '../domain/collectionStats'
+import { buildStatsRows, missingPriceLabels } from '../domain/collectionStats'
+import { indicativePriceLabel, priceReferenceFromSnapshot } from '../domain/collectionPricing'
 import { isAsianCatalogLanguage } from '../domain/pricing'
 import type { Card } from '../types'
 import type { CollectionEntry } from '../domain/collection'
@@ -13,18 +14,24 @@ import type { PriceHistorySyncStatus } from '../hooks/useGitHubPriceHistorySync'
 import { CatalogueImage } from './CatalogueImage'
 import { PriceHistoryExplorer } from './PriceHistoryExplorer'
 import { usePriceHistory } from '../hooks/usePriceHistory'
+import { IndicativeValueSummary } from './IndicativeValueSummary'
+import { CardEditor } from './CardEditor'
 
-type Props = { cards: Card[]; entries: CollectionEntry[]; favorites: FavoriteCard[]; historySync: { status: PriceHistorySyncStatus; message: string } }
+type Props = { cards: Card[]; entries: CollectionEntry[]; favorites: FavoriteCard[]; historySync: { status: PriceHistorySyncStatus; message: string }; onChangeEntry?: (entry: CollectionEntry) => void }
 const SELECTION_KEY = 'pv-stats-selected-card-v1'
-export function PriceHistoryPage({ cards, entries, favorites, historySync }: Props) {
+export function PriceHistoryPage({ cards, entries, favorites, historySync, onChangeEntry }: Props) {
   const [range, setRange] = useState<'30' | '90' | 'all'>('30')
   const [selectedKey, setSelectedKey] = useState(() => readStoredString(SELECTION_KEY, '', 'session'))
+  const [editingKey, setEditingKey] = useState<string>()
   const { snapshots, persistence } = usePriceHistory()
   const detailRef = useRef<HTMLElement>(null)
   const pendingSelection = useRef(false)
   const rows = useMemo(() => buildStatsRows(cards, entries, favorites, snapshots, range), [cards, entries, favorites, snapshots, range])
   const owned = rows.filter(row => row.owned > 0)
   const selected = rows.find(row => row.key === selectedKey || `${row.language}:${row.id}` === selectedKey) ?? owned[0]
+  const selectedEntry = entries.find(entry => entry.key === selected?.key && entry.quantity > 0)
+  const editing = entries.find(entry => entry.key === editingKey && entry.quantity > 0)
+  const editingReference = rows.find(row => row.key === editingKey)?.reference
   const ids = (language: string) => [...new Set(rows.filter(row => (row.owned > 0 || row.key === selected?.key) && row.language === language && row.setId !== 'jumbo' && row.variant === 'normal').map(row => row.id))]
   const fr = useCardPrices(ids('fr'), 'fr'), en = useCardPrices(ids('en'), 'en')
   const priceMaps = { fr, en }
@@ -37,6 +44,7 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
   const change = first !== undefined && latest !== undefined && visibleHistory.length > 1 ? latest - first : undefined
   const total = owned.reduce((sum, row) => sum + (row.value ?? 0) * row.owned, 0)
   const valued = owned.filter(row => row.value !== undefined).length
+  const indicativeCount = owned.filter(row => row.indicative).length
   const manualTotal = owned.filter(row=>row.manual).reduce((sum,row)=>sum+(row.value??0)*row.owned,0)
   const lastPoint = history[history.length-1]
   const loading = Object.values(fr).some(price => price.status === 'loading') || Object.values(en).some(price => price.status === 'loading')
@@ -61,7 +69,8 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
       <article><span><Wallet size={17}/> {valued < owned.length ? 'Valeur connue' : 'Valeur'} · EUR</span><strong>{owned.length && !valued ? '—' : money(total)}</strong><small>{valued}/{owned.length} valorisées{loading ? ' · actualisation…' : ''}</small></article>
       <article><span><CalendarDays size={17}/> Extensions</span><strong>{new Set(owned.map(row => row.setId)).size}</strong></article>
     </div>
-    {owned.length>0 && <details className="stats-source"><summary>Couverture des prix · {owned.length-valued} sans prix</summary><p>Prix personnels : {money(manualTotal)} · Références datées : {money(total-manualTotal)}. Quantités incluses.</p><p>Les cartes sans cote restent dans la liste. La valeur connue n’est pas une estimation des cartes manquantes.</p><button className="history-refresh" disabled={loading} onClick={()=>{refreshCardPrices(ids('fr'),'fr');refreshCardPrices(ids('en'),'en')}}><RefreshCw size={15} className={loading?'spinning':''}/>{loading?'Actualisation…':'Actualiser les cotes'}</button></details>}
+    <IndicativeValueSummary rows={owned}/>
+    {owned.length>0 && <details className="stats-source"><summary>Couverture des prix · {indicativeCount > 0 ? `${indicativeCount} indicatives · ` : ''}{owned.length-valued-indicativeCount} sans prix</summary><p>Prix personnels : {money(manualTotal)} · Références datées : {money(total-manualTotal)}. Quantités incluses.</p><p>Les cartes sans cote restent dans la liste. La valeur connue n’est pas une estimation des cartes manquantes.</p><button className="history-refresh" disabled={loading} onClick={()=>{refreshCardPrices(ids('fr'),'fr');refreshCardPrices(ids('en'),'en')}}><RefreshCw size={15} className={loading?'spinning':''}/>{loading?'Actualisation…':'Actualiser les cotes'}</button></details>}
     <p className="stats-data-status" role="status">{persistence==='loading'?'Restauration de l’historique…':persistence==='saving'?'Enregistrement des relevés…':persistence==='error'?'Sauvegarde des prix indisponible. Garde cet onglet ouvert et exporte l’historique.':loading?'Actualisation des cotes…':'Données chargées'} · {owned.filter(row=>row.delta!==undefined).length} cartes avec une comparaison de prix</p>
     {persistence==='error'&&<button className="history-refresh" onClick={()=>void retryPriceHistoryPersistence()}>Réessayer l’enregistrement des prix</button>}
     <div className="stats-workspace">
@@ -72,7 +81,10 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
         <div><span className="eyebrow">{selected.setName} · {selected.language.toUpperCase()}</span><h2>{selected.name}</h2><p>{selected.number ? `Nº ${selected.number}` : ''}{selected.owned ? ` · ${selected.owned} exemplaire${selected.owned === 1 ? '' : 's'}` : ''}</p></div>
         <div className="history-current-price"><small>{selected.manual ? 'Prix personnel · unitaire' : selected.reference?.basis==='listing'?'Annonce datée · EUR':'Guide Cardmarket · EUR'}</small><strong>{selected.value === undefined ? '—' : money(selected.value)}</strong>{selected.owned > 1 && selected.value !== undefined && <small>{money(selected.value * selected.owned)} au total</small>}{change !== undefined && <span className={change > 0 ? 'positive' : change < 0 ? 'negative' : ''}>{change > 0 ? <TrendingUp size={15}/> : change < 0 ? <TrendingDown size={15}/> : null}{change > 0 ? '+' : ''}{money(change)}{first ? ` (${change > 0 ? '+' : ''}${(change / first * 100).toFixed(1)} %)` : ''}<small> marché</small></span>}</div>
       </div>
-      {!selected.manual && <p className="stats-hint" role="status">{selected.value===undefined ? current?.status==='loading'?'Recherche de cote…':'Aucune cote comparable disponible' : `Dernier prix connu · ${selected.reference?formatDate(selected.reference.sourceUpdatedAt?.slice(0,10)??selected.reference.date):''}`}{current?.status==='error'?` · actualisation impossible${selected.value!==undefined?', prix conservé':''}`:current?.retained?' · cote conservée':''}</p>}
+      {selected.indicative && <aside className="indicative-summary"><strong>Référence indicative · {money(selected.indicative.value)} par exemplaire</strong><p>Cardmarket · {formatDate((selected.indicative.sourceUpdatedAt ?? selected.indicative.date).slice(0, 10))} · {indicativePriceLabel(selected.indicative)}. Incluse uniquement dans le total indicatif séparé.</p></aside>}
+      {selected.savedManualPrice !== undefined && <p className="stats-hint">Prix personnel enregistré : {money(selected.savedManualPrice)} · désactivé, mode marché sélectionné.</p>}
+      {selectedEntry && onChangeEntry && <button className="history-refresh" onClick={() => setEditingKey(selectedEntry.key)}>Modifier le prix de ma carte</button>}
+      {!selected.manual && <p className="stats-hint" role="status">{selected.value===undefined ? current?.status==='loading'?'Recherche de cote…':selected.missingReason ? missingPriceLabels[selected.missingReason] : 'Aucune cote comparable disponible' : `Dernier prix connu · ${selected.reference?formatDate(selected.reference.sourceUpdatedAt?.slice(0,10)??selected.reference.date):''}`}{current?.status==='error'?` · actualisation impossible${selected.value!==undefined?', prix conservé':''}`:current?.retained?' · cote conservée':''}</p>}
       {selected.averages && [selected.averages.day,selected.averages.week,selected.averages.month].some(value=>value!==undefined) && <section className="stats-market-reference" aria-label="Moyennes des ventes Cardmarket">
         <h3>Moyennes du marché</h3>
         <div>{([['1 jour',selected.averages.day],['7 jours',selected.averages.week],['30 jours',selected.averages.month]] as const).map(([label,value])=><article key={label}><small>{label}</small><strong>{value===undefined?'—':money(value)}</strong></article>)}</div>
@@ -83,9 +95,10 @@ export function PriceHistoryPage({ cards, entries, favorites, historySync }: Pro
         {marketAvailable && <button className="history-refresh" onClick={() => refreshCardPrices([selected.id], selected.language)} disabled={current?.status === 'loading'}><RefreshCw size={15} className={current?.status === 'loading' ? 'spinning' : ''}/>{current?.status === 'loading' ? 'Actualisation…' : 'Actualiser'}</button>}
       </div>
       {visibleHistory.length > 1 ? <PriceChart points={visibleHistory}/> : <div className="history-empty"><Activity size={26}/><strong>{!marketAvailable ? 'Cote de cette édition indisponible' : current?.status === 'loading' ? 'Actualisation du prix…' : visibleHistory.length === 1 ? 'Premier relevé enregistré' : history.length ? 'Aucun relevé sur cette période' : selected.reference?.basis==='listing'?'Annonce disponible, sans courbe de ventes':'Pas encore de relevé'}</strong><p>{!marketAvailable ? 'Tu peux renseigner ton prix dans les paramètres de la carte.' : visibleHistory.length === 1 ? 'Deux jours de relevés sont nécessaires pour tracer une évolution.' : history.length ? 'Choisis une période plus large.' : selected.reference?.basis==='listing'?'Le prix d’annonce reste un repère daté. Il ne crée pas de cours ni de vente dans le graphique.':'La courbe se construira dès que des prix seront disponibles.'}</p></div>}
-      <details className="stats-source"><summary>À propos des prix</summary><p>Valeur de collection : prix personnel si ce mode est choisi, sinon prix vérifié pour l’édition exacte et la langue. Les cartes sans prix restent comptées et ne contribuent pas au total. Les annonces datées Near Mint peuvent servir de référence pour les exemplaires Near Mint ou mieux ; elles restent distinctes des ventes conclues et des courbes de prix guide.</p><p>Courbe et variations : guide Cardmarket, finition normale, un relevé par jour. Les moyennes de ventes 1/7/30 jours sont des repères distincts, pas des prix observés à ces dates. Les anciens relevés sans langue ou édition vérifiée sont conservés en sauvegarde mais exclus des courbes et totaux. Les Jumbo et les éditions asiatiques n’ont pas de cote adaptée ici.</p>{lastPoint && <p>Dernier relevé : {formatDate(lastPoint.date)}.{lastPoint.sourceUpdatedAt ? ` Mise à jour source : ${new Date(lastPoint.sourceUpdatedAt).toLocaleDateString('fr-FR')}.` : ' Date de mise à jour source non fournie.'}</p>}</details>
+      <details className="stats-source"><summary>À propos des prix</summary><p>Valeur de collection : prix personnel si ce mode est choisi, sinon prix vérifié pour l’édition exacte et la langue. Les cartes sans prix restent comptées et ne contribuent pas au total. Les annonces datées Near Mint peuvent servir de référence pour les exemplaires Near Mint ou mieux ; elles restent distinctes des ventes conclues et des courbes de prix guide.</p><p>Courbe et variations : guide Cardmarket, finition normale, un relevé par jour. Les moyennes de ventes 1/7/30 jours sont des repères distincts, pas des prix observés à ces dates. Les anciennes références Cardmarket non vérifiées ont leur total indicatif séparé. Elles restent exclues de la valeur connue, des courbes et des alertes. Les Jumbo et les éditions asiatiques n’ont pas de cote adaptée ici.</p>{lastPoint && <p>Dernier relevé : {formatDate(lastPoint.date)}.{lastPoint.sourceUpdatedAt ? ` Mise à jour source : ${new Date(lastPoint.sourceUpdatedAt).toLocaleDateString('fr-FR')}.` : ' Date de mise à jour source non fournie.'}</p>}</details>
     </article>}
     </div>
+    {editing && onChangeEntry && <CardEditor key={editing.key} card={{id: editing.cardId, name: editing.name, localId: editing.number ?? '', image: editing.image, rarity: editing.rarity}} setName={editing.setName} language={editing.language} entry={editing} automaticPrice={editingReference ? priceReferenceFromSnapshot(editingReference) : undefined} onSave={draft => { onChangeEntry({...editing, ...draft}); setEditingKey(undefined) }} onRemove={() => { onChangeEntry({...editing, quantity: 0, gradedCopies: []}); setEditingKey(undefined) }} onClose={() => setEditingKey(undefined)}/>}
   </section>
 }
 

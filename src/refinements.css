@@ -85,5 +85,10 @@ input, select, textarea { max-width: 100%; }
 .stats-market-reference small { color:var(--muted); }
 .stats-market-reference strong { font-size:16px; }
 .stats-market-reference p { font-size:12px; margin:12px 0 0; }
+.indicative-summary { margin:16px 0; padding:16px; border:1px dashed var(--line); border-radius:14px; background:var(--panel2); font-size:13px; line-height:1.5; }
+.indicative-summary>div { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 16px; }
+.indicative-summary b { font-size:22px; font-variant-numeric:tabular-nums; }
+.indicative-summary p { margin:8px 0; color:var(--muted); }
+.indicative-summary summary { cursor:pointer; }
 @media(min-width:1200px) { .stats-workspace { grid-template-columns:minmax(380px,1fr) minmax(420px,1.15fr); } .stats-workspace .history-detail-card { position:sticky; top:90px; } }
 @media(max-width:700px) { .stats-workspace .price-explorer-filters { gap:12px; } .stats-workspace .price-explorer-row { min-height:76px; text-align:left; } }

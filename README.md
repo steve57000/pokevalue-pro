@@ -177,3 +177,11 @@ PokéValue Pro est un projet indépendant, non affilié à Nintendo, Creatures, 
 La Collection affiche les cartes par groupes de 36 et charge les prix des cartes visibles en priorité, tout en conservant les prix des cartes possédées nécessaires aux totaux. Les tris par prix ou potentiel de gradation continuent à analyser l'ensemble des références filtrées. Les réponses du catalogue TCGdex sont dédupliquées et mises en cache pendant 30 minutes dans la session ; les scans éloignés du viewport restent différés.
 
 Sans API de transactions gradées autorisée, le comparateur offre des liens **eBay France et eBay international filtrés sur les annonces vendues**, par société et note exacte, ainsi qu'une recherche **PriceCharting**. Ces recherches sont des pistes à vérifier, pas des ventes individuelles automatiquement validées ni des cotations chiffrées garanties. La saisie manuelle sourcée reste disponible.
+
+### Valeur connue et références indicatives
+
+La collection et les statistiques utilisent la même sélection des relevés sauvegardés. La **valeur connue** comprend les prix personnels activés et les références vérifiées encore valides pour la langue, la finition et l’état. Les anciennes références Cardmarket sans langue confirmée, ainsi que les relevés vérifiés expirés compatibles avec l’état, apparaissent dans un **total indicatif séparé**. Chaque référence n’y figure qu’une fois, multipliée par sa quantité. Une carte déjà valorisée par un prix personnel ou vérifié n’est pas recomptée dans ce total. Les anciennes correspondances erronées Règne Delta, les autres devises, les Jumbo et les variantes incompatibles restent exclus. Les références indicatives ne servent pas aux alertes ni aux courbes vérifiées.
+
+La restauration conserve la nature du relevé (annonce, guide ou moyenne de ventes), sa date, ses liens, son état et sa validité. Une réponse réseau sans preuve de prix ne remplace pas une référence déjà vérifiée. Un prix personnel conservé en mode marché reste désactivé ; les statistiques le signalent et permettent de le réactiver dans l’éditeur, sans modifier automatiquement le choix enregistré.
+
+Les commandes des cartes sont regroupées dans `src/components/collection-card.css` : quantité et actions secondaires s’adaptent à la largeur de chaque carte, avec des cibles d’au moins 44 pixels.

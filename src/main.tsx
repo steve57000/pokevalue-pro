@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './scanner.css'
 import './refinements.css'
+import './components/collection-card.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
