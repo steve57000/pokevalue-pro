@@ -15,10 +15,10 @@ const point = (overrides: Partial<PriceSnapshot> = {}): PriceSnapshot => ({
 })
 afterEach(() => vi.useRealTimers())
 
-describe('separate collection valuations', () => {
-  it('restores archived references without counting them as verified prices or chart points', () => {
+describe('unified collection estimates', () => {
+  it('counts archived estimates once in the total without marking them verified', () => {
     const [row] = buildStatsRows([], [entry()], [], [point()])
-    expect(row).toMatchObject({owned: 3, value: undefined, history: [], indicative: {value: 12}, missingReason: 'unverified'})
+    expect(row).toMatchObject({owned: 3, value: 12, indicative: {value: 12}})
     expect(row.indicative!.value * row.owned).toBe(36)
   })
   it('uses only the latest source observation once, regardless of backup import order', () => {
@@ -29,12 +29,12 @@ describe('separate collection valuations', () => {
     }
   })
   it('does not borrow another currency, language, finish, Jumbo price or rejected Delta mapping', () => {
-    const unsuitable = [point({currency: 'USD'}), point({language: 'en'}), point({printingLanguage: 'en'}), point({variant: 'reverse-holofoil'}), point({source: 'tcgplayer'}), point({basis: 'listing'})]
+    const unsuitable = [point({currency: 'USD'}), point({language: 'en'}), point({printingLanguage: 'en'}), point({variant: 'reverse-holofoil'}), point({source: 'tcgplayer'})]
     expect(buildStatsRows([], [entry()], [], unsuitable)[0].indicative).toBeUndefined()
     expect(buildStatsRows([], [entry({setId: 'jumbo'})], [], [point()])[0].indicative).toBeUndefined()
     expect(buildStatsRows([], [entry({cardId: 'me06-138', setId: 'me06'})], [], [point({cardId: 'me06-138'})])[0].indicative).toBeUndefined()
   })
-  it('moves a card out of the indicative subtotal when a verified quote or personal price is available', () => {
+  it('prefers a verified quote or explicit personal override without double counting', () => {
     const verified = point({identityVerified: true, printingLanguage: 'fr', value: 20})
     const [row] = buildStatsRows([], [entry()], [], [point(), verified])
     expect(row.value).toBe(20)
@@ -47,13 +47,13 @@ describe('separate collection valuations', () => {
   })
   it('keeps dormant personal prices visible while respecting the explicit market choice', () => {
     expect(buildStatsRows([], [entry({manualPrice: 17, priceMode: 'market'})], [], [point()])[0])
-      .toMatchObject({value: undefined, manual: false, savedManualPrice: 17, indicative: {value: 12}})
+      .toMatchObject({value: 12, manual: false, savedManualPrice: 17, indicative: {value: 12}})
   })
-  it('moves expired offers to the dated indicative subtotal but never values the wrong condition', () => {
+  it('keeps expired offers in the total while rejecting the wrong condition', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-24T12:00:00Z'))
     const offer = point({identityVerified: true, printingLanguage: 'fr', basis: 'listing', condition: 'near-mint', validUntil: '2026-11-23'})
-    expect(buildStatsRows([], [entry()], [], [point(), offer])[0])
-      .toMatchObject({value: undefined, indicative: {value: 12, identityVerified: true}, missingReason: 'expired'})
+    expect(buildStatsRows([], [entry()], [], [offer])[0])
+      .toMatchObject({value: 12, indicative: {value: 12, identityVerified: true}})
     expect(buildStatsRows([], [entry({condition: 'good'})], [], [{...offer, validUntil: '2026-12-01'}])[0])
       .toMatchObject({value: undefined, indicative: undefined, missingReason: 'condition'})
   })

@@ -1,6 +1,8 @@
 name: Quality and GitHub Pages
 
 on:
+  schedule:
+    - cron: '17 6 * * *'
   workflow_dispatch:
   pull_request:
   push:
@@ -31,6 +33,10 @@ jobs:
 
       - name: Typecheck, test and build
         run: npm run check
+
+      - name: Refresh shared market observations
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: npm run refresh:prices && npm run build && npm run verify:dist
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

@@ -7,7 +7,7 @@ import type { FavoriteCard } from '../domain/favorites'
 import type { Card } from '../types'
 import { readStoredJson, writeStoredJson } from '../utils/storage'
 import { money } from '../utils/money'
-import { collectionMarketValue, isAsianCatalogLanguage } from '../domain/pricing'
+import { collectionMarketValue, isAsianCatalogLanguage, isVerifiedLocalQuote, isPriceReferenceStale } from '../domain/pricing'
 
 type TrackedCard = { id: string; language: string; name: string; setName: string; number?: string }
 type Props = { cards: Card[]; entries: CollectionEntry[]; favorites: FavoriteCard[] }
@@ -69,7 +69,7 @@ export function PriceAlertsPage({ cards, entries, favorites }: Props) {
     const values = new Map<string, number>()
     for (const alert of alerts) {
       const state=getPrice(alert.cardId, alert.language)
-      const value = state?.status==='success' ? collectionMarketValue(state.price,alert.language) : undefined
+      const value = state?.status==='success' && isVerifiedLocalQuote(state.price,alert.language) && !isPriceReferenceStale(state.price) ? collectionMarketValue(state.price,alert.language) : undefined
       if (typeof value === 'number') values.set(priceAlertKey(alert), value)
     }
     setAlerts((currentAlerts) => markReachedPriceAlerts(currentAlerts, values))

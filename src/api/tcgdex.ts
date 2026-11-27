@@ -120,7 +120,7 @@ async function fetchJson<T>(url: string): Promise<T> {
     const controller = new AbortController()
     const timeout = globalThis.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
     try {
-      const response = await fetch(url, { signal: controller.signal })
+      const response = await fetch(url, { signal: controller.signal, cache: 'no-store' })
       if (!response.ok) throw new Error(`TCGdex a répondu ${response.status}`)
       return (await response.json()) as T
     } finally {

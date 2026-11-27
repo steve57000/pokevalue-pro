@@ -9,3 +9,5 @@ vite.config.js
 vite.config.d.ts
 .env.*
 !.env.example
+
+/public/prices/reviewed-delta.json

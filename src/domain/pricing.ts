@@ -30,6 +30,7 @@ export type MarketPriceQuote = {
 }
 
 export type PriceReference = {
+  catalogLanguage?: string
   printingLanguage?: PrintingLanguage
   identityVerified?: boolean
   value: number
@@ -84,7 +85,7 @@ function pricingDate(value: string | number | null | undefined): string | undefi
 
 export function selectCardmarketPrice(pricing?: TcgDexPricing | null): PriceReference | undefined {
   const cardmarket = pricing?.cardmarket
-  if (!cardmarket) return undefined
+  if (!cardmarket || currencyCode(cardmarket.unit, 'EUR') !== 'EUR') return undefined
 
   for (const [field, label, basis] of priorities) {
     const value = cardmarket[field]
@@ -374,9 +375,25 @@ export function isPriceReferenceStale(quote: {validUntil?: string} | null | unde
   return !Number.isFinite(expiry) || expiry <= now
 }
 
-/** A dated NM offer may value an NM copy, never a worn or reverse copy. */
+/** Estimates stay in the valuation while refreshing; provenance stays explicit. */
 export function collectionMarketValue(quote: PriceReference | null | undefined, language: string, condition?: string, now = Date.now()) {
-  if (!quote || !isVerifiedLocalQuote(quote, language) || isPriceReferenceStale(quote, now)) return undefined
+  void now
+  if (!quote || !['fr', 'en'].includes(language) || quote.currency !== 'EUR' || !isValidMarketPrice(quote.value)) return undefined
+  const estimate = quote.identityVerified !== true && quote.printingLanguage === 'unknown' && quote.catalogLanguage === language
+  if (!isVerifiedLocalQuote(quote, language) && !estimate) return undefined
   if (quote.condition === 'near-mint' && condition && !['mint', 'near-mint'].includes(condition)) return undefined
   return quote.value
+}
+
+/** Prefer a current language-specific quote, then the freshest usable estimate. */
+export function preferPriceReference(next: PriceReference, previous?: PriceReference) {
+  if (!previous) return true
+  const quality = (quote: PriceReference) => Number(quote.identityVerified === true && !isPriceReferenceStale(quote))
+  if (quality(next) !== quality(previous)) return quality(next) > quality(previous)
+  const time = (quote: PriceReference) => Date.parse(quote.updatedAt ?? '') || 0
+  if (time(next) !== time(previous)) return time(next) > time(previous)
+  const basisRank = (quote: PriceReference) => ({guide:3,'completed-sale':2,listing:1,unknown:0})[quote.basis ?? 'unknown']
+  if (basisRank(next) !== basisRank(previous)) return basisRank(next) > basisRank(previous)
+  const tie = (quote: PriceReference) => JSON.stringify([quote.identityVerified === true, quote.basis, quote.aggregator, quote.value, quote.printingLanguage, quote.sourceUrl, quote.listingUrl])
+  return tie(next) > tie(previous)
 }

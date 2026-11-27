@@ -10,7 +10,7 @@ import {useModalDialog} from '../hooks/useModalDialog'
 import {CatalogueImage} from './CatalogueImage'
 import {money} from '../utils/money'
 import {buildCardmarketUrl} from '../domain/cardmarket'
-import {collectionMarketValue,isPriceReferenceStale,isAsianCatalogLanguage} from '../domain/pricing'
+import {collectionMarketValue,isPriceReferenceStale,isAsianCatalogLanguage,isVerifiedLocalQuote} from '../domain/pricing'
 
 type Tab='overview'|'price'|'collection'|'grading'
 type Props={jumbo?:boolean;card:SetCard;setName:string;language:string;entry?:CollectionEntry;price?:CardPriceState;favorite?:boolean;onFavorite?:()=>void;onQuantity:(quantity:number)=>void;onEdit:()=>void;onShowcase?:()=>void;onClose:()=>void}
@@ -35,14 +35,14 @@ export function CardDetailsModal({card,setName,language,entry,price,favorite,onF
    {onShowcase&&<button className="details-action" onClick={onShowcase}><span>Voir en grand</span></button>}
    <a className="details-action" href={marketUrl} target="_blank" rel="noopener noreferrer"><span>Cardmarket</span><ExternalLink size={15}/></a>
   </div>
-  {tab==='overview'&&<section><h3>Aperçu</h3>{entry&&<p>Ma collection : <strong>{entry.quantity} exemplaire{entry.quantity===1?'':'s'} · {value===undefined?'prix à renseigner':money(value)}</strong></p>}<p>{jumbo?'Cote Jumbo indisponible.':price?.price?`${price.price.basis==='listing'?'Annonce datée':'Prix vérifié'} · ${language.toUpperCase()} : ${money(price.price.value)}${price.price.updatedAt?` · ${new Date(price.price.updatedAt).toLocaleDateString('fr-FR')}`:''}`:'Prix non vérifié pour cette langue'}</p><small>Les prix sans édition et langue vérifiées sont exclus.</small></section>}
+  {tab==='overview'&&<section><h3>Aperçu</h3>{entry&&<p>Ma collection : <strong>{entry.quantity} exemplaire{entry.quantity===1?'':'s'} · {value===undefined?'prix à renseigner':money(value)}</strong></p>}<p>{jumbo?'Cote Jumbo indisponible.':price?.price?`${price.price.basis==='listing'?'Annonce datée':isVerifiedLocalQuote(price.price,language)?'Prix vérifié':'Estimation Cardmarket'} · ${isVerifiedLocalQuote(price.price,language)?language.toUpperCase():'multilingue'} : ${money(price.price.value)}${price.price.updatedAt?` · ${new Date(price.price.updatedAt).toLocaleDateString('fr-FR')}`:''}`:'Prix non vérifié pour cette langue'}</p><small>Les estimations Cardmarket disponibles sont incluses dans la valeur de collection.</small></section>}
   {tab==='price'&&<section><h3>Prix · {language.toUpperCase()}</h3>
-   {!price?.price&&<p>Prix non vérifié pour cette édition et cette langue. Les prix personnels restent utilisables.</p>}
+   {!price?.price&&<p>Aucune cote automatique disponible pour cette carte.</p>}
    {price?.price&&<>
     <div className="price-stat-grid">{stat(price.price.label,price.price.value)}{cm?.trend!==undefined&&stat('Tendance · guide',cm.trend)}{cm?.avg!==undefined&&stat('Prix de vente moyen',cm.avg)}{cm?.avg1!==undefined&&stat('Ventes · moyenne 1 jour',cm.avg1)}{cm?.avg7!==undefined&&stat('Ventes · moyenne 7 jours',cm.avg7)}{cm?.avg30!==undefined&&stat('Ventes · moyenne 30 jours',cm.avg30)}</div>
     <p>{price.price.condition==='near-mint'?'Near Mint ou mieux · hors port · hors reverse. ':''}Relevé du {price.price.updatedAt?new Date(price.price.updatedAt).toLocaleDateString('fr-FR'):'jour non renseigné'}.</p>
     {price.price.basis==='listing'&&<p>Prix demandé dans les annonces, pas une vente conclue. Ce relevé daté ne s’actualise pas en direct.</p>}
-    {isPriceReferenceStale(price.price)&&<p>Relevé de plus de 14 jours : à actualiser. Il ne contribue plus aux totaux ni aux alertes.</p>}
+    {isPriceReferenceStale(price.price)&&<p>Relevé de plus de 14 jours : à actualiser. Il reste inclus dans la valeur estimée pendant son actualisation.</p>}
     <details><summary>Source et correspondance de la carte</summary><dl className="price-provenance">
      <div><dt>Source</dt><dd>Cardmarket via {price.price.aggregator==='manakodex'?'Manakodex':'TCGdex'}</dd></div>
      <div><dt>Carte</dt><dd>{setName} · {card.localId} · {languageName[language]??language}</dd></div>
@@ -50,7 +50,7 @@ export function CardDetailsModal({card,setName,language,entry,price,favorite,onF
     </dl>{price.price.sourceUrl&&<p><a href={price.price.sourceUrl} target="_blank" rel="noreferrer">Consulter le relevé Manakodex ↗</a></p>}{price.price.listingUrl&&<p><a href={price.price.listingUrl} target="_blank" rel="noreferrer">Annonces de cette carte en {languageName[language]} ↗</a></p>}</details>
    </>}
    {language==='en'&&price?.tcgplayerQuote&&<p>TCGplayer · Amérique du Nord · anglais : <strong>{money(price.tcgplayerQuote.value,'USD')}</strong> · {basisName(tcgplayerQuote?.basis)}. Cette référence USD reste séparée du montant européen en EUR.</p>}
-   <div className="price-history"><h4>Historique PokéValue</h4><p>Courbe des prix guide vérifiés. Les annonces datées restent séparées et ne créent pas de fausse évolution quotidienne.</p><Sparkline points={history}/></div>
+   <div className="price-history"><h4>Historique PokéValue</h4><p>Courbe des estimations guide Cardmarket comparables. Les annonces datées restent séparées et ne créent pas de fausse évolution quotidienne.</p><Sparkline points={history}/></div>
   </section>}
   {tab==='collection'&&<section><h3>Collection</h3><p>{entry?.quantity??0} exemplaire{entry?.quantity===1?'':'s'} · valeur : <strong>{value===undefined?'indisponible':money(value)}</strong></p>{entry?.manualPrice!==undefined&&(entry.priceMode??'manual')==='manual'&&<p>Prix personnalisé utilisé : {money(entry.manualPrice)} par exemplaire.</p>}</section>}
   {tab==='grading'&&<section><h3>Gradation</h3>{entry?.gradedCopies?.map(copy=><p key={copy.id}><strong>{copy.company} {copy.grade}</strong>{copy.certificate?` · Certificat ${copy.certificate}`:""}</p>)}<p><strong>Potentiel {grading.level==='high'?'élevé':grading.level==='medium'?'modéré':'faible'} à étudier.</strong> Score interne heuristique, pas une probabilité ni une recommandation.</p><ul>{grading.reasons.map(x=><li key={x}>{x}</li>)}</ul>{grading.hasRealGradedData?<p>Données gradées vérifiées disponibles.</p>:<p>Données de prix gradés vérifiées non disponibles.</p>}</section>}

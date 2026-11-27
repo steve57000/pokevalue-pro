@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/publish-reviewed-prices.mjs && tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "verify:dist": "node scripts/verify-dist.mjs",
     "validate:price-sample": "node scripts/validate-price-provider-sample.mjs",
     "check": "npm run typecheck && npm run test && npm run audit:images && npm run build && npm run verify:dist",
-    "audit:images": "node scripts/audit-special-images.mjs"
+    "audit:images": "node scripts/audit-special-images.mjs",
+    "refresh:prices": "node scripts/publish-reviewed-prices.mjs --fetch"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

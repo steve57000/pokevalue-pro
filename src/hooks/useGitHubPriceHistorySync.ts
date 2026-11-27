@@ -54,9 +54,19 @@ export function useGitHubPriceHistorySync(connection: GitHubConnection | null) {
       timer = setTimeout(() => { void sync() }, 1500)
     }
     retryRef.current = () => { clearTimeout(timer); void sync() }
+    const refresh = () => { if (document.visibilityState !== 'hidden') { clearTimeout(timer); void sync() } }
+    const interval = window.setInterval(refresh, 5 * 60 * 1000)
     window.addEventListener('pv-price-history-updated', onUpdate)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('online', refresh)
+    document.addEventListener('visibilitychange', refresh)
     void sync()
-    return () => { cancelled = true; clearTimeout(timer); window.removeEventListener('pv-price-history-updated', onUpdate) }
+    return () => {
+      cancelled = true; clearTimeout(timer); window.clearInterval(interval)
+      window.removeEventListener('pv-price-history-updated', onUpdate)
+      window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
   }, [connection])
   return { status, message, lastSavedAt, retry: () => retryRef.current() }
 }

@@ -1,10 +1,10 @@
-import { isPriceReferenceStale, isVerifiedLocalQuote } from '../domain/pricing'
+import { collectionMarketValue, isPriceReferenceStale, isVerifiedLocalQuote } from '../domain/pricing'
 import type { CatalogLanguage } from '../api/sets'
 import type { PriceBasis, PriceReference, TcgPlayerQuote } from '../domain/pricing'
 import { money } from '../utils/money'
 import { Info } from 'lucide-react'
 import type { PriceSnapshot } from '../domain/priceHistory'
-import { indicativePriceLabel } from '../domain/collectionPricing'
+import { indicativePriceLabel, priceReferenceFromSnapshot } from '../domain/collectionPricing'
 
 type Props = {
   indicative?: PriceSnapshot
@@ -39,22 +39,19 @@ function QuoteRow({ provider, context, value, currency = 'EUR', status, updatedA
 }
 
 export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, personalPrice, jumbo, indicative }: Props) {
-  cardmarket = isVerifiedLocalQuote(cardmarket,language) ? cardmarket : undefined
-  tcgplayer = isVerifiedLocalQuote(tcgplayer,language) ? tcgplayer : undefined
+  cardmarket = indicative ? priceReferenceFromSnapshot(indicative) : cardmarket
+  cardmarket = collectionMarketValue(cardmarket,language) !== undefined ? cardmarket : undefined
+  tcgplayer = language === 'en' ? tcgplayer : undefined
   const asian = language === 'ja' || language === 'zh-tw'
-  const cardmarketContext = cardmarket?.aggregator==='manakodex' ? `${language.toUpperCase()} · Near Mint ou mieux · hors port` : `Europe · EUR · ${language.toUpperCase()} · ${basisLabel(cardmarket?.basis)} · ${cardmarket?.condition === 'near-mint' ? 'Near Mint ou mieux, hors port' : 'état non renseigné'}${cardmarket ? ` · ${cardmarket.label}` : ''}`
+  const cardmarketContext = cardmarket?.aggregator==='manakodex' ? `${language.toUpperCase()} · Near Mint ou mieux · hors port` : `Europe · EUR · ${isVerifiedLocalQuote(cardmarket,language)?language.toUpperCase():'multilingue'} · ${basisLabel(cardmarket?.basis)} · ${cardmarket?.condition === 'near-mint' ? 'Near Mint ou mieux, hors port' : 'état non renseigné'}${cardmarket ? ` · ${cardmarket.label}` : ''}`
   const note = cardmarket || tcgplayer
-    ? cardmarket?.aggregator === 'manakodex' ? 'Annonce Cardmarket relevée par Manakodex. Prix demandé, hors reverse ; ce n’est pas une vente conclue ni un prix en direct.' : 'Prix vérifié pour cette édition et cette langue.'
-    : 'Aucun prix automatique vérifié pour cette carte et sa langue. Les références multilingues et les correspondances incertaines sont exclues. Tu peux renseigner ton prix personnel dans les paramètres.'
+    ? cardmarket?.aggregator === 'manakodex' ? 'Annonce Cardmarket relevée par Manakodex. Prix demandé, hors reverse ; ce n’est pas une vente conclue ni un prix en direct.' : isVerifiedLocalQuote(cardmarket,language) ? 'Prix vérifié pour cette édition et cette langue.' : 'Estimation Cardmarket multilingue incluse dans le total. Aucun supplément français n’est ajouté automatiquement.'
+    : 'Aucune référence automatique disponible pour cette carte. Une nouvelle recherche sera effectuée lors de l’actualisation.'
 
   const cardmarketProvider = asian ? 'Référence Cardmarket' : 'Cardmarket'
   const tcgplayerContext = `Amérique du Nord · USD · EN · ${basisLabel(tcgplayer?.basis)} · état non renseigné${tcgplayer ? ` · ${tcgplayer.label}` : ''}`
-  // Keep the card tile focused on one actionable figure. English cards prefer
-  // their North American reference when it exists; otherwise Cardmarket is a
-  // clearly European fallback inside the detailed information panel.
-  const primaryValue = personalPrice !== undefined ? { value: personalPrice, currency: 'EUR' as const } : asian || jumbo ? undefined : language === 'en' && tcgplayer?.value !== undefined
-    ? { value: tcgplayer.value, currency: 'USD' as const }
-    : cardmarket?.value !== undefined ? { value: cardmarket.value, currency: 'EUR' as const } : undefined
+  // The tile and collection total use the same EUR reference.
+  const primaryValue = personalPrice !== undefined ? { value: personalPrice, currency: 'EUR' as const } : asian || jumbo ? undefined : cardmarket?.value !== undefined ? { value: cardmarket.value, currency: 'EUR' as const } : undefined
   const compactAmount = primaryValue
     ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: primaryValue.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(primaryValue.value)
     : status === 'loading' ? '…' : '—'
@@ -66,7 +63,7 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, pe
     <details className="binder-price-info">
       <summary aria-label="Afficher les informations sur les prix" title="Informations sur les prix"><Info size={15}/><span>Informations</span></summary>
       <div className="binder-price-info-content">
-        {indicative && <p>Référence indicative Cardmarket du {new Date(indicative.sourceUpdatedAt ?? indicative.date).toLocaleDateString('fr-FR')} · {indicativePriceLabel(indicative)}. Comptée uniquement dans le total indicatif séparé.</p>}
+        {indicative && <p>Référence indicative Cardmarket du {new Date(indicative.sourceUpdatedAt ?? indicative.date).toLocaleDateString('fr-FR')} · {indicativePriceLabel(indicative)}. Incluse dans la valeur estimée de la collection.</p>}
         {personalPrice!==undefined&&<QuoteRow provider="Prix personnel" context="Valeur de ma collection" value={personalPrice}/>}
         {jumbo&&<p>Pas de cote Jumbo disponible. Renseigne ton prix dans les paramètres.</p>}
         {asian && <QuoteRow provider="Cote locale" context={language === 'ja' ? 'Japon' : 'Chinois traditionnel'} status="error" />}
@@ -75,7 +72,7 @@ export function MarketPriceDisplay({ language, status, cardmarket, tcgplayer, pe
         <small className="binder-price-note">{note}{cardmarket?.aggregator!=='manakodex'?' Les moyennes de ventes sont agrégées par période, pas des transactions individuelles.':''}</small>
         {cardmarket?.sourceUrl&&<a href={cardmarket.sourceUrl} target="_blank" rel="noreferrer">Consulter le relevé source ↗</a>}
         {cardmarket?.listingUrl&&<a href={cardmarket.listingUrl} target="_blank" rel="noreferrer">Annonces {language.toUpperCase()} de cette carte ↗</a>}
-        {isPriceReferenceStale(cardmarket)&&<p>Relevé de plus de 14 jours : conservé pour information, exclu des totaux et des alertes.</p>}
+        {isPriceReferenceStale(cardmarket)&&<p>Relevé de plus de 14 jours : dernière estimation connue conservée dans le total pendant son actualisation.</p>}
       </div>
     </details>
   </div>

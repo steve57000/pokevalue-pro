@@ -3,7 +3,7 @@ import { tcgDexProvider } from '../api/tcgdex'
 import type { ExternalCard } from '../domain/cards'
 import type { Card } from '../types'
 import { recordPriceSnapshots, snapshotsFromQuotes } from '../domain/priceHistory'
-import { collectMarketPriceQuotes } from '../domain/pricing'
+import { localizedMarketData } from '../domain/localizedPricing'
 
 export type LiveEntry = { status: 'idle' | 'loading' | 'success' | 'error'; data?: ExternalCard; error?: string }
 
@@ -41,7 +41,7 @@ export function useLiveCards(cards: Card[]) {
       const snapshots=results.flatMap((result,index)=>{
         if(result.status!=='fulfilled'||result.value.data.fromStaleCache)return[]
         const language=tcgDexLanguageForCard(mappedCards[index])
-        return snapshotsFromQuotes(result.value.data.id,collectMarketPriceQuotes(result.value.data.pricing,language))
+        return snapshotsFromQuotes(result.value.data.id,localizedMarketData(result.value.data,undefined,{id:mappedCards[index].tcgdexId!,language}).quotes)
       })
       if(snapshots.length){try{recordPriceSnapshots(snapshots)}catch(error){console.error('Échec de sauvegarde de l’historique de prix',error)}}
       if (!active) return

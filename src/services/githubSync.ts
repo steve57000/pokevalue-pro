@@ -11,6 +11,7 @@ export type RemotePortfolio = { document?: CollectionDocument; sha?: string; log
 async function github<T>(path: string, connection: GitHubConnection, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     ...init,
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${connection.token}`,
@@ -30,6 +31,7 @@ async function github<T>(path: string, connection: GitHubConnection, init: Reque
 
 async function githubRawFile(path: string, connection: GitHubConnection): Promise<string> {
   const response = await fetch(API + path, {
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github.raw+json',
       Authorization: 'Bearer ' + connection.token,

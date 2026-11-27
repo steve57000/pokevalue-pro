@@ -14,6 +14,7 @@ async function requireFile(path, label) {
 }
 
 await requireFile(resolve(dist, 'index.html'), 'Page principale')
+await requireFile(resolve(dist, 'prices/reviewed-delta.json'), 'Relevé de prix partagé')
 await requireFile(resolve(dist, 'manifest.webmanifest'), 'Manifeste PWA')
 await requireFile(resolve(dist, 'pokevalue-icon.svg'), 'Icône PWA')
 

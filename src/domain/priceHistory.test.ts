@@ -98,3 +98,14 @@ describe('price history',()=>{
   expect(()=>recordPriceSnapshot({cardId:'x',language:'fr',date:'2026-10-01',value:2,source:'cardmarket'} as PriceSnapshot,storage)).toThrow('provenance')
  })
 })
+
+it('converges across browsers and rejects a later fetch of an older upstream quote',()=>{
+ const fresh=snapshot({value:22,sourceUpdatedAt:'2026-10-01T10:00:00Z',recordedAt:'2026-10-01T11:00:00Z'})
+ const cached=snapshot({value:10,sourceUpdatedAt:'2026-10-01T08:00:00Z',recordedAt:'2026-10-01T13:00:00Z'})
+ expect(mergePriceHistory([fresh],[cached])).toEqual(mergePriceHistory([cached],[fresh]))
+ expect(mergePriceHistory([cached],[fresh])[0].value).toBe(22)
+ const competing=snapshot({value:24,sourceUpdatedAt:fresh.sourceUpdatedAt,recordedAt:fresh.recordedAt})
+ const first=mergePriceHistory([competing],[fresh]),second=mergePriceHistory([fresh],[competing])
+ expect(first).toEqual(second)
+ expect(first[0].quotes.find(quote=>quote.metric===first[0].metric)?.value).toBe(first[0].value)
+})

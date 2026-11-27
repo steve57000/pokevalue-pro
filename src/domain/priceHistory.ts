@@ -196,7 +196,7 @@ export function snapshotsFromQuotes(cardId: string, quotes: MarketPriceQuote[], 
     return {
       cardId,
       language: primary.catalogLanguage,
-      date: primary.aggregator === 'manakodex' && primary.sourceUpdatedAt ? primary.sourceUpdatedAt.slice(0,10) : date,
+      date: primary.sourceUpdatedAt ? primary.sourceUpdatedAt.slice(0,10) : date,
       value: primary.value,
       source: primary.source,
       aggregator: primary.aggregator,
@@ -238,21 +238,24 @@ export function parsePriceHistoryDocument(value: unknown): PriceHistoryDocument 
   return { schemaVersion: 2, updatedAt: candidate.updatedAt, snapshots: mergePriceHistory(snapshots as PriceSnapshot[]) }
 }
 
-function snapshotTime(snapshot: PriceSnapshot) { return snapshot.recordedAt ? Date.parse(snapshot.recordedAt) : Date.parse(`${snapshot.date}T00:00:00Z`) }
+function snapshotTime(snapshot: PriceSnapshot) { return Date.parse(snapshot.sourceUpdatedAt ?? snapshot.recordedAt ?? `${snapshot.date}T00:00:00Z`) }
+function stableSnapshotOrder(snapshot: PriceSnapshot) {
+  return JSON.stringify([snapshot.value, snapshot.metric, snapshot.identityVerified === true, snapshot.externalProductId, snapshot.sourceUrl, snapshot.listingUrl, snapshot.validUntil, [...snapshot.quotes].sort((a,b)=>a.metric.localeCompare(b.metric)).map(q=>[q.metric,q.basis,q.value,q.sourceUpdatedAt])])
+}
 function historyKey(snapshot: PriceSnapshot) {
   return [snapshot.language, snapshot.cardId, snapshot.date, snapshot.source, snapshot.market, snapshot.currency,
     snapshot.printingLanguage, snapshot.variant, snapshot.condition, snapshot.aggregator, snapshot.externalProductId ?? '', snapshot.basis].join(':')
 }
 function mergeQuoteSnapshots(current: PriceSnapshot, incoming: PriceSnapshot): PriceSnapshot {
-  const incomingIsNewer = snapshotTime(incoming) >= snapshotTime(current)
+  const incomingIsNewer = snapshotTime(incoming) > snapshotTime(current) || snapshotTime(incoming) === snapshotTime(current) && stableSnapshotOrder(incoming) > stableSnapshotOrder(current)
   const ordered = incomingIsNewer ? [current, incoming] : [incoming, current]
   const metrics = new Map<string, PriceMetricSnapshot>()
   for (const snapshot of ordered) for (const metric of snapshot.quotes) {
     metrics.set(`${metric.metric}:${metric.basis}:${metric.aggregation}`, metric)
   }
   const primary = incomingIsNewer ? incoming : current
-  const recordedAt = incomingIsNewer ? incoming.recordedAt ?? current.recordedAt : current.recordedAt ?? incoming.recordedAt
-  return { ...primary, quotes: [...metrics.values()], ...(recordedAt ? { recordedAt } : {}) }
+  const recordedAt = [incoming.recordedAt, current.recordedAt].filter((value): value is string => Boolean(value)).sort().slice(-1)[0]
+  return { ...primary, quotes: [...metrics.values()].sort((a,b)=>a.metric.localeCompare(b.metric)||a.basis.localeCompare(b.basis)), ...(recordedAt ? { recordedAt } : {}) }
 }
 
 export function mergePriceHistory(local: PriceSnapshot[], remote: PriceSnapshot[] = []): PriceSnapshot[] {
@@ -265,10 +268,13 @@ export function mergePriceHistory(local: PriceSnapshot[], remote: PriceSnapshot[
   const sorted = [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || a.language.localeCompare(b.language)
     || a.cardId.localeCompare(b.cardId) || a.source.localeCompare(b.source) || a.market.localeCompare(b.market)
     || a.currency.localeCompare(b.currency) || a.variant.localeCompare(b.variant) || a.basis.localeCompare(b.basis)
-    || a.metric.localeCompare(b.metric) || (a.externalProductId ?? '').localeCompare(b.externalProductId ?? ''))
+    || a.metric.localeCompare(b.metric) || (a.externalProductId ?? '').localeCompare(b.externalProductId ?? '') || historyKey(a).localeCompare(historyKey(b)))
   // Prune old chart points, never the last known price of an inactive card.
   const latest = new Map<string, PriceSnapshot>()
-  for(const point of sorted) latest.set(historyKey({...point,date:''}),point)
+  for(const point of sorted) {
+    const key=historyKey({...point,date:''}), previous=latest.get(key)
+    if(!previous || snapshotTime(point)>snapshotTime(previous) || snapshotTime(point)===snapshotTime(previous)&&stableSnapshotOrder(point)>stableSnapshotOrder(previous))latest.set(key,point)
+  }
   const remaining = Math.max(0,MAX-latest.size)
   const retained = new Set([...latest.values(), ...(remaining ? sorted.slice(-remaining) : [])])
   return sorted.filter(point=>retained.has(point))
@@ -335,7 +341,8 @@ export function todayPriceDate() {
 export function comparablePriceHistory(snapshots: PriceSnapshot[]): PriceSnapshot[] {
   const daily = new Map<string, PriceSnapshot>()
   for (const point of snapshots) {
-    if (point.identityVerified !== true || point.printingLanguage !== point.language || isAsianCatalogLanguage(point.language) || point.source !== 'cardmarket' || point.market !== 'cardmarket-europe'
+    const eligible = point.identityVerified === true ? point.printingLanguage === point.language : point.printingLanguage === 'unknown' && !point.cardId.startsWith('me06-')
+    if (!eligible || isAsianCatalogLanguage(point.language) || point.source !== 'cardmarket' || point.market !== 'cardmarket-europe'
       || point.currency !== 'EUR' || point.variant !== 'normal' || point.basis !== 'guide') continue
     const key = `${point.language}:${point.cardId}:${point.date}`
     const previous = daily.get(key)
@@ -346,7 +353,9 @@ export function comparablePriceHistory(snapshots: PriceSnapshot[]): PriceSnapsho
 }
 
 export function getPriceHistory(cardId: string, language: string, storage: Pick<Storage, 'getItem'> = localStorage): PriceSnapshot[] {
-  return comparablePriceHistory(readHistory(storage)).filter(point => point.cardId === cardId && point.language === language)
+  const points = comparablePriceHistory(readHistory(storage)).filter(point => point.cardId === cardId && point.language === language)
+  const latest = points[points.length-1]
+  return points.filter(point=>point.externalProductId===latest?.externalProductId&&point.metric===latest?.metric&&point.printingLanguage===latest?.printingLanguage&&point.aggregator===latest?.aggregator)
 }
 
 export function getAllPriceHistory(storage: Pick<Storage, 'getItem'> = localStorage): PriceSnapshot[] {

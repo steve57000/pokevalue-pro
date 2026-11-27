@@ -103,6 +103,39 @@ export function useGitHubCollectionSync(document: CollectionDocument, onChange: 
     dirtyRef.current = true; void flush()
   }, [document, connected, flush])
 
+  useEffect(() => {
+    if (!activeConnection) return
+    let pulling = false, cancelled = false
+    const refresh = async () => {
+      if (cancelled || pulling || writingRef.current || window.document.visibilityState === 'hidden') return
+      pulling = true
+      const generation = generationRef.current
+      try {
+        const remote = await readRemotePortfolio(activeConnection)
+        if (cancelled || generation !== generationRef.current || writingRef.current) return
+        shaRef.current = remote.sha; setSha(remote.sha)
+        const merged = remote.document ? mergeCollections(documentRef.current, remote.document) : documentRef.current
+        lastSavedRef.current = JSON.stringify(remote.document ?? emptyCollection())
+        const changed = JSON.stringify(merged) !== JSON.stringify(documentRef.current)
+        documentRef.current = merged
+        if (changed) onChange(merged)
+        if (JSON.stringify(merged) !== lastSavedRef.current) { dirtyRef.current = true; await flush() }
+        else { setStatus('saved'); setMessage('Collection synchronisée.'); setLastSavedAt(new Date()) }
+      } catch (error) {
+        if (!cancelled) { setStatus('error'); setMessage((error as Error).message) }
+      } finally { pulling = false }
+    }
+    const onFocus = () => { void refresh() }
+    const interval = window.setInterval(onFocus, 5 * 60 * 1000)
+    window.addEventListener('focus', onFocus); window.addEventListener('online', onFocus)
+    window.document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      cancelled = true; window.clearInterval(interval)
+      window.removeEventListener('focus', onFocus); window.removeEventListener('online', onFocus)
+      window.document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [activeConnection, onChange, flush])
+
   const resolveConflict = useCallback(async () => {
     const generation = generationRef.current
     try {

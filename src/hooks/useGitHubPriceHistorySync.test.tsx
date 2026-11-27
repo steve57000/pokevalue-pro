@@ -28,3 +28,25 @@ it('preserves a second price arriving during an in-flight GitHub write',async()=
   expect(remote.map(row=>row.cardId).sort()).toEqual(['Dracaufeu','Magicarpe'])
   act(()=>root.unmount())
 })
+
+it('pulls another browser’s newer quote on focus without needing a local edit',async()=>{
+ vi.clearAllMocks();localStorage.clear()
+ const point=(value:number,date:string)=>snapshotsFromQuotes('shared-card',collectMarketPriceQuotes({cardmarket:{trend:value,updated:date}},'fr'))
+ let remote=point(10,'2026-11-20')
+ vi.mocked(readRemotePriceHistory).mockImplementation(async()=>({sha:'shared',document:{schemaVersion:2,updatedAt:'2026-11-25',snapshots:remote}}))
+ vi.mocked(writeRemotePriceHistory).mockImplementation(async(_,snapshots)=>{remote=snapshots;return 'next'})
+ const connection={owner:'test',repo:'test',token:'test'}
+ function Harness(){useGitHubPriceHistorySync(connection);return null}
+ const root=createRoot(document.createElement('div'))
+ await act(async()=>root.render(createElement(Harness)))
+ const calls=vi.mocked(readRemotePriceHistory).mock.calls.length
+ remote=point(25,'2026-11-25')
+ await act(async()=>window.dispatchEvent(new Event('focus')))
+ expect(vi.mocked(readRemotePriceHistory).mock.calls.length).toBeGreaterThan(calls)
+ const {latestCollectionReferences}=await import('../domain/collectionPricing')
+ expect(latestCollectionReferences(getAllPriceHistory()).get('fr:shared-card')?.value).toBe(25)
+ act(()=>root.unmount())
+ const afterUnmount=vi.mocked(readRemotePriceHistory).mock.calls.length
+ window.dispatchEvent(new Event('focus'))
+ expect(readRemotePriceHistory).toHaveBeenCalledTimes(afterUnmount)
+})

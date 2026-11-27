@@ -52,3 +52,19 @@ it('sends market evidence, graded copies and personal sales to the private backu
   expect(live.gradingSettings![0].feePercent).toBe('8')
   act(()=>root.unmount())
 })
+
+it('retrieves quantities changed on another browser when this window regains focus',async()=>{
+ Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});localStorage.clear();vi.clearAllMocks()
+ localStorage.setItem('pv-github-connection-v1',JSON.stringify({owner:'test',repo:'private-backup',token:'test'}))
+ const initial=upsertEntry(emptyCollection(),{source:'tcgdex',setId:'shared',cardId:'shared-1',language:'fr',variant:'normal',name:'Carte',setName:'Test',quantity:1,condition:'near-mint',notes:''})
+ let remote=initial,live=initial
+ vi.mocked(readRemotePortfolio).mockImplementation(async()=>({login:'test',sha:'shared',document:remote}))
+ vi.mocked(writeRemotePortfolio).mockImplementation(async(_,value)=>{remote=value;return {content:{sha:'shared'}}})
+ function Harness(){const [value,setValue]=useState(initial);live=value;useGitHubCollectionSync(value,setValue);return null}
+ const root=createRoot(window.document.createElement('div'))
+ await act(async()=>root.render(createElement(Harness)))
+ remote={...initial,revision:initial.revision+1,entries:[{...initial.entries[0],quantity:4,updatedAt:'2099-01-01T00:00:00Z'}]}
+ await act(async()=>window.dispatchEvent(new Event('focus')))
+ expect(live.entries[0].quantity).toBe(4)
+ act(()=>root.unmount())
+})

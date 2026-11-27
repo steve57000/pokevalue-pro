@@ -18,6 +18,7 @@ beforeEach(()=>{
  Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true})
  localStorage.clear();sessionStorage.clear()
  vi.stubGlobal('requestAnimationFrame',(callback:FrameRequestCallback)=>{callback(0);return 1})
+ vi.stubGlobal('scrollTo',vi.fn())
  vi.stubGlobal('matchMedia',()=>({matches:false}))
  HTMLElement.prototype.scrollIntoView=vi.fn()
  host=document.createElement('div');document.body.append(host);root=createRoot(host)
@@ -68,16 +69,17 @@ describe('statistics navigation',async()=>{
   act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Réinitialiser les filtres')!.click())
   expect(names()).toEqual(['Dracaufeu','Magicarpe'])
  })
- it('separates archived totals and lets the owner reactivate a saved personal price directly', async()=>{
+ it('includes archived estimates with quantities in the single total and respects explicit overrides', async()=>{
   const saved=[{...entries[0],quantity:3,manualPrice:17,priceMode:'market' as const},entries[1]]
   recordPriceSnapshots(snapshotsFromQuotes(saved[0].cardId,collectMarketPriceQuotes({cardmarket:{trend:12}},'fr')))
   const onChangeEntry=vi.fn()
   await act(async()=>root.render(createElement(PriceHistoryPage,{...props,entries:saved,onChangeEntry})))
   const known=host.querySelectorAll('.history-insight-grid strong')[2]
-  expect(known.textContent).toContain('31')
-  expect(host.querySelector('[aria-label="Total indicatif séparé"] b')?.textContent).toContain('36')
+  expect(known.textContent).toContain('67')
+  expect(host.querySelector('[aria-label="Total indicatif séparé"]')).toBeNull()
+  expect(host.textContent).toContain('2/2 valorisées')
   expect(host.textContent).toContain('désactivé, mode marché sélectionné')
-  act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Modifier le prix de ma carte')!.click())
+  act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Paramètres de ma carte')!.click())
   act(()=>document.querySelectorAll<HTMLInputElement>('input[name="price-mode"]')[1].click())
   act(()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='Valider ma carte')!.click())
   expect(onChangeEntry).toHaveBeenCalledWith(expect.objectContaining({cardId:saved[0].cardId,quantity:3,manualPrice:17,priceMode:'manual'}))

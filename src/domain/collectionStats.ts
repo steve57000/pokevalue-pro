@@ -3,7 +3,7 @@ import { collectionUnitPrice, printingKey, setIdFromCardId, type CollectionEntry
 import type { FavoriteCard } from './favorites'
 import { comparablePriceHistory, todayPriceDate, type PriceSnapshot } from './priceHistory'
 import { normalizeImageLanguage } from './image'
-import { collectionMarketValue, isPriceReferenceStale } from './pricing'
+import { collectionMarketValue, isPriceReferenceStale, isVerifiedLocalQuote } from './pricing'
 import { latestCollectionReferences, priceIdentityKey, priceReferenceFromSnapshot } from './collectionPricing'
 
 export const missingPriceLabels = {
@@ -61,7 +61,6 @@ export function buildStatsRows(cards: Card[], entries: CollectionEntry[], favori
   }
   const histories = new Map<string, PriceSnapshot[]>()
   const references = latestCollectionReferences(snapshots)
-  const indicativeReferences = latestCollectionReferences(snapshots, 'indicative')
   for (const point of comparablePriceHistory(snapshots)) {
     const key = `${point.language}:${point.cardId}`
     histories.set(key, [...(histories.get(key) ?? []), point])
@@ -71,7 +70,7 @@ export function buildStatsRows(cards: Card[], entries: CollectionEntry[], favori
     row.history = row.setId === 'jumbo' || row.variant !== 'normal' ? [] : histories.get(`${row.language}:${row.id}`) ?? []
     const latest = row.history[row.history.length - 1]
     // A changed provider mapping must not create a fictitious price jump.
-    row.history = row.history.filter(point=>point.externalProductId===latest?.externalProductId&&point.metric===latest?.metric)
+    row.history = row.history.filter(point=>point.externalProductId===latest?.externalProductId&&point.metric===latest?.metric&&point.printingLanguage===latest?.printingLanguage&&point.aggregator===latest?.aggregator)
     const period = range==='all' ? row.history : row.history.filter(point=>Date.parse(point.date)>=cutoff)
     const first = period[0], last = period[period.length-1]
     const supported = row.setId !== 'jumbo' && row.variant === 'normal' && ['fr', 'en'].includes(row.language)
@@ -83,15 +82,11 @@ export function buildStatsRows(cards: Card[], entries: CollectionEntry[], favori
       ? collectionMarketValue(quote, row.language) : undefined
     row.reference = reference
     Object.assign(row, currentCollectionPrice(eligible, ownedEntries))
+    row.indicative = reference && !row.manual && row.value !== undefined && (!isVerifiedLocalQuote(reference, row.language) || isPriceReferenceStale(reference)) ? reference : undefined
     row.savedManualPrice = ownedEntries.find(entry => entry.priceMode === 'market' && entry.manualPrice !== undefined)?.manualPrice
     if (row.value === undefined) {
-      const conditionMatches = !reference || reference.condition !== 'near-mint' || ownedEntries.every(entry => ['mint', 'near-mint'].includes(entry.condition))
-      row.indicative = supported && !row.manual && conditionMatches
-        ? reference ? isPriceReferenceStale(reference) ? reference : undefined : indicativeReferences.get(key)
-        : undefined
       row.missingReason = row.manual ? 'manual' : !supported ? 'unsupported' : reference
-        ? isPriceReferenceStale(reference) ? 'expired' : 'condition'
-        : row.indicative ? 'unverified' : 'missing'
+        ? 'condition' : 'missing'
     }
     const metric = (name: string) => eligible === undefined ? undefined : reference?.quotes.find(quote=>quote.metric===name&&quote.basis==='completed-sale')?.value
     row.averages = {day:metric('avg1'),week:metric('avg7'),month:metric('avg30')}

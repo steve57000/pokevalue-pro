@@ -9,10 +9,15 @@ describe('foreground pricing priorities',()=>{
  it('starts requests for the newly opened set ahead of unstarted older cards',async()=>{
   const started:string[]=[]
   const completions=new Map<string,()=>void>()
-  vi.spyOn(tcgDexProvider,'getCard').mockImplementation((id,language='fr')=>new Promise<ExternalCard>(resolve=>{
-   started.push(id)
-   completions.set(id,()=>resolve({id,name:id,language}))
-  }))
+  vi.spyOn(tcgDexProvider,'getCard').mockImplementation((id,language='fr')=>{
+   // An unavailable French quote also checks EN; keep that lookup independent
+   // from the foreground ordering of the French card tasks under test.
+   if(language==='en')return Promise.resolve({id,name:id,language})
+   return new Promise<ExternalCard>(resolve=>{
+    started.push(id)
+    completions.set(id,()=>resolve({id,name:id,language}))
+   })
+  })
   const old=Array.from({length:10},(_,i)=>'queue-old-oct27-'+i)
   const current=['queue-visible-oct27-1','queue-visible-oct27-2']
   refreshCardPrices(old)
